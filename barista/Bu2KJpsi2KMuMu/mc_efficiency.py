@@ -18,7 +18,7 @@ from coffea import hist, lookup_tools
 import awkward
 import copy
 
-from constants import *
+from brazil.constants import *
 
 np.set_printoptions(threshold=np.inf)
 
