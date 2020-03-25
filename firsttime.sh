@@ -7,8 +7,7 @@ fi
 
 python -m venv --copies venv
 source venv/bin/activate
-python -m pip install setuptools pip --upgrade
-python -m pip install coffea
-python -m pip install xxhash
-cd brazil
-pip install --editable .
+#python -m pip install setuptools pip --upgrade
+#python -m pip install coffea
+#python -m pip install xxhash
+python -m pip install --editable .

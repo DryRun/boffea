@@ -1,0 +1,6 @@
+/home/dryu/store/BParkingNANO/v1_7/ParkingBPH1/crab_data_Run2018A_part1/200226_010320/0000/BParkNANO_data_2020Feb26_362.root
+/home/dryu/store/BParkingNANO/v1_7/ParkingBPH1/crab_data_Run2018A_part1/200226_010320/0000/BParkNANO_data_2020Feb26_284.root
+/home/dryu/store/BParkingNANO/v1_7/ParkingBPH1/crab_data_Run2018A_part1/200226_010320/0000/BParkNANO_data_2020Feb26_305.root
+/home/dryu/store/BParkingNANO/v1_7/ParkingBPH1/crab_data_Run2018A_part1/200226_010320/0000/BParkNANO_data_2020Feb26_325.root
+/home/dryu/store/BParkingNANO/v1_7/ParkingBPH1/crab_data_Run2018A_part1/200226_010320/0000/BParkNANO_data_2020Feb26_159.root
+/home/dryu/store/BParkingNANO/v1_7/ParkingBPH1/crab_data_Run2018A_part1/200226_010320/0000/BParkNANO_data_2020Feb26_100.root

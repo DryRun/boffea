@@ -1,0 +1,2 @@
+#!/bin/bash
+python coffea2rootfit.py -i /home/dryu/BFrag/data/histograms/condor/job20200228_174348/DataHistograms\*.coffea -j Bcands_Bs_tag,Bcands_Bs_probe,Bcands_Bu_tag,Bcands_Bu_probe -o data.root -c
