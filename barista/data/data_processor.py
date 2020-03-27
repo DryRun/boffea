@@ -290,7 +290,7 @@ class DataProcessor(processor.ProcessorABC):
     selections["Bu"]["cos2D"]    = (reco_bukmumu.fit_cos2D > 0.999)
     selections["Bu"]["l1"]      =  (reco_bukmumu.fit_l1_pt > 1.5) & (abs(reco_bukmumu.fit_l1_eta) < 2.4) & reco_bukmumu.l1_softId
     selections["Bu"]["l2"]      =  (reco_bukmumu.fit_l2_pt > 1.5) & (abs(reco_bukmumu.fit_l2_eta) < 2.4) & reco_bukmumu.l2_softId
-    selections["Bu"]["k"]       = (reco_bukmumu.fit_k_pt > 1.2) & (abs(reco_bukmumu.fit_k_eta) < 2.5)
+    selections["Bu"]["k"]       = (reco_bukmumu.fit_k_pt > 0.5) & (abs(reco_bukmumu.fit_k_eta) < 2.5)
     selections["Bu"]["dR"]      = (delta_r(reco_bukmumu.fit_k_eta, reco_bukmumu.fit_l1_eta, reco_bukmumu.fit_k_phi, reco_bukmumu.fit_l1_phi) > 0.03) \
                                  & (delta_r(reco_bukmumu.fit_k_eta, reco_bukmumu.fit_l2_eta, reco_bukmumu.fit_k_phi, reco_bukmumu.fit_l2_phi) > 0.03) \
                                  & (delta_r(reco_bukmumu.fit_l1_eta, reco_bukmumu.fit_l2_eta, reco_bukmumu.fit_l1_phi, reco_bukmumu.fit_l2_phi) > 0.03)

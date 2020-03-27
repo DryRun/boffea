@@ -10,4 +10,4 @@ source venv/bin/activate
 #python -m pip install setuptools pip --upgrade
 #python -m pip install coffea
 #python -m pip install xxhash
-python -m pip install --editable .
+pip install --editable . 
