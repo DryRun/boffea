@@ -35,7 +35,7 @@ def where(predicate, iftrue, iffalse):
 
 class MCEfficencyProcessor(processor.ProcessorABC):
   def __init__(self):
-    self._trigger = "HLT_Mu7_IP4"
+    #self._trigger = "HLT_Mu9_IP6"
 
     # Histograms
     dataset_axis = hist.Cat("dataset", "Primary dataset")
@@ -275,7 +275,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
                                 & (abs(reco_bskkmumu.Kstar2_mass - KSTAR_892_MASS) > BS_KSTAR_VETO_WINDOW)
     #(reco_bskkmumu.phi_m < KSTAR_892_MASS - KSTAR_WINDOW) | (KSTAR_892_MASS + KSTAR_WINDOW < reco_bskkmumu.phi_m)
 
-    selections["trigger"] = (df[self._trigger] == 1) * reco_bskkmumu_mask_template # Shape = event!
+    selections["trigger"] = ((df["HLT_Mu9_IP5"] == 1) | (df["HLT_Mu9_IP6"] == 1)) * reco_bskkmumu_mask_template # Shape = event!
 
     # Final selections
     selections["inclusive"] = reco_bskkmumu.fit_pt.ones_like().astype(bool)
@@ -327,10 +327,10 @@ class MCEfficencyProcessor(processor.ProcessorABC):
                                             fit_pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten(),
                                             fit_y=reco_bskkmumu.fit_y[selections[selection_name]].flatten(),
                                             fit_mass=reco_bskkmumu.fit_mass[selections[selection_name]].flatten())
-      output["BsToKKMuMu_fit_pt"].fill(dataset=dataset_name, selection=selection_name, fit_pt=reco_bskkmumu.pt[selections[selection_name]].flatten())
-      output["BsToKKMuMu_fit_eta"].fill(dataset=dataset_name, selection=selection_name, fit_eta=reco_bskkmumu.eta[selections[selection_name]].flatten())
-      output["BsToKKMuMu_fit_phi"].fill(dataset=dataset_name, selection=selection_name, fit_phi=reco_bskkmumu.phi[selections[selection_name]].flatten())
-      output["BsToKKMuMu_fit_mass"].fill(dataset=dataset_name, selection=selection_name, fit_mass=reco_bskkmumu.mass[selections[selection_name]].flatten())
+      output["BsToKKMuMu_fit_pt"].fill(dataset=dataset_name, selection=selection_name, fit_pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["BsToKKMuMu_fit_eta"].fill(dataset=dataset_name, selection=selection_name, fit_eta=reco_bskkmumu.fit_eta[selections[selection_name]].flatten())
+      output["BsToKKMuMu_fit_phi"].fill(dataset=dataset_name, selection=selection_name, fit_phi=reco_bskkmumu.fit_phi[selections[selection_name]].flatten())
+      output["BsToKKMuMu_fit_mass"].fill(dataset=dataset_name, selection=selection_name, fit_mass=reco_bskkmumu.fit_mass[selections[selection_name]].flatten())
       output["BsToKKMuMu_chi2"].fill(dataset=dataset_name, selection=selection_name, chi2=reco_bskkmumu.chi2[selections[selection_name]].flatten())
       output["BsToKKMuMu_fit_cos2D"].fill(dataset=dataset_name, selection=selection_name, fit_cos2D=reco_bskkmumu.fit_cos2D[selections[selection_name]].flatten())
       output["BsToKKMuMu_fit_theta2D"].fill(dataset=dataset_name, selection=selection_name, fit_theta2D=np.arccos(reco_bskkmumu.fit_cos2D[selections[selection_name]]).flatten())
@@ -552,11 +552,13 @@ if __name__ == "__main__":
 
   # Inputs
   in_txt = {
-      "Bs2PhiJpsi2KKMuMu_probefilter": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
-      #"Bs2PhiJpsi2KKMuMu_probefilter_lzma6": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_lzma.txt",
-      #"Bs2PhiJpsi2KKMuMu_probefilter_zlib6": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_zlib.txt",
-      #"Bs2PhiJpsi2KKMuMu_probefilter_veryloose": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_5_veryloose/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
-      "Bs2PhiJpsi2KKMuMu_inclusive": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      #"Bs2PhiJpsi2KKMuMu_probefilter_noconstr": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v1_7/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
+      #"Bs2PhiJpsi2KKMuMu_inclusive_noconstr": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v1_6/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
+      "Bs2PhiJpsi2KKMuMu_probefilter": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_2/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat"),
+      "Bs2PhiJpsi2KKMuMu_inclusive": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_2/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat"),
+      #"Bs2PhiJpsi2KKMuMu_probefilter_lzma6": "/home/dryu/BFrag/boffea/barista/filelists/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_lzma.txt",
+      #"Bs2PhiJpsi2KKMuMu_probefilter_zlib6": "/home/dryu/BFrag/boffea/barista/filelists/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_zlib.txt",
+      #"Bs2PhiJpsi2KKMuMu_probefilter_veryloose": "/home/dryu/BFrag/boffea/barista/filelists/v1_5_veryloose/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
   }
   dataset_files = {}
   for dataset_name, filelistpath in in_txt.items():
@@ -569,7 +571,7 @@ if __name__ == "__main__":
                                 treename='Events',
                                 processor_instance=MCEfficencyProcessor(),
                                 executor=processor.futures_executor,
-                                executor_args={'workers': 32, 'flatten': False},
+                                executor_args={'workers': 8, 'flatten': False},
                                 chunksize=50000,
                                 # maxchunks=1,
                             )
