@@ -38,15 +38,16 @@ class DataProcessor(processor.ProcessorABC):
 
     self._accumulator = processor.dict_accumulator()
     self._accumulator["nevents"] = processor.defaultdict_accumulator(int)
-    self._accumulator["reco_Bu_cutflow"] = processor.defaultdict_accumulator(partial(processor.defaultdict_accumulator, int))
-    self._accumulator["reco_Bd_cutflow"] = processor.defaultdict_accumulator(partial(processor.defaultdict_accumulator, int))
-    self._accumulator["reco_Bs_cutflow"] = processor.defaultdict_accumulator(partial(processor.defaultdict_accumulator, int))
 
-    '''
-    for selection_name in ["tag_HLT_Mu7_IP4", "tag_HLT_Mu9_IP5", "tag_inclusive", "tag_HLT_Mu9_IP5&~HLT_Mu7_IP4", "probe_HLT_Mu7_IP4", "probe_HLT_Mu9_IP5", "probe_inclusive", "probe_HLT_Mu9_IP5&~HLT_Mu7_IP4"]:
+    for side in ["tag", "probe"]:
+      for trigger_name in ["inclusive", "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", "HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu7_IP4|HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu9_IP5&~HLT_Mu7_IP4"]:
+        selection_name = f"{side}_{trigger_name}"
+        for bflavor in ["Bu", "Bd", "Bs"]:
+          self._accumulator[f"Bcands_{bflavor}_{selection_name}"] = processor.defaultdict_accumulator(Bcand_accumulator) #, outputfile=f"tree_{selection_name}.root"))
+
+    for trigger_name in ["inclusive", "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", "HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu7_IP4|HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu9_IP5&~HLT_Mu7_IP4"]:
       for bflavor in ["Bu", "Bd", "Bs"]:
-        self._accumulator[f"Bcands_{bflavor}_{selection_name}"] = processor.defaultdict_accumulator(Bcand_accumulator) #, outputfile=f"tree_{selection_name}.root"))
-    '''
+        self._accumulator[f"reco_cutflow_{bflavor}_{trigger_name}"] = processor.defaultdict_accumulator(partial(processor.defaultdict_accumulator, int))
 
     self._accumulator["nMuon"]          = hist.Hist("Events", dataset_axis, hist.Bin("nMuon", r"Number of muons", 11,-0.5, 10.5))
     self._accumulator["nMuon_isTrig"]   = hist.Hist("Events", dataset_axis, hist.Bin("nMuon_isTrig", r"Number of triggering muons", 11,-0.5, 10.5))
@@ -143,6 +144,8 @@ class DataProcessor(processor.ProcessorABC):
       dataset_name.replace(match_subjob.group("subjob_tag"), "")
     output["nevents"][dataset_name] += df.size
 
+    
+
     # Create jagged object arrays
     reco_bskkmumu  = dataframereader.reco_bskkmumu(df)
     reco_bukmumu   = dataframereader.reco_bukmumu(df)
@@ -222,6 +225,7 @@ class DataProcessor(processor.ProcessorABC):
     trigger_masks["HLT_Mu9_IP6"] = (df["HLT_Mu9_IP6"] == 1)
     trigger_masks["HLT_Mu12_IP6"] = (df["HLT_Mu12_IP6"] == 1)
     trigger_masks["HLT_Mu9_IP5|HLT_Mu9_IP6"] = trigger_masks["HLT_Mu9_IP5"] | trigger_masks["HLT_Mu9_IP6"]
+    trigger_masks["HLT_Mu7_IP4|HLT_Mu9_IP5|HLT_Mu9_IP6"] = trigger_masks["HLT_Mu7_IP4"] | trigger_masks["HLT_Mu9_IP5"] | trigger_masks["HLT_Mu9_IP6"]
     trigger_masks["HLT_Mu9_IP5&~HLT_Mu7_IP4"] = trigger_masks["HLT_Mu9_IP5"] & ~trigger_masks["HLT_Mu7_IP4"]
 
     # - Bs to Jpsi phi to mu mu K K
@@ -270,17 +274,18 @@ class DataProcessor(processor.ProcessorABC):
       selections["Bs"][f"probe_{trigger_name}"] = selections["Bs"][f"recotrig_{trigger_name}"] & (reco_bskkmumu.TagCount >= 1)
       selections["Bs"][f"probe_{trigger_name}"] = selections["Bs"][f"probe_{trigger_name}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probe_{trigger_name}"]].min())
 
-    # Fill cutflow (HLT_Mu9_IP6 only)
-    cumulative_selection = reco_bskkmumu.pt.ones_like().astype(bool)
-    output["reco_Bs_cutflow"][dataset_name]["inclusive"] = cumulative_selection.sum().sum()
-    cumulative_selection = cumulative_selection & (trigger_masks["HLT_Mu9_IP6"] * reco_bskkmumu_mask_template).astype(bool)
-    output["reco_Bs_cutflow"][dataset_name]["trigger"] = cumulative_selection.sum().sum()
-    for cut_name in ["sv_pt", "l_xy_sig", "sv_prob", "cos2D", "l1", "l2", "k1", "k2", "dR", "jpsi", "phi", "kstar_veto"]:
-      cumulative_selection = cumulative_selection & selections["Bs"][cut_name]
-      output["reco_Bs_cutflow"][dataset_name][cut_name] += cumulative_selection.sum().sum()
-    output["reco_Bs_cutflow"][dataset_name]["tag"] += selections["Bs"]["tag_HLT_Mu9_IP6"].sum().sum()
-    output["reco_Bs_cutflow"][dataset_name]["probe"] += selections["Bs"]["probe_HLT_Mu9_IP6"].sum().sum()
-
+    # Fill cutflows
+    for trigger_strat in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", "HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu7_IP4|HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu9_IP5&~HLT_Mu7_IP4"]:
+      cutflow_name = f"reco_cutflow_Bs_{trigger_strat}"
+      cumulative_selection = reco_bskkmumu.pt.ones_like().astype(bool)
+      output[cutflow_name][dataset_name]["inclusive"] = cumulative_selection.sum().sum()
+      cumulative_selection = cumulative_selection & (trigger_masks[trigger_strat] * reco_bskkmumu_mask_template).astype(bool)
+      output[cutflow_name][dataset_name]["trigger"] = cumulative_selection.sum().sum()
+      for cut_name in ["sv_pt", "l_xy_sig", "sv_prob", "cos2D", "l1", "l2", "k1", "k2", "dR", "jpsi", "phi", "kstar_veto"]:
+        cumulative_selection = cumulative_selection & selections["Bs"][cut_name]
+        output[cutflow_name][dataset_name][cut_name] += cumulative_selection.sum().sum()
+      output[cutflow_name][dataset_name]["tag"] += selections["Bs"][f"tag_{trigger_strat}"].sum().sum()
+      output[cutflow_name][dataset_name]["probe"] += selections["Bs"][f"probe_{trigger_strat}"].sum().sum()
 
     # Bu to Jpsi K to mu mu K
     reco_bukmumu_mask_template = reco_bukmumu.pt.ones_like().astype(bool)
@@ -315,15 +320,17 @@ class DataProcessor(processor.ProcessorABC):
       selections["Bu"][f"probe_{trigger_name}"] = selections["Bu"][f"probe_{trigger_name}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probe_{trigger_name}"]].min())
 
     # Fill cutflow
-    cumulative_selection = reco_bukmumu.pt.ones_like().astype(bool)
-    output["reco_Bu_cutflow"][dataset_name]["inclusive"] = cumulative_selection.sum().sum()
-    cumulative_selection = cumulative_selection & (trigger_masks["HLT_Mu9_IP6"] * reco_bukmumu_mask_template).astype(bool)
-    output["reco_Bu_cutflow"][dataset_name]["trigger"] = cumulative_selection.sum().sum()
-    for cut_name in ["sv_pt", "l_xy_sig", "sv_prob", "cos2D", "l1", "l2", "k", "dR", "jpsi"]:
-      cumulative_selection = cumulative_selection & selections["Bu"][cut_name]
-      output["reco_Bu_cutflow"][dataset_name][cut_name] += cumulative_selection.sum().sum()
-    output["reco_Bu_cutflow"][dataset_name]["tag"] += selections["Bu"]["tag_HLT_Mu9_IP6"].sum().sum()
-    output["reco_Bu_cutflow"][dataset_name]["probe"] += selections["Bu"]["probe_HLT_Mu9_IP6"].sum().sum()
+    for trigger_strat in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", "HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu7_IP4|HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu9_IP5&~HLT_Mu7_IP4"]:
+      cutflow_name = f"reco_cutflow_Bu_{trigger_strat}"
+      cumulative_selection = reco_bukmumu.pt.ones_like().astype(bool)
+      output[cutflow_name][dataset_name]["inclusive"] = cumulative_selection.sum().sum()
+      cumulative_selection = cumulative_selection & (trigger_masks[trigger_strat] * reco_bukmumu_mask_template).astype(bool)
+      output[cutflow_name][dataset_name]["trigger"] = cumulative_selection.sum().sum()
+      for cut_name in ["sv_pt", "l_xy_sig", "sv_prob", "cos2D", "l1", "l2", "k", "dR", "jpsi"]:
+        cumulative_selection = cumulative_selection & selections["Bu"][cut_name]
+        output[cutflow_name][dataset_name][cut_name] += cumulative_selection.sum().sum()
+      output[cutflow_name][dataset_name]["tag"] += selections["Bu"][f"tag_{trigger_strat}"].sum().sum()
+      output[cutflow_name][dataset_name]["probe"] += selections["Bu"][f"probe_{trigger_strat}"].sum().sum()
 
 
     # - Bd to Jpsi K* to mu mu K pi
@@ -369,15 +376,17 @@ class DataProcessor(processor.ProcessorABC):
       selections["Bd"][f"probe_{trigger_name}"] = selections["Bd"][f"probe_{trigger_name}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probe_{trigger_name}"]].min())
 
     # Fill cutflow
-    cumulative_selection = reco_bdkpimumu.pt.ones_like().astype(bool)
-    output["reco_Bd_cutflow"][dataset_name]["inclusive"] = cumulative_selection.sum().sum()
-    cumulative_selection = cumulative_selection & (trigger_masks["HLT_Mu9_IP6"] * reco_bdkpimumu_mask_template).astype(bool)
-    output["reco_Bd_cutflow"][dataset_name]["trigger"] = cumulative_selection.sum().sum()
-    for cut_name in ["sv_pt", "l_xy_sig", "sv_prob", "cos2D", "l1", "l2", "trk1", "trk2", "dR", "jpsi", "kstar", "phi_veto"]:
-      cumulative_selection = cumulative_selection & selections["Bd"][cut_name]
-      output["reco_Bd_cutflow"][dataset_name][cut_name] += cumulative_selection.sum().sum()
-    output["reco_Bd_cutflow"][dataset_name]["tag"] += selections["Bd"]["tag_HLT_Mu9_IP6"].sum().sum()
-    output["reco_Bd_cutflow"][dataset_name]["probe"] += selections["Bd"]["probe_HLT_Mu9_IP6"].sum().sum()
+    for trigger_strat in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", "HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu7_IP4|HLT_Mu9_IP5|HLT_Mu9_IP6", "HLT_Mu9_IP5&~HLT_Mu7_IP4"]:
+      cutflow_name = f"reco_cutflow_Bd_{trigger_strat}"
+      cumulative_selection = reco_bdkpimumu.pt.ones_like().astype(bool)
+      output[cutflow_name][dataset_name]["inclusive"] = cumulative_selection.sum().sum()
+      cumulative_selection = cumulative_selection & (trigger_masks[trigger_strat] * reco_bdkpimumu_mask_template).astype(bool)
+      output[cutflow_name][dataset_name]["trigger"] = cumulative_selection.sum().sum()
+      for cut_name in ["sv_pt", "l_xy_sig", "sv_prob", "cos2D", "l1", "l2", "trk1", "trk2", "dR", "jpsi", "kstar", "phi_veto"]:
+        cumulative_selection = cumulative_selection & selections["Bd"][cut_name]
+        output[cutflow_name][dataset_name][cut_name] += cumulative_selection.sum().sum()
+      output[cutflow_name][dataset_name]["tag"] += selections["Bd"][f"tag_{trigger_strat}"].sum().sum()
+      output[cutflow_name][dataset_name]["probe"] += selections["Bd"][f"probe_{trigger_strat}"].sum().sum()
 
 
     # Fill reco histograms
@@ -454,13 +463,13 @@ class DataProcessor(processor.ProcessorABC):
       for cut in all_cuts:
         if not cut == xcut:
           nm1_selections["Bs"][f"{xcut}_tag"] = nm1_selections["Bs"][f"{xcut}_tag"] & selections["Bs"][cut]
-        nm1_selections["Bs"][f"{xcut}_probe"] = copy.deepcopy(nm1_selections["Bs"][f"{xcut}_tag"])
+      nm1_selections["Bs"][f"{xcut}_probe"] = copy.deepcopy(nm1_selections["Bs"][f"{xcut}_tag"])
 
-        nm1_selections["Bs"][f"{xcut}_tag"] = nm1_selections["Bs"][f"{xcut}_tag"] & (reco_bskkmumu.Muon1IsTrig | reco_bskkmumu.Muon2IsTrig)
-        nm1_selections["Bs"][f"{xcut}_tag"] = nm1_selections["Bs"][f"{xcut}_tag"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[nm1_selections["Bs"][f"{xcut}_tag"]].min())
+      nm1_selections["Bs"][f"{xcut}_tag"] = nm1_selections["Bs"][f"{xcut}_tag"] & (reco_bskkmumu.Muon1IsTrig | reco_bskkmumu.Muon2IsTrig)
+      nm1_selections["Bs"][f"{xcut}_tag"] = nm1_selections["Bs"][f"{xcut}_tag"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[nm1_selections["Bs"][f"{xcut}_tag"]].min())
 
-        nm1_selections["Bs"][f"{xcut}_probe"] = nm1_selections["Bs"][f"{xcut}_probe"] & (reco_bskkmumu.TagCount >= 1)
-        nm1_selections["Bs"][f"{xcut}_probe"] = nm1_selections["Bs"][f"{xcut}_probe"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[nm1_selections["Bs"][f"{xcut}_tag"]].min())
+      nm1_selections["Bs"][f"{xcut}_probe"] = nm1_selections["Bs"][f"{xcut}_probe"] & (reco_bskkmumu.TagCount >= 1)
+      nm1_selections["Bs"][f"{xcut}_probe"] = nm1_selections["Bs"][f"{xcut}_probe"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[nm1_selections["Bs"][f"{xcut}_tag"]].min())
     for selection in ["tag", "probe"]:
       output["NM1_BsToKKMuMu_jpsi_m"].fill(dataset=dataset_name, selection="f{selection}", mass=reco_bskkmumu.mll_fullfit[nm1_selections["Bs"][f"jpsi_{selection}"]].flatten())
       output["NM1_BsToKKMuMu_phi_m"].fill(dataset = dataset_name, selection="f{selection}", mass=reco_bskkmumu.phi_m[nm1_selections["Bs"][f"phi_{selection}"]].flatten())
@@ -469,8 +478,10 @@ class DataProcessor(processor.ProcessorABC):
       output["NM1_BsToKKMuMu_cos2D"].fill(dataset=dataset_name, selection="f{selection}", cos2D=reco_bskkmumu.fit_cos2D[nm1_selections["Bs"][f"cos2D_{selection}"]].flatten())
 
     # Tree outputs
-    '''
     for selection_name in [f"tag_{x}" for x in trigger_masks.keys()] + [f"probe_{x}" for x in trigger_masks.keys()]:
+      for key in output.keys():
+        if "Bcands_Bu" in key:
+          print(key)
       output[f"Bcands_Bu_{selection_name}"][dataset_name].extend({
         "pt": reco_bukmumu.fit_pt[selections["Bu"][selection_name]].flatten(),
         "eta": reco_bukmumu.fit_eta[selections["Bu"][selection_name]].flatten(),
@@ -504,8 +515,6 @@ class DataProcessor(processor.ProcessorABC):
         "sv_prob": reco_bskkmumu.sv_prob[selections["Bs"][selection_name]].flatten(),
         "cos2D": reco_bskkmumu.fit_cos2D[selections["Bs"][selection_name]].flatten(),
       })
-    '''
-
 
     return output
 
@@ -586,18 +595,18 @@ if __name__ == "__main__":
 
 
   print("Reco cutflows:")
-  for dataset, d1 in output["reco_Bs_cutflow"].items():
+  for dataset, d1 in output["reco_cutflow_Bs_inclusive"].items():
     print(f"\tDataset={dataset}")
     print(f"\t\tnevents => {dataset_nevents[dataset]}")
 
     print("\n\t\tBs:\n")
-    for cut_name, cut_npass in output["reco_Bs_cutflow"][dataset].items():
+    for cut_name, cut_npass in output["reco__cutflow_Bs_inclusive"][dataset].items():
       print(f"\t\t{cut_name} => {cut_npass} = {cut_npass / dataset_nevents[dataset]}")
     print("\n\t\tBu:\n")
-    for cut_name, cut_npass in output["reco_Bu_cutflow"][dataset].items():
+    for cut_name, cut_npass in output["reco__cutflow_Bu_inclusive"][dataset].items():
       print(f"\t\t{cut_name} => {cut_npass} = {cut_npass / dataset_nevents[dataset]}")
     print("\n\t\tBd:\n")
-    for cut_name, cut_npass in output["reco_Bd_cutflow"][dataset].items():
+    for cut_name, cut_npass in output["reco__cutflow_Bd_inclusive"][dataset].items():
       print(f"\t\t{cut_name} => {cut_npass} = {cut_npass / dataset_nevents[dataset]}")
 
 

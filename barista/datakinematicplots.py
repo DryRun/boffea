@@ -13,23 +13,7 @@ from brazil.aguapreta import *
 figure_directory = "/home/dryu/BFrag/data/figures/"
 
 input_files = [
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018A.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018B.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018C.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D1.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D2.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D3.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D4.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D5.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018A.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018B.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018C.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018D.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part1.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part2.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part3.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part4.coffea",
-#"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part5.coffea",
+    "/home/dryu/BFrag/data/histograms/condor/job20200513_215445/DataHistograms_Run2018.coffea",
 ]
 hists = {}
 subjob_cutflows = {}
@@ -84,7 +68,7 @@ for channel in ["BuToKMuMu", "BsToKKMuMu", "BdToKPiMuMu"]:
         h1 = hists[f"{channel}_fit_pt_y_mass"]\
             .integrate("fit_y", y_slice)\
             .integrate("fit_pt", pt_slice)
-        sels = [f"{side}_{x}" for x in ["inclusive", "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]]
+        sels = [f"{side}_{x}" for x in ["inclusive", "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu9_IP5|HLT_Mu9_IP6"]]
         hist.plot1d(h1[(sels),:], ax=ax_mass, overlay="selection")
         if "Bu" in channel:
             ax_mass.set_xlim(5.05-0.1, 5.5+0.1)
@@ -238,7 +222,7 @@ kinfigs = {}
 kinaxs = {}
 for kinplot in kinplots:
     for side in ["tag", "probe"]:
-        sels = [f"{side}_{x}" for x in ["inclusive", "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]]
+        sels = [f"{side}_{x}" for x in ["inclusive", "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu9_IP5|HLT_Mu9_IP6"]]
         kinfigs[kinplot], kinaxs[kinplot] = plt.subplots()
         hist.plot1d(hists[kinplot][(sels),:], overlay="selection", ax=kinaxs[kinplot])
         if "pt" in kinplot:
@@ -255,5 +239,5 @@ for channel, cutflow in cutflows.items():
         print(f"{key} => {cutflow[key]}")
 
 # N-1 plots
-for var in ["phi_m", "jpsi_m", "l_xy_sig", "sv_prob", "cos2D"]:
-'NM1_BsToKKMuMu_phi_m', 'NM1_BsToKKMuMu_jpsi_m', 'NM1_BsToKKMuMu_l_xy_sig', 'NM1_BsToKKMuMu_sv_prob', 'NM1_BsToKKMuMu_cos2D'
+#for var in ["phi_m", "jpsi_m", "l_xy_sig", "sv_prob", "cos2D"]:
+#'NM1_BsToKKMuMu_phi_m', 'NM1_BsToKKMuMu_jpsi_m', 'NM1_BsToKKMuMu_l_xy_sig', 'NM1_BsToKKMuMu_sv_prob', 'NM1_BsToKKMuMu_cos2D'

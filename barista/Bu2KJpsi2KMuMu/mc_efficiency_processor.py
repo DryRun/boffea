@@ -235,8 +235,10 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     #(JPSI_1S_MASS - JPSI_WINDOW < reco_bukmumu.mll_fullfit) & (reco_bukmumu.mll_fullfit < JPSI_1S_MASS + JPSI_WINDOW)
 
     # Final selections
-    selections["inclusive"]  = reco_bukmumu.fit_pt.ones_like().astype(bool)
-    selections["reco"]       = selections["sv_pt"] \
+    selections["inclusive"] = reco_bukmumu.fit_pt.ones_like().astype(bool)
+    selections["trigger"]   = ((df["HLT_Mu9_IP5"] == 1) | (df["HLT_Mu9_IP6"] == 1)) * reco_bukmumu_mask_template
+    selections["reco"]      = selections["trigger"] \
+                              & selections["sv_pt"] \
                               & selections["l_xy_sig"] \
                               & selections["sv_prob"] \
                               & selections["cos2D"] \
@@ -245,23 +247,23 @@ class MCEfficencyProcessor(processor.ProcessorABC):
                               & selections["k"] \
                               & selections["dR"] \
                               & selections["jpsi"]
-    for trigger_name, trigger_mask in trigger_masks.items():
-      selections[f"recotrig_{trigger_name}"]   = selections["reco"] & (trigger_mask * reco_bukmumu_mask_template).astype(bool)
-      selections[f"tag_{trigger_name}"]            = selections[f"recotrig_{trigger_name}"] & (reco_bukmumu.Muon1IsTrig | reco_bukmumu.Muon2IsTrig)
-      selections[f"tagmatch_{trigger_name}"]       = selections[f"tag_{trigger_name}"] & (reco_bukmumu.genPartIdx >= 0)
-      selections[f"tagunmatched_{trigger_name}"]   = selections[f"tag_{trigger_name}"] & (reco_bukmumu.genPartIdx < 0)
-      
-      selections[f"probe_{trigger_name}"]          = selections[f"recotrig_{trigger_name}"] & (reco_bukmumu.TagCount >= 1)
-      selections[f"probematch_{trigger_name}"]     = selections[f"probe_{trigger_name}"] & (reco_bukmumu.genPartIdx >= 0)
-      selections[f"probeunmatched_{trigger_name}"] = selections[f"probe_{trigger_name}"] & (reco_bukmumu.genPartIdx < 0)
+    #for trigger_name, trigger_mask in trigger_masks.items():
+    #selections[f"recotrig"]   = selections["reco"] & (trigger_mask * reco_bukmumu_mask_template).astype(bool)
+    selections[f"tag"]            = selections[f"reco"] & (reco_bukmumu.Muon1IsTrig | reco_bukmumu.Muon2IsTrig)
+    selections[f"tagmatch"]       = selections[f"tag"] & (reco_bukmumu.genPartIdx >= 0)
+    selections[f"tagunmatched"]   = selections[f"tag"] & (reco_bukmumu.genPartIdx < 0)
+    
+    selections[f"probe"]          = selections[f"reco"] & (reco_bukmumu.TagCount >= 1)
+    selections[f"probematch"]     = selections[f"probe"] & (reco_bukmumu.genPartIdx >= 0)
+    selections[f"probeunmatched"] = selections[f"probe"] & (reco_bukmumu.genPartIdx < 0)
 
-      selections[f"tag_{trigger_name}"]   = selections[f"tag_{trigger_name}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"tag_{trigger_name}"]].min())
-      selections[f"tagmatched_{trigger_name}"]   = selections[f"tagmatched_{trigger_name}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"tagmatched_{trigger_name}"]].min())
-      selections[f"tagunmatched_{trigger_name}"]   = selections[f"tagunmatched_{trigger_name}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"tagunmatched_{trigger_name}"]].min())
+    selections[f"tag"]   = selections[f"tag"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"tag"]].min())
+    selections[f"tagmatch"]   = selections[f"tagmatch"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"tagmatch"]].min())
+    selections[f"tagunmatched"]   = selections[f"tagunmatched"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"tagunmatched"]].min())
 
-      selections[f"probe_{trigger_name}"] = selections[f"probe_{trigger_name}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probe_{trigger_name}"]].min())
-      selections[f"probematch_{trigger_name}"] = selections[f"probematch_{trigger_name}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probematch_{trigger_name}"]].min())
-      selections[f"probeunmatched_{trigger_name}"] = selections[f"probeunmatched_{trigger_name}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probeunmatched_{trigger_name}"]].min())
+    selections[f"probe"] = selections[f"probe"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probe"]].min())
+    selections[f"probematch"] = selections[f"probematch"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probematch"]].min())
+    selections[f"probeunmatched"] = selections[f"probeunmatched"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probeunmatched"]].min())
 
     # Fill cutflow
     cumulative_selection = copy.deepcopy(reco_bukmumu_mask_template)
@@ -280,10 +282,11 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     output["Muon_pt"].fill(dataset=dataset_name, Muon_pt=reco_muons.pt.flatten())
     output["Muon_pt_isTrig"].fill(dataset=dataset_name, Muon_pt_isTrig=reco_muons.pt[reco_muons.isTriggering==1].flatten())
 
-    sels_to_fill = ["inclusive", "reco"]
-    for x in ["tag", "tagmatch", "tagunmatched", "probe", "probematch", "probeunmatched"]:
-      sels_to_fill.extend([f"{x}_{y}" for y in trigger_masks.keys()])
-    for selection_name in sels_to_fill:
+    #sels_to_fill = ["inclusive", "reco"]
+    #for x in ["tag", "tagmatch", "tagunmatched", "probe", "probematch", "probeunmatched"]:
+    #  sels_to_fill.extend([f"{x}_{y}" for y in trigger_masks.keys()])
+    #for selection_name in sels_to_fill:
+    for selection_name in ["inclusive", "reco", "tag", "tagmatch", "probe", "probematch", "tagunmatched", "probeunmatched"]:
       output["BuToKMuMu_fit_pt_y_mass"].fill(dataset=dataset_name, selection=selection_name, 
                                             fit_pt=reco_bukmumu.fit_pt[selections[selection_name]].flatten(),
                                             fit_y=reco_bukmumu.fit_y[selections[selection_name]].flatten(),
@@ -477,8 +480,10 @@ if __name__ == "__main__":
 
   # Inputs
   in_txt = {
-      "Bu2KJpsi2KMuMu_probefilter": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BuToKJpsi_ToMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
-      "Bu2KJpsi2KMuMu_inclusive": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BuToJpsiK_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      #"Bu2KJpsi2KMuMu_probefilter_unconstr": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BuToKJpsi_ToMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      #"Bu2KJpsi2KMuMu_inclusive_unconstr": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BuToJpsiK_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      "Bu2KJpsi2KMuMu_probefilter": "/home/dryu/BFrag/boffea/barista/filelists/v2_4/files_BuToKJpsi_ToMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat",
+      "Bu2KJpsi2KMuMu_inclusive": "/home/dryu/BFrag/boffea/barista/filelists/v2_4/files_BuToJpsiK_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat",
   }
   dataset_files = {}
   for dataset_name, filelistpath in in_txt.items():
@@ -486,6 +491,8 @@ if __name__ == "__main__":
       dataset_files[dataset_name] = [x.strip() for x in filelist.readlines()]
 
   ts_start = time.time()
+  import psutil
+  print("psutil.cpu_count() = ".format(psutil.cpu_count()))
   output = processor.run_uproot_job(dataset_files,
                                 treename='Events',
                                 processor_instance=MCEfficencyProcessor(),

@@ -35,7 +35,7 @@ def where(predicate, iftrue, iffalse):
 
 class MCEfficencyProcessor(processor.ProcessorABC):
   def __init__(self):
-    self._trigger = "HLT_Mu7_IP4"
+    #self._trigger = "HLT_Mu7_IP4"
 
     # Histograms
     dataset_axis = hist.Cat("dataset", "Primary dataset")
@@ -70,8 +70,8 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     self._accumulator["BdToKPiMuMu_fit_theta2D"]        = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_theta2D", r"Fit $\theta_{2D}$", 100, 0., math.pi))
     self._accumulator["BdToKPiMuMu_l_xy"]               = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l_xy", r"$L_{xy}$",50, -1.0, 4.0))
     self._accumulator["BdToKPiMuMu_l_xy_sig"]           = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l_xy_sig", r"$L_{xy}/\sigma(L_{xy})$",50, -1.0, 4.0))
-    self._accumulator["BdToKPiMuMu_fit_best_mkstar"]    = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_mkstar", r"$m_{K^{*}}^{(fit)}$ [GeV]", 100, BD_MASS*0.9, BD_MASS*1.1))
-    self._accumulator["BdToKPiMuMu_fit_best_barmkstar"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_barmkstar", r"Swap $m_{K^{*}}^{(fit)}$ [GeV]", 100, BD_MASS*0.9, BD_MASS*1.1))
+    self._accumulator["BdToKPiMuMu_fit_best_mkstar"]    = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_mkstar", r"$m_{K^{*}}^{(fit)}$ [GeV]", 100, KSTAR_892_MASS*0.7, KSTAR_892_MASS*1.3))
+    self._accumulator["BdToKPiMuMu_fit_best_barmkstar"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_barmkstar", r"Swap $m_{K^{*}}^{(fit)}$ [GeV]", 100, KSTAR_892_MASS*0.7, KSTAR_892_MASS*1.3))
     self._accumulator["BdToKPiMuMu_jpsi_mass"]          = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("mass", r"$m(J/\psi)$ [GeV]", 100, JPSI_1S_MASS * 0.8, JPSI_1S_MASS * 1.2))
 
 
@@ -152,7 +152,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
                                                   hist.Bin("pt", r"$p_{T}(K^{*}(892))$ [GeV]", 100, 0.0, 100.0),
                                                   hist.Bin("eta", r"$\eta(K^{*}(892))$", 20, -5., 5.),
                                                   hist.Bin("phi", r"$\phi(K^{*}(892))$", 20, -1*math.pi, math.pi),
-                                                  hist.Bin("mass", r"$m(K^{*}(892))$", 30, PHI_1020_MASS*0.5, PHI_1020_MASS*2.0)
+                                                  hist.Bin("mass", r"$m(K^{*}(892))$", 30, KSTAR_892_MASS*0.5, KSTAR_892_MASS*2.0)
                                                   )
     self._accumulator["TruthBdToKPiMuMu_jpsi_p4"] = hist.Hist("Events", dataset_axis, selection_axis_truth, 
                                                   hist.Bin("pt", r"$p_{T}(J/\psi)$ [GeV]", 100, 0.0, 100.0),
@@ -299,7 +299,10 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selections["sv_prob"]  = (reco_bdkpimumu.sv_prob > 0.1)
     selections["cos2D"]    = (reco_bdkpimumu.fit_cos2D > 0.999)
     selections["l1"]       = (reco_bdkpimumu.lep1pt_fullfit > 1.5) & (abs(reco_bdkpimumu.lep1eta_fullfit) < 2.4)
-    selections["l2"]       = (reco_bdkpimumu.lep2pt_fullfit > 1.5) & (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4)
+    selections["l2"]       = (abs(reco_bskkmumu.lep2eta_fullfit) < 2.4)
+    selections["l2"]       = (selections["l2"] & where(abs(reco_bskkmumu.lep2eta_fullfit) < 1.4, 
+                                                      (reco_bskkmumu.lep2pt_fullfit > 1.5), 
+                                                      (reco_bskkmumu.lep2pt_fullfit > 1.0))).astype(bool)
     selections["trk1"]     = (reco_bdkpimumu.trk1pt_fullfit > 0.5) & (abs(reco_bdkpimumu.trk1eta_fullfit) < 2.5)
     selections["trk2"]     = (reco_bdkpimumu.trk2pt_fullfit > 0.5) & (abs(reco_bdkpimumu.trk2eta_fullfit) < 2.5)
     selections["dR"]       = (delta_r(reco_bdkpimumu.trk1eta_fullfit, reco_bdkpimumu.trk2eta_fullfit, reco_bdkpimumu.trk1phi_fullfit, reco_bdkpimumu.trk2phi_fullfit) > 0.03) \
@@ -312,7 +315,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selections["kstar"]    = abs(reco_bdkpimumu.mkstar_best_fullfit - KSTAR_892_MASS) < KSTAR_WINDOW
     selections["phi_veto"] = (abs(reco_bdkpimumu.mkstar_best_fullfit - PHI_1020_MASS) > B0_PHI_VETO_WINDOW) \
                               & (abs(reco_bdkpimumu.barmkstar_best_fullfit - PHI_1020_MASS) > B0_PHI_VETO_WINDOW)
-    selections["trigger"] = (df[self._trigger] == 1) # Shape = event!
+    selections["trigger"] = ((df["HLT_Mu9_IP5"] == 1) | (df["HLT_Mu9_IP6"] == 1)) * reco_bdkpimumu_mask_template
 
     # Final selections
     selections["inclusive"]  = reco_bdkpimumu.fit_pt.ones_like().astype(bool)
@@ -603,8 +606,10 @@ if __name__ == "__main__":
 
   # Inputs
   in_txt = {
-    "Bd2KstarJpsi2KPiMuMu_probefilter":"/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BdToKstarJpsi_ToKPiMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
-    "Bd2KstarJpsi2KPiMuMu_inclusive":"/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BdToJpsiKstar_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"
+    #"Bd2KstarJpsi2KPiMuMu_probefilter_noconstr":"/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BdToKstarJpsi_ToKPiMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+    #"Bd2KstarJpsi2KPiMuMu_inclusive_noconstr":"/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BdToJpsiKstar_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+    "Bd2KstarJpsi2KPiMuMu_probefilter":"/home/dryu/BFrag/boffea/barista/filelists/v2_5_2/files_BdToKstarJpsi_ToKPiMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat",
+    "Bd2KstarJpsi2KPiMuMu_inclusive":"/home/dryu/BFrag/boffea/barista/filelists/v2_5_2/files_BdToJpsiKstar_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat",
   }
   dataset_files = {}
   for dataset_name, filelistpath in in_txt.items():
@@ -612,11 +617,13 @@ if __name__ == "__main__":
       dataset_files[dataset_name] = [x.strip() for x in filelist.readlines()]
 
   ts_start = time.time()
+  import psutil
+  print("psutil.cpu_count() = {}".format(psutil.cpu_count()))
   output = processor.run_uproot_job(dataset_files,
                                 treename='Events',
                                 processor_instance=MCEfficencyProcessor(),
                                 executor=processor.futures_executor,
-                                executor_args={'workers': 32, 'flatten': False},
+                                executor_args={'workers': 8, 'flatten': False},
                                 chunksize=50000,
                                 # maxchunks=1,
                             )

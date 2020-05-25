@@ -3,6 +3,9 @@ import os
 import sys
 from coffea import util, hist
 import re
+from copy import deepcopy
+import psutil
+process = psutil.Process(os.getpid())
 
 if __name__ == "__main__":
   import argparse
@@ -23,11 +26,27 @@ if __name__ == "__main__":
     # Delete "Bcand" stuff
     del_keys = []
     for key in this_input.keys():
-      if "Bcand" in key or "eta_vs_pt_vs_mass" in key:
+      if "Bcand" in key or "eta_vs_pt_vs_mass" in key or "pt_y_mass" in key:
         #print("Skipping {}".format(key))
         del_keys.append(key)
     for key in del_keys:
       del this_input[key]
+
+    # Collapse cutflows, otherwise get one per subjob
+    for key in this_input.keys():
+      if "cutflow" in key:
+        cutflow_copy = None
+        for k, v in this_input[key].items():
+          print(k)
+          print(v)
+          if not cutflow_copy:
+            cutflow_copy = deepcopy(v)
+          else:
+            cutflow_copy.add(v)
+        #print("DEBUG: cutflow_copy=")
+        #print(cutflow_copy)
+        if cutflow_copy:
+          this_input[key] = cutflow_copy
 
     # Collapse subjobs: needed temporarily to reduce giant numbers of datasets, but now DataProcessor does a better job.
     #for key in this_input.keys():
@@ -48,8 +67,12 @@ if __name__ == "__main__":
     #      this_input[key] = obj.group(obj.axis("dataset"), hist.Cat("dataset", "Primary dataset"), dataset_rebin)
 
     if not output:
-      output = this_input
+      output = deepcopy(this_input)
     else:
-      assert set(output.keys()) == set(this_input.keys())
+      #assert set(output.keys()) == set(this_input.keys())
+      #print(output)
       output.add(this_input)
+    del this_input
+    print("Done with this file. mem={}".format(print(process.memory_info().rss)))
+  print("Trying to save now. mem={}".format(print(process.memory_info().rss)))
   util.save(output, args.output_file)

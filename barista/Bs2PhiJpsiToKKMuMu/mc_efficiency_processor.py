@@ -57,19 +57,29 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     self._accumulator["BsToKKMuMu_fit_pt_y_mass"] = hist.Hist("Events", dataset_axis, selection_axis_reco, 
                                                             hist.Bin("fit_pt", r"$p_{T}^{(fit)}$ [GeV]", 500, 0.0, 100.0),
                                                             hist.Bin("fit_y", r"$y^{(fit)}$", 50, -5.0, 5.0),
-                                                            hist.Bin("fit_mass", r"$m^{(fit)}$ [GeV]", 100, BD_MASS*0.9, BD_MASS*1.1)
+                                                            hist.Bin("fit_mass", r"$m^{(fit)}$ [GeV]", 100, BS_MASS*0.9, BS_MASS*1.1)
                                                           )
     self._accumulator["BsToKKMuMu_fit_pt"]    = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_pt", r"$p_{T}^{(fit)}$ [GeV]", 500, 0.0, 100.0))
     self._accumulator["BsToKKMuMu_fit_eta"]   = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_eta", r"$\eta^{(fit)}$", 50, -5.0, 5.0))
     self._accumulator["BsToKKMuMu_fit_phi"]   = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_phi", r"$\phi^{(fit)}$", 50, -2.0*math.pi, 2.0*math.pi))
-    self._accumulator["BsToKKMuMu_fit_mass"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_mass", r"$m^{(fit)}$ [GeV]", 100, BS_MASS*0.8, BS_MASS*1.2))
+    self._accumulator["BsToKKMuMu_fit_mass"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_mass", r"$m^{(fit)}$ [GeV]", 100, BS_MASS*0.9, BS_MASS*1.1))
     self._accumulator["BsToKKMuMu_chi2"]      = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("chi2", r"Fit $\chi^{2}$", 100, 0.0, 100.0))
     self._accumulator["BsToKKMuMu_fit_cos2D"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_cos2D", r"Fit cos2D", 100, -1., 1.))
     self._accumulator["BsToKKMuMu_fit_theta2D"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("fit_theta2D", r"Fit $\theta_{2D}$", 100, 0., math.pi))
     self._accumulator["BsToKKMuMu_l_xy"]      = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l_xy", r"$L_{xy}$",50, -1.0, 4.0))
-    self._accumulator["BsToKKMuMu_l_xy_sig"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l_xy_sig", r"$L_{xy}/\sigma(L_{xy})$",50, -1.0, 4.0))
+    self._accumulator["BsToKKMuMu_l_xy_sig"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l_xy_sig", r"$L_{xy}/\sigma(L_{xy})$", 50, -1.0, 4.0))
     self._accumulator["BsToKKMuMu_jpsi_mass"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("mass", r"$m(J/\psi)$ [GeV]", 100, JPSI_1S_MASS * 0.8, JPSI_1S_MASS * 1.2))
     self._accumulator["BsToKKMuMu_phi_mass"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("mass", r"$m(\phi)$ [GeV]", 100, PHI_1020_MASS * 0.8, PHI_1020_MASS * 1.2))
+
+    self._accumulator["Bs_cos2D_vs_pt"]   = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("log1mcos2D", r"log(1-cos2D)", 40, -4, 0.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_svprob_vs_pt"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("sv_prob", r"SV prob", 100, 0., 1.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_lxysig_vs_pt"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l_xy_sig", r"$L_{xy}/\sigma(L_{xy})$", 60, -1., 11.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_phimass_vs_pt"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("phi_m", r"$m(\phi)$ [GeV]",  50, PHI_1020_MASS*0.8, PHI_1020_MASS*1.2), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_phipt_vs_pt"]   = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("phi_pt", r"$p_{T}(\phi)$ [GeV]",  50, 0., 25.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_k1pt_vs_pt"]    = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("k1_pt", r"$p_{T}(k1)$ [GeV]", 60, 0., 15.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_k2pt_vs_pt"]    = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("k2_pt", r"$p_{T}(k2)$ [GeV]", 60, 0., 15.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_l1pt_vs_l1eta_vs_pt"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l1_pt", r"$p_{T}(l1)$ [GeV]", 50, 0., 25.), hist.Bin("l1_eta", r"$\eta(l1)$ [GeV]", 30, 0., 3.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_l2pt_vs_l2eta_vs_pt"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l2_pt", r"$p_{T}(l2)$ [GeV]", 50, 0., 25.), hist.Bin("l2_eta", r"$\eta(l2)$ [GeV]", 30, 0., 3.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
 
     #self._accumulator["BsToKKMuMu_tag_fit_pt"]    = hist.Hist("Events", dataset_axis, hist.Bin("BsToKKMuMu_fit_pt", r"$p_{T}^{(fit)}$ [GeV]", 500, 0.0, 100.0))
     #self._accumulator["BsToKKMuMu_tag_fit_eta"]   = hist.Hist("Events", dataset_axis, hist.Bin("BsToKKMuMu_fit_eta", r"$\eta^{(fit)}$", 50, -5.0, 5.0))
@@ -256,9 +266,12 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selections["sv_pt"]    = (reco_bskkmumu.pt > 3.0)
     selections["l_xy_sig"] = (abs(reco_bskkmumu.l_xy_sig) > 3.5)
     selections["sv_prob"]  = (reco_bskkmumu.sv_prob > 0.1)
-    selections["cos2D"] = (reco_bskkmumu.fit_cos2D > 0.999)
+    selections["cos2D"]    = (reco_bskkmumu.fit_cos2D > 0.999)
     selections["l1"]       = (reco_bskkmumu.l1_pt > 1.5) & (abs(reco_bskkmumu.l1_eta) < 2.4)
-    selections["l2"]       = (reco_bskkmumu.l2_pt > 1.5) & (abs(reco_bskkmumu.l2_eta) < 2.4)
+    selections["l2"]       = (abs(reco_bskkmumu.l2_eta) < 2.4)
+    selections["l2"]       = (selections["l2"] & where(abs(reco_bskkmumu.l2_eta) < 1.4, 
+                                                      (reco_bskkmumu.l2_pt > 1.5), 
+                                                      (reco_bskkmumu.l2_pt > 1.0))).astype(bool)
     selections["k1"]       = (reco_bskkmumu.trk1_pt > 0.5) & (abs(reco_bskkmumu.trk1_eta) < 2.5)
     selections["k2"]       = (reco_bskkmumu.trk2_pt > 0.5) & (abs(reco_bskkmumu.trk2_eta) < 2.5)
     selections["dR"]       = (delta_r(reco_bskkmumu.trk1_eta, reco_bskkmumu.trk2_eta, reco_bskkmumu.trk1_phi, reco_bskkmumu.trk2_phi) > 0.03) \
@@ -269,13 +282,13 @@ class MCEfficencyProcessor(processor.ProcessorABC):
                             & (delta_r(reco_bskkmumu.l1_eta, reco_bskkmumu.l2_eta, reco_bskkmumu.l1_phi, reco_bskkmumu.l2_phi) > 0.03)
     selections["jpsi"]       = abs(reco_bskkmumu.mll_fullfit - JPSI_1S_MASS) < JPSI_WINDOW
     #(JPSI_1S_MASS - JPSI_WINDOW < reco_bskkmumu.mll_fullfit) & (reco_bskkmumu.mll_fullfit < JPSI_1S_MASS + JPSI_WINDOW)
-    selections["phi"]        = (abs(reco_bskkmumu.phi_m - PHI_1020_MASS) < PHI_WINDOW) & (reco_bskkmumu.phi_pt > 2.0)
+    selections["phi"]        = (abs(reco_bskkmumu.phi_m - PHI_1020_MASS) < PHI_WINDOW) # & (reco_bskkmumu.phi_pt > 1.0)
     #(PHI_1020_MASS - PHI_WINDOW < reco_bskkmumu.phi_m) & (reco_bskkmumu.phi_m < PHI_1020_MASS + PHI_WINDOW)
     selections["kstar_veto"] = (abs(reco_bskkmumu.Kstar1_mass - KSTAR_892_MASS) > BS_KSTAR_VETO_WINDOW) \
                                 & (abs(reco_bskkmumu.Kstar2_mass - KSTAR_892_MASS) > BS_KSTAR_VETO_WINDOW)
     #(reco_bskkmumu.phi_m < KSTAR_892_MASS - KSTAR_WINDOW) | (KSTAR_892_MASS + KSTAR_WINDOW < reco_bskkmumu.phi_m)
 
-    selections["trigger"] = ((df["HLT_Mu9_IP5"] == 1) | (df["HLT_Mu9_IP6"] == 1)) * reco_bskkmumu_mask_template # Shape = event!
+    selections["trigger"] = ((df["HLT_Mu7_IP4"] == 1) |(df["HLT_Mu9_IP5"] == 1) | (df["HLT_Mu9_IP6"] == 1)) * reco_bskkmumu_mask_template # Shape = event!
 
     # Final selections
     selections["inclusive"] = reco_bskkmumu.fit_pt.ones_like().astype(bool)
@@ -292,12 +305,13 @@ class MCEfficencyProcessor(processor.ProcessorABC):
                               & selections["jpsi"] \
                               & selections["phi"] \
                               & selections["kstar_veto"]
+    selections["truthmatched"] = (reco_bskkmumu.genPartIdx >= 0)
     selections["tag"]            = selections["reco"] & (reco_bskkmumu.Muon1IsTrig | reco_bskkmumu.Muon2IsTrig)
-    selections["tagmatch"]       = selections["tag"] & (reco_bskkmumu.genPartIdx >= 0)
-    selections["tagunmatched"]   = selections["tag"] & (reco_bskkmumu.genPartIdx < 0)
+    selections["tagmatch"]       = selections["tag"] & selections["truthmatched"]
+    selections["tagunmatched"]   = selections["tag"] & (~selections["truthmatched"])
     selections["probe"]          = selections["reco"] & (reco_bskkmumu.TagCount >= 1)
-    selections["probematch"]     = selections["probe"] & (reco_bskkmumu.genPartIdx >= 0)
-    selections["probeunmatched"] = selections["probe"] & (reco_bskkmumu.genPartIdx < 0)
+    selections["probematch"]     = selections["probe"] & selections["truthmatched"]
+    selections["probeunmatched"] = selections["probe"] & (~selections["truthmatched"])
 
     # If more than one B is selected, choose best chi2
     selections["tag"]            = selections["tag"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["tag"]].min())
@@ -322,7 +336,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     output["Muon_pt"].fill(dataset=dataset_name, Muon_pt=reco_muons.pt.flatten())
     output["Muon_pt_isTrig"].fill(dataset=dataset_name, Muon_pt_isTrig=reco_muons.pt[reco_muons.isTriggering==1].flatten())
 
-    for selection_name in ["inclusive", "reco", "tag", "tagmatch", "probe", "probematch", "tagunmatched", "probeunmatched"]:
+    for selection_name in ["inclusive", "reco", "truthmatched", "tag", "tagmatch", "probe", "probematch", "tagunmatched", "probeunmatched"]:
       output["BsToKKMuMu_fit_pt_y_mass"].fill(dataset=dataset_name, selection=selection_name, 
                                             fit_pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten(),
                                             fit_y=reco_bskkmumu.fit_y[selections[selection_name]].flatten(),
@@ -338,6 +352,17 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       output["BsToKKMuMu_l_xy_sig"].fill(dataset=dataset_name, selection=selection_name, l_xy_sig=reco_bskkmumu.l_xy_sig[selections[selection_name]].flatten())
       output["BsToKKMuMu_jpsi_mass"].fill(dataset=dataset_name, selection=selection_name, mass=reco_bskkmumu.mll_fullfit[selections[selection_name]].flatten())
       output["BsToKKMuMu_phi_mass"].fill(dataset=dataset_name, selection=selection_name, mass=reco_bskkmumu.phi_m[selections[selection_name]].flatten())
+
+    for selection_name in ["truthmatched"]:
+      output["Bs_cos2D_vs_pt"].fill(dataset=dataset_name, selection=selection_name, log1mcos2D=np.log(1. - reco_bskkmumu.fit_cos2D[selections[selection_name]].flatten() + 1.e-40) / math.log(10), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_svprob_vs_pt"].fill(dataset=dataset_name, selection=selection_name, sv_prob=reco_bskkmumu.sv_prob[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_lxysig_vs_pt"].fill(dataset=dataset_name, selection=selection_name, l_xy_sig=reco_bskkmumu.l_xy_sig[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_phimass_vs_pt"].fill(dataset=dataset_name, selection=selection_name, phi_m=reco_bskkmumu.phi_m[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_phipt_vs_pt"].fill(dataset=dataset_name, selection=selection_name, phi_pt=reco_bskkmumu.phi_pt[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_l1pt_vs_l1eta_vs_pt"].fill(dataset=dataset_name, selection=selection_name, l1_pt=reco_bskkmumu.l1_pt[selections[selection_name]].flatten(), l1_eta=abs(reco_bskkmumu.l1_eta[selections[selection_name]].flatten()), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_l2pt_vs_l2eta_vs_pt"].fill(dataset=dataset_name, selection=selection_name, l2_pt=reco_bskkmumu.l2_pt[selections[selection_name]].flatten(), l2_eta=abs(reco_bskkmumu.l2_eta[selections[selection_name]].flatten()), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_k1pt_vs_pt"].fill(dataset=dataset_name, selection=selection_name, k1_pt=reco_bskkmumu.trk1_pt[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_k2pt_vs_pt"].fill(dataset=dataset_name, selection=selection_name, k2_pt=reco_bskkmumu.trk2_pt[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
 
     # Build gen-to-reco map
     reco_genidx      = reco_bskkmumu.genPartIdx
@@ -554,8 +579,8 @@ if __name__ == "__main__":
   in_txt = {
       #"Bs2PhiJpsi2KKMuMu_probefilter_noconstr": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v1_7/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
       #"Bs2PhiJpsi2KKMuMu_inclusive_noconstr": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v1_6/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
-      "Bs2PhiJpsi2KKMuMu_probefilter": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_2/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat"),
-      "Bs2PhiJpsi2KKMuMu_inclusive": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_2/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat"),
+      "Bs2PhiJpsi2KKMuMu_probefilter": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_5_4/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat"),
+      "Bs2PhiJpsi2KKMuMu_inclusive": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_5_4/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.dat"),
       #"Bs2PhiJpsi2KKMuMu_probefilter_lzma6": "/home/dryu/BFrag/boffea/barista/filelists/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_lzma.txt",
       #"Bs2PhiJpsi2KKMuMu_probefilter_zlib6": "/home/dryu/BFrag/boffea/barista/filelists/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_zlib.txt",
       #"Bs2PhiJpsi2KKMuMu_probefilter_veryloose": "/home/dryu/BFrag/boffea/barista/filelists/v1_5_veryloose/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",

@@ -7,7 +7,7 @@ from coffea import hist, util
 from pprint import pprint
 
 import mplhep
-plt.style.use(mplhep.style.ROOT)
+plt.style.use(mplhep.style.LHCb)
 plt.tight_layout()
 
 figure_directory = "/home/dryu/BFrag/data/figures/kinematic"
@@ -60,6 +60,7 @@ def kinematic_selection_plot(hname, btype, dataset_name, selection_name, yscale=
 		dataset_tag = "probefilter"
 	plt.tight_layout()
 	fig.savefig(f"{figure_directory}/{hname}_{btype}_{dataset_tag}_{selection_name}.png")
+	plt.close(fig)
 
 # Bu
 for dataset_name in ["Bu2KJpsi2KMuMu_probefilter", "Bu2KJpsi2KMuMu_inclusive"]:
@@ -105,7 +106,7 @@ for dataset_name in ["Bs2PhiJpsi2KKMuMu_probefilter", "Bs2PhiJpsi2KKMuMu_inclusi
 # Bd
 for dataset_name in ["Bd2KstarJpsi2KPiMuMu_probefilter", "Bd2KstarJpsi2KPiMuMu_inclusive"]:
 	# Reco histograms
-	for hname in ["BdToKPiMuMu_fit_pt", "BdToKPiMuMu_fit_eta", "BdToKPiMuMu_fit_phi", "BdToKPiMuMu_fit_mass", "BdToKPiMuMu_chi2", "BdToKPiMuMu_fit_cos2D", "BdToKPiMuMu_l_xy", "BdToKPiMuMu_l_xy_sig", "BdToKPiMuMu_jpsi_mass", "BdToKPiMuMu_phi_mass", ]:
+	for hname in ["BdToKPiMuMu_fit_pt", "BdToKPiMuMu_fit_eta", "BdToKPiMuMu_fit_phi", "BdToKPiMuMu_fit_best_mass", "BdToKPiMuMu_chi2", "BdToKPiMuMu_fit_cos2D", "BdToKPiMuMu_l_xy", "BdToKPiMuMu_l_xy_sig", "BdToKPiMuMu_jpsi_mass", "BdToKPiMuMu_fit_best_mkstar", ]:
 		for selection in ["inclusive", "reco", "tag", "probe"]:
 			if "pt" in hname:
 				yscale = "log"

@@ -21,15 +21,16 @@ input_files = [
 #"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D3.coffea",
 #"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D4.coffea",
 #"/home/dryu/BFrag/data/histograms/DataHistograms_Run2018D5.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018A.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018B.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018C.coffea",
-"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018D.coffea",
+#"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018A.coffea",
+#"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018B.coffea",
+#"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018C.coffea",
+#"/home/dryu/BFrag/data/histograms/DataHistogramsTT_Run2018D.coffea",
 #"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part1.coffea",
 #"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part2.coffea",
 #"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part3.coffea",
 #"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part4.coffea",
 #"/home/dryu/BFrag/data/histograms/DataHistogramsT_Run2018D_part5.coffea",
+"/home/dryu/BFrag/data/histograms/condor/job20200514_021539/DataHistograms_Run2018.coffea"
 ]
 subjob_cutflows = {}
 for i, input_file in enumerate(input_files):
