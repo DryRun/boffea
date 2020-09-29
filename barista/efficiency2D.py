@@ -223,6 +223,8 @@ for btype in btypes:
 			hist_eff[btype][side][trigger_strategy].Write()
 
 # Plots
+ROOT.gStyle.SetPaintTextFormat("4.3f");
+
 canvases = {}
 for btype in btypes:
 	for side in ["tag", "probe", "probe_total"]:
@@ -241,7 +243,7 @@ for btype in btypes:
 
 			hist_eff[btype][side][trigger_strategy].GetXaxis().SetTitle("p_{T} [GeV]")
 			hist_eff[btype][side][trigger_strategy].GetYaxis().SetTitle("|y|")
-			hist_eff[btype][side][trigger_strategy].Draw("colz text")
+			hist_eff[btype][side][trigger_strategy].Draw("colz text89")
 
 			print(f"{figure_directory}/{cname}.png")
 			canvases[cname].SaveAs(f"{figure_directory}/{cname}.png")
@@ -305,7 +307,6 @@ for btype in btypes:
 			legend.Draw()
 			canvases[cname].SaveAs(f"{figure_directory}/{cname}.png")
 
-
 			cname = f"effRelUnc_{btype}_{side}_{trigger_strategy}"
 			canvases[cname] = ROOT.TCanvas(cname, cname, 800, 600)
 			canvases[cname].SetRightMargin(0.25)
@@ -317,7 +318,7 @@ for btype in btypes:
 						h_relunc.SetBinContent(xbin, ybin, hist_eff[btype][side][trigger_strategy].GetBinError(xbin, ybin) / hist_eff[btype][side][trigger_strategy].GetBinContent(xbin, ybin))
 					else:
 						h_relunc.SetBinContent(xbin, ybin, -0.1)
-			h_relunc.Draw("colz text")
+			h_relunc.Draw("colz text89")
 			canvases[cname].SaveAs(f"{figure_directory}/{cname}.png")
 
 
