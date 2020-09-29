@@ -15,7 +15,7 @@ figure_directory = "/home/dryu/BFrag/data/figures/kinematic"
 # Load
 histograms = {
 	"Bu": util.load(f"Bu2KJpsi2KMuMu/MCEfficiencyHistograms.coffea"),
-	"Bs": util.load(f"Bs2PhiJpsiToKKMuMu/MCEfficiencyHistograms.coffea"),
+	"Bs": util.load(f"Bs2PhiJpsi2KKMuMu/MCEfficiencyHistograms.coffea"),
 	"Bd": util.load(f"Bd2KsJpsi2KPiMuMu/MCEfficiencyHistograms.coffea")
 }
 #pprint(histograms["Bu"])
@@ -51,7 +51,9 @@ histograms["Bd"]["TruthBdToKPiMuMu_mum_pt"] = histograms["Bd"]["TruthBdToKPiMuMu
 def kinematic_selection_plot(hname, btype, dataset_name, selection_name, yscale="linear"):
 	print(f"Making plot: {hname}, {btype}, {dataset_name}, {selection_name}, {yscale}")
 	fig, ax = plt.subplots(1, 1, figsize=(10, 7))
-	plt.style.use(mplhep.style.ROOT)
+	print(histograms[btype][hname].axes())
+	print(histograms[btype][hname].axis("dataset").identifiers())
+	print(histograms[btype][hname].axis("selection").identifiers())
 	hist.plot1d(histograms[btype][hname].integrate("dataset", [(dataset_name)]).integrate("selection", [(selection_name)]), 
 			error_opts={"marker":".", "linestyle":"none", "markersize":10., "color":"k", "elinewidth":1})
 	if "inclusive" in dataset_name:
@@ -63,9 +65,10 @@ def kinematic_selection_plot(hname, btype, dataset_name, selection_name, yscale=
 	plt.close(fig)
 
 # Bu
+'''
 for dataset_name in ["Bu2KJpsi2KMuMu_probefilter", "Bu2KJpsi2KMuMu_inclusive"]:
 	# Reco histograms
-	for hname in ["BuToKMuMu_fit_pt", "BuToKMuMu_fit_eta", "BuToKMuMu_fit_phi", "BuToKMuMu_fit_mass", "BToKMuMu_chi2", "BuToKMuMu_fit_cos2D", "BuToKMuMu_l_xy", "BuToKMuMu_l_xy_sig", "BuToKMuMu_jpsi_mass", ]:
+	for hname in ["BuToKMuMu_fit_pt", "BuToKMuMu_fit_eta", "BuToKMuMu_fit_phi", "BuToKMuMu_fit_mass", "BToKMuMu_chi2", "BuToKMuMu_fit_cos2D", "BuToKMuMu_l_xy", "BuToKMuMu_l_xy_sig", "BuToKMuMu_jpsi_mass", "BuToKMuMu_sv_prob"]:
 		for selection in ["inclusive", "reco", "tag", "probe"]:
 			if "pt" in hname:
 				yscale = "log"
@@ -81,11 +84,12 @@ for dataset_name in ["Bu2KJpsi2KMuMu_probefilter", "Bu2KJpsi2KMuMu_inclusive"]:
 			else:
 				yscale = "linear"
 			kinematic_selection_plot(hname, "Bu", dataset_name, selection, yscale=yscale)
+'''
 
 # Bs
 for dataset_name in ["Bs2PhiJpsi2KKMuMu_probefilter", "Bs2PhiJpsi2KKMuMu_inclusive"]:
 	# Reco histograms
-	for hname in ["BsToKKMuMu_fit_pt", "BsToKKMuMu_fit_eta", "BsToKKMuMu_fit_phi", "BsToKKMuMu_fit_mass", "BsToKKMuMu_chi2", "BsToKKMuMu_fit_cos2D", "BsToKKMuMu_l_xy", "BsToKKMuMu_l_xy_sig", "BsToKKMuMu_jpsi_mass", "BsToKKMuMu_phi_mass", ]:
+	for hname in ["BsToKKMuMu_fit_pt", "BsToKKMuMu_fit_eta", "BsToKKMuMu_fit_phi", "BsToKKMuMu_fit_mass", "BsToKKMuMu_chi2", "BsToKKMuMu_fit_cos2D", "BsToKKMuMu_l_xy", "BsToKKMuMu_l_xy_sig", "BsToKKMuMu_jpsi_mass", "BsToKKMuMu_phi_mass", "BsToKKMuMu_sv_prob"]:
 		for selection in ["inclusive", "reco", "tag", "probe"]:
 			if "pt" in hname:
 				yscale = "log"
@@ -106,7 +110,7 @@ for dataset_name in ["Bs2PhiJpsi2KKMuMu_probefilter", "Bs2PhiJpsi2KKMuMu_inclusi
 # Bd
 for dataset_name in ["Bd2KstarJpsi2KPiMuMu_probefilter", "Bd2KstarJpsi2KPiMuMu_inclusive"]:
 	# Reco histograms
-	for hname in ["BdToKPiMuMu_fit_pt", "BdToKPiMuMu_fit_eta", "BdToKPiMuMu_fit_phi", "BdToKPiMuMu_fit_best_mass", "BdToKPiMuMu_chi2", "BdToKPiMuMu_fit_cos2D", "BdToKPiMuMu_l_xy", "BdToKPiMuMu_l_xy_sig", "BdToKPiMuMu_jpsi_mass", "BdToKPiMuMu_fit_best_mkstar", ]:
+	for hname in ["BdToKPiMuMu_fit_pt", "BdToKPiMuMu_fit_eta", "BdToKPiMuMu_fit_phi", "BdToKPiMuMu_fit_best_mass", "BdToKPiMuMu_chi2", "BdToKPiMuMu_fit_cos2D", "BdToKPiMuMu_l_xy", "BdToKPiMuMu_l_xy_sig", "BdToKPiMuMu_sv_prob", "BdToKPiMuMu_jpsi_mass", "BdToKPiMuMu_fit_best_mkstar", ]:
 		for selection in ["inclusive", "reco", "tag", "probe"]:
 			if "pt" in hname:
 				yscale = "log"

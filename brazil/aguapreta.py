@@ -23,10 +23,47 @@ BS_MASS = 5.3663
 
 # Cuts (see AN2017_168)
 JPSI_WINDOW = 0.150
-PHI_WINDOW = 0.015
+PHI_WINDOW = 0.010
 KSTAR_WINDOW = 0.10
 B0_PHI_VETO_WINDOW = 0.01
 BS_KSTAR_VETO_WINDOW = 0.05
+
+# Optimized cuts
+final_cuts = {
+	"Bs": {
+		"sv_pt": 3.0, 
+		"sv_prob": 0.063, 
+		"cos2D": 0.988, 
+		"l_xy_sig": 3.94, 
+		"dm_phi": 0.017, 
+		"k1_pt": 1.16, 
+		"k2_pt": 0.7, 
+		"l1_pt": 1.5, # Not optimized 
+		"l2_pt": 1.5, # Not optimized
+		"kstar_veto": BS_KSTAR_VETO_WINDOW,
+	}, 
+	"Bu": {
+		"sv_pt": 3.0, 
+		"sv_prob": 0.063, 
+		"cos2D": 0.988, 
+		"l_xy_sig": 3.94, 
+		"k_pt": 1.16,
+		"l1_pt": 1.5, # Not optimized 
+		"l2_pt": 1.5, # Not optimized
+	}, 
+	"Bd": {
+		"sv_pt": 3.0, 
+		"sv_prob": 0.063, 
+		"cos2D": 0.988, 
+		"l_xy_sig": 3.94, 
+		"k1_pt": 1.16, 
+		"k2_pt": 0.7, 
+		"l1_pt": 1.5, # Not optimized 
+		"l2_pt": 1.5, # Not optimized
+		"kstar_window": KSTAR_WINDOW,
+		"phi_veto": B0_PHI_VETO_WINDOW,
+	}, 
+}
 
 def where(predicate, iftrue, iffalse):
     predicate = predicate.astype(np.bool)   # just to make sure they're 0/1

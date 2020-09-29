@@ -14,7 +14,7 @@ class Bcand_accumulator(dict, processor.AccumulatorABC):
         cols : list[str]
             List of columns to save
     '''
-    def __init__(self, cols=["pt", "eta", "y", "phi", "mass", "l_xy", "l_xy_unc", "sv_prob", "cos2D"]):#, name="Bcands", outputfile=None, reuseoutputfile=None):
+    def __init__(self, cols=["pt", "eta", "y", "phi", "mass"]): # , "l_xy", "l_xy_unc", "sv_prob", "cos2D"]):#, name="Bcands", outputfile=None, reuseoutputfile=None):
         self._cols = cols
         #self._name = name
         for col in cols:

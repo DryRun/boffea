@@ -2,12 +2,59 @@ from coffea.analysis_objects import JaggedCandidateArray
 import awkward
 import uproot_methods
 from brazil.aguapreta import *
+import copy
+import numba
+import numpy as np
+
+@numba.njit
+def count_children(content_in, offsets_in):
+    content_out = np.empty(len(content_in), dtype=content_in.dtype)
+    idx_out = 0
+
+    for record_index in range(len(offsets_in) - 1):
+        start_src, stop_src = offsets_in[record_index], offsets_in[record_index + 1]
+
+        for index in range(stop_src - start_src):
+            nchildren = 0
+            for possible_child in range(index, stop_src - start_src):
+                if content_in[start_src + possible_child] == index:
+                    nchildren += 1
+            content_out[idx_out] = nchildren
+            idx_out += 1
+    return content_out
+
 
 def genparts(df, is_mc=True):
+    nchildren = count_children(df["GenPart_genPartIdxMother"]._content, df["GenPart_genPartIdxMother"]._offsets)
+
+    # Fix masses (NanoAOD filled in 0)
+    masses_in = df["GenPart_mass"].flatten()
+    pdgids_in = df["GenPart_pdgId"].flatten()
+    masses_out = copy.deepcopy(masses_in)
+    fix_masses = {
+        11: ELECTRON_MASS,
+        13: MUON_MASS,
+        15: TAU_MASS,
+        211: PI_MASS,
+        313: KSTAR_892_MASS,
+        321: K_MASS,
+        333: PHI_1020_MASS,
+        443: JPSI_1S_MASS,
+        511: BD_MASS,
+        521: BU_MASS,
+        531: BS_MASS,
+    }
+    for pdgId, mass in fix_masses.items():
+        pdgId_mask = (pdgids_in == pdgId)
+        masses_out[pdgId_mask] = np.ones_like(masses_out[pdgId_mask]) * mass
+
+        pdgId_mask = (pdgids_in == (-1*pdgId))
+        masses_out[pdgId_mask] = np.ones_like(masses_out[pdgId_mask]) * mass
+
     genparts_collection = JaggedCandidateArray.candidatesfromcounts(
         df["nGenPart"].flatten(),
         eta              = df["GenPart_eta"].flatten(),
-        mass             = df["GenPart_mass"].flatten(),
+        mass             = masses_out, #df["GenPart_mass"].flatten(),
         phi              = df["GenPart_phi"].flatten(),
         pt               = df["GenPart_pt"].flatten(),
         vx               = df["GenPart_vx"].flatten(),
@@ -16,6 +63,7 @@ def genparts(df, is_mc=True):
         status           = df["GenPart_status"].flatten(),
         genPartIdxMother = df["GenPart_genPartIdxMother"].flatten(),
         pdgId            = df["GenPart_pdgId"].flatten(),
+        nChildren        = nchildren,
     )
     return genparts_collection
 
@@ -153,6 +201,24 @@ def reco_bdkpimumu(df, is_mc=False):
                         reco_bdkpimumu_collection.barMkstar_fullfit,
                         reco_bdkpimumu_collection.mkstar_fullfit
                         )
+    )
+    # Add di-track K/K mass, for phi > K K veto
+    phi_trk1 = JaggedCandidateArray.candidatesfromcounts(
+        df["nBToKsMuMu"].flatten(), 
+        pt = reco_bdkpimumu_collection.trk1pt_fullfit.flatten(), 
+        eta = reco_bdkpimumu_collection.trk1eta_fullfit.flatten(), 
+        phi = reco_bdkpimumu_collection.trk1phi_fullfit.flatten(), 
+        mass = reco_bdkpimumu_collection.trk1pt_fullfit.ones_like().flatten() * K_MASS
+    )
+    phi_trk2 = JaggedCandidateArray.candidatesfromcounts(
+        df["nBToKsMuMu"].flatten(), 
+        pt = reco_bdkpimumu_collection.trk2pt_fullfit.flatten(), 
+        eta = reco_bdkpimumu_collection.trk2eta_fullfit.flatten(), 
+        phi = reco_bdkpimumu_collection.trk2phi_fullfit.flatten(), 
+        mass = reco_bdkpimumu_collection.trk2pt_fullfit.ones_like().flatten() * K_MASS
+    )
+    reco_bdkpimumu_collection.add_attributes(
+        phi_mass = (phi_trk1.p4 + phi_trk2.p4).mass,
     )
 
     # TLorentzVector arrays for tracks and muons
@@ -462,6 +528,10 @@ def reco_muons(df, is_mc=False):
         tightId        = df["Muon_tightId"].flatten(),
         tkIsoId        = df["Muon_tkIsoId"].flatten(),
         triggerIdLoose = df["Muon_triggerIdLoose"].flatten(),
+        isTriggering_HLT_Mu7_IP4  = (df["Muon_isTriggering_HLT_Mu7_IP4"]==1).flatten(),
+        isTriggering_HLT_Mu9_IP5  = (df["Muon_isTriggering_HLT_Mu9_IP5"]==1).flatten(),
+        isTriggering_HLT_Mu9_IP6  = (df["Muon_isTriggering_HLT_Mu9_IP6"]==1).flatten(),
+        isTriggering_HLT_Mu12_IP6 = (df["Muon_isTriggering_HLT_Mu12_IP6"]==1).flatten(),
     )
     if is_mc:
         reco_muons_collection.add_attributes(
