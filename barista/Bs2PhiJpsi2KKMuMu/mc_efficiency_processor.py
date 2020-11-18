@@ -54,7 +54,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       self._Bcand_selections.append(f"tagmatch_{trigger}")
       self._Bcand_selections.append(f"probematch_{trigger}")
     for selection_name in self._Bcand_selections:
-      self._accumulator[f"Bcands_{selection_name}"] = processor.defaultdict_accumulator(Bcand_accumulator)
+      self._accumulator[f"Bcands_{selection_name}"] = processor.defaultdict_accumulator(partial(Bcand_accumulator, cols=["pt", "eta", "y", "phi", "mass"]))
 
     self._accumulator["Bcands_Bs_opt"] = processor.defaultdict_accumulator(
           partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass", 
@@ -310,17 +310,25 @@ class MCEfficencyProcessor(processor.ProcessorABC):
 
     reco_bskkmumu.add_attributes(l_xy_sig = where(reco_bskkmumu.l_xy_unc > 0, reco_bskkmumu.l_xy / reco_bskkmumu.l_xy_unc, -1.e20))
     """
+    tagmuon_ptcuts = {
+     "HLT_Mu7_IP4": 7*1.05,
+     "HLT_Mu9_IP5": 9*1.05,
+     "HLT_Mu9_IP6": 9*1.05,
+     "HLT_Mu12_IP6": 12*1.05,
+    }    
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
       reco_bskkmumu.add_attributes(**{
         f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l1_idx],
         f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l2_idx],
+        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l1_idx] & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts[trigger]),
+        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l2_idx] & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts[trigger]),
       })
       reco_bskkmumu.add_attributes(**{
         f"MuonIsTrigCount_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrig_{trigger}").astype(int) + getattr(reco_bskkmumu, f"Muon2IsTrig_{trigger}").astype(int)
       })
       event_ntriggingmuons = getattr(reco_muons, f"isTriggering_{trigger}").astype(int).sum()
       reco_bskkmumu.add_attributes(**{
-        f"TagCount_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggingmuons - getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}")
+        f"TagCount_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggingmuons - getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}"),
       })
     reco_bskkmumu.add_attributes(l_xy_sig = where(reco_bskkmumu.l_xy_unc > 0, reco_bskkmumu.l_xy / reco_bskkmumu.l_xy_unc, -1.e20))
 
@@ -374,11 +382,12 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selections["truthmatched"] = (reco_bskkmumu.genPartIdx >= 0)
     selections["recomatch"]      = selections["reco"] & selections["truthmatched"]
 
+
     for trigger in self._triggers:
       trigger_mask = (df[trigger] == 1) * reco_bskkmumu_mask_template
 
       selections[f"recomatch_{trigger}"]      = selections["reco"] & trigger_mask
-      selections[f"tag_{trigger}"]            = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"Muon1IsTrig_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrig_{trigger}"))
+      selections[f"tag_{trigger}"]            = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}"))
       selections[f"tagmatch_{trigger}"]       = selections[f"tag_{trigger}"] & selections["truthmatched"]
       selections[f"tagunmatched_{trigger}"]   = selections[f"tag_{trigger}"] & (~selections["truthmatched"])
       selections[f"probe_{trigger}"]          = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"TagCount_{trigger}") >= 1)

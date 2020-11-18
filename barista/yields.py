@@ -1,5 +1,6 @@
 import os
 import sys
+from pprint import pprint
 import pickle
 import ROOT
 ROOT.gROOT.SetBatch(True)
@@ -52,16 +53,18 @@ def style_graph(graph, btype):
 	graph.SetLineWidth(style[btype]["line_width"])
 
 # Load yields from RooFit result
-def load_yields(btype, binned=False):
+def load_yields(btype, binned=False, correct_eff=False):
+	yields_file = f"/home/dryu/BFrag/boffea/barista/fitting/{btype}/yields"
 	if binned:
-		with open(f"/home/dryu/BFrag/boffea/barista/fitting/{btype}/yields_binned.pkl", "rb") as f:
-			yields = pickle.load(f)
-	else:
-		with open(f"/home/dryu/BFrag/boffea/barista/fitting/{btype}/yields.pkl", "rb") as f:
-			yields = pickle.load(f)
+		yields_file += "_binned"
+	if correct_eff:
+		yields_file += "_correcteff"
+	yields_file += ".pkl"
+	with open(yields_file, "rb") as f:
+		yields = pickle.load(f)
 	return yields
 
-def yield_pt_graph(yields):
+def yield_pt_graph(yields, normalize_bin_width=None):
 	#print(yields)
 	cut_names = [x for x in yields.keys() if "ptbin" in x]
 	cut_names.sort(key=lambda x: cut_xvals[x][0])
@@ -69,29 +72,40 @@ def yield_pt_graph(yields):
 	for ipoint, cut_name in enumerate(cut_names):
 		this_yield = yields[cut_name][0]
 		this_dyield = yields[cut_name][1]
-		bin_width = 0.5*(cut_xvals[cut_name][1] - cut_xvals[cut_name][0])
-		tg.SetPoint(ipoint, 0.5*(cut_xvals[cut_name][0] + cut_xvals[cut_name][1]), this_yield / (2. * bin_width))
-		tg.SetPointError(ipoint, bin_width, this_dyield / (2. * bin_width))
+		bin_width = (cut_xvals[cut_name][1] - cut_xvals[cut_name][0])
+		if normalize_bin_width:
+			normalization_factor = bin_width / normalize_bin_width
+		else:
+			normalization_factor = 1.0
+		tg.SetPoint(ipoint, 0.5*(cut_xvals[cut_name][0] + cut_xvals[cut_name][1]), this_yield / normalization_factor)
+		tg.SetPointError(ipoint, 0.5*bin_width, this_dyield / normalization_factor)
 	return tg
 
-def yield_pt_plot(yields, save_tag):
+def yield_pt_plot(yields, save_tag, normalize_bin_width=False, correct_eff=False):
+	print("\n*** Making pT plot {} ***".format(save_tag))
 	canvas = ROOT.TCanvas(f"c_yield_pt_{save_tag}", f"c_yield_pt_{save_tag}", 800, 600)
+	canvas.SetLeftMargin(0.1)
+	pprint(yields)
 	if "probe" in save_tag:
-		legend = ROOT.TLegend(0.6, 0.65, 0.9, 0.88)
+		legend = ROOT.TLegend(0.6, 0.7, 0.9, 0.88)
 	else:
-		legend = ROOT.TLegend(0.58, 0.65, 0.88, 0.88)
+		legend = ROOT.TLegend(0.58, 0.7, 0.88, 0.88)
 	legend.SetFillColor(0)
+	legend.SetFillStyle(0)
 	legend.SetBorderSize(0)
 
 	graphs = {}
 	for btype, yields_btype in yields.items():
-		graphs[btype] = yield_pt_graph(yields_btype)
+		graphs[btype] = yield_pt_graph(yields_btype, normalize_bin_width=normalize_bin_width)
 
 	graph_max = max([max(x.GetY()) for x in graphs.values()])
 	#print(f"graph_max={graph_max}")
 	frame = ROOT.TH1D("frame", "frame", 100, 0., 45.)
 	frame.GetXaxis().SetTitle("p_{T} [GeV]")
-	frame.GetYaxis().SetTitle("Events / GeV")
+	if normalize_bin_width:
+		frame.GetYaxis().SetTitle("Event / {} GeV".format(normalize_bin_width))
+	else:
+		frame.GetYaxis().SetTitle("Events per bin")
 	frame.SetMaximum(graph_max * 1.2)
 	frame.SetMinimum(0.)
 	frame.Draw("axis")
@@ -108,7 +122,7 @@ def yield_pt_plot(yields, save_tag):
 	# Log y
 	canvas.SetLogy()
 	frame.SetMinimum(0.5)
-	frame.SetMaximum(graph_max * 10.)
+	frame.SetMaximum(graph_max * 50.)
 	frame.Draw("axis")
 	for btype in ["Bu", "Bd", "Bs"]:
 		graphs[btype].Draw("p")
@@ -129,7 +143,7 @@ def yield_y_graph(yields):
 		tg.SetPointError(ipoint, bin_width, this_dyield)
 	return tg
 
-def yield_y_plot(yields, save_tag):
+def yield_y_plot(yields, save_tag, correct_eff=False):
 	canvas = ROOT.TCanvas(f"c_yield_y_{save_tag}", f"c_yield_y_{save_tag}", 800, 600)
 	legend = ROOT.TLegend(0.6, 0.62, 0.88, 0.87)
 	legend.SetFillColor(0)
@@ -171,13 +185,21 @@ def yield_y_plot(yields, save_tag):
 
 if __name__ == "__main__":
 	for binned in [True, False]:#, False]:
-		for side in ["tag", "probe"]:
-			for trigger_strategy in ['HLT_all', 'HLT_Mu7', 'HLT_Mu9']:
-				yields = {}
-				for btype in ["Bu", "Bd", "Bs"]:
-					yields[btype] = load_yields(btype, binned)[side][trigger_strategy]
-				save_tag = f"{side}_{trigger_strategy}"
-				if binned:
-					save_tag += "_binned"
-				yield_pt_plot(yields, save_tag=save_tag)
-				yield_y_plot(yields, save_tag=save_tag)
+		for correct_eff in [False]: # False
+			for side in ["tag", "probe"]:
+				for trigger_strategy in ['HLT_all', 'HLT_Mu7', 'HLT_Mu9']:
+					yields = {}
+					for btype in ["Bu", "Bd", "Bs"]:
+						yields[btype] = load_yields(btype, binned)[side][trigger_strategy]
+					save_tag = f"{side}_{trigger_strategy}"
+					if binned:
+						save_tag += "_binned"
+					if correct_eff:
+						save_tag += "_correcteff"
+
+					if side == "tag":
+						normalize_bin_width = 1.0
+					else:
+						normalize_bin_width = False
+					yield_pt_plot(yields, save_tag=save_tag, correct_eff=correct_eff, normalize_bin_width=normalize_bin_width)
+					yield_y_plot(yields, save_tag=save_tag, correct_eff=correct_eff)

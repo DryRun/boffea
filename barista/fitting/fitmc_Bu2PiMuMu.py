@@ -178,8 +178,6 @@ if __name__ == "__main__":
 		chain = ROOT.TChain("Bcands_recomatch_Bu2PiJpsi2KMuMu_inclusive")
 		chain.Add("MCEfficiency_Bu2PiJpsi.root")
 		for cut_name in cuts:
-			if not "inclusive" in cut_name: 
-				continue
 			cut_str = cut_strings[cut_name]
 			ws, fit_result = fit_mc(chain, incut=cut_str)
 			ws.Print()

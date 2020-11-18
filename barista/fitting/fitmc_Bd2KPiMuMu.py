@@ -49,15 +49,15 @@ def plot_mc(tree, mass_range=BD_FIT_WINDOW, cut="", tag=""):
 def make_signal_pdf_main(ws, mass_range, tag=""):
 	mass = ws.var("mass")
 	mean = ws.factory(f"mean[{BD_MASS}, {BD_MASS-0.2}, {BD_MASS+0.2}]")
-	sigma_gauss1 = ws.factory("sigma_gauss1[0.01, 0.005, 0.3]")
-	sigma_gauss2 = ws.factory("sigma_gauss2[0.003, 0.005, 0.3]")
+	sigma_gauss1 = ws.factory("sigma_gauss1[0.01, 0.005, 0.2]")
+	sigma_gauss2 = ws.factory("sigma_gauss2[0.003, 0.005, 0.2]")
 	signal_gauss1 = ws.factory(f"Gaussian::signal_gauss1(mass, mean, sigma_gauss1)")
 	signal_gauss2 = ws.factory(f"Gaussian::signal_gauss2(mass, mean, sigma_gauss2)")
 	c_dg_g1 = ws.factory("c_dg_g1[0.8, 0.0, 1.0]")
 	signal_dg = ROOT.RooAddPdf("signal_dg", "signal_dg", ROOT.RooArgList(signal_gauss1, signal_gauss2), ROOT.RooArgList(c_dg_g1))
 	getattr(ws, "import")(signal_dg)
 
-	sigma_cb = ws.factory(f"sigma_cb[0.08, 0.005, 0.3]")
+	sigma_cb = ws.factory(f"sigma_cb[0.08, 0.005, 0.2]")
 	alpha = ws.factory(f"alpha[1.7, 0., 10.]")
 	n = ws.factory(f"n[2.2, 0.1, 6.0]")
 	signal_cb = ROOT.RooCBShape("signal_cb", "signal_cb", mass, mean, sigma_cb, alpha, n)

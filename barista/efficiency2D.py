@@ -40,8 +40,8 @@ for btype in btypes:
 axes = {}
 # pt: probe=5 bins, tag=13 bins
 axes["pt"] = {
-	"probe": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([5., 10., 15., 20., 25., 30.])), 
-	"tag": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0]))
+	"probe": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([8., 13., 18., 23., 28., 33., 100.])), # [5., 10., 15., 20., 25., 30., 100.0]
+	"tag": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0, 100.0]))
 }
 axes["y"] = {
 	"probe": hist.Bin("y", r"$|y|$", np.array(np.arange(0., 2.5+0.5, 0.5))), 
@@ -156,13 +156,13 @@ total_lumis = {
     "HLT_Mu12_IP6": 34698.771755487,
     "HLT_Mu9_IP6": 33577.176480857,
     "HLT_Mu9_IP5": 20890.692760413,
-    "HLT_Mu7_IP4":6939.748065950
+    "HLT_Mu7_IP4": 6939.748065950
 }
 unique_lumis = {
     "HLT_Mu12_IP6": 34698.771755487 - 33577.176480857,
     "HLT_Mu9_IP6": 33577.176480857 - 20890.692760413,
     "HLT_Mu9_IP5": 20890.692760413 - 6939.748065950,
-    "HLT_Mu7_IP4":6939.748065950
+    "HLT_Mu7_IP4": 6939.748065950
 }
 total_lumi = 34698.771755487
 f_eff = ROOT.TFile("/home/dryu/BFrag/data/efficiency/efficiency2D.root", "RECREATE")
@@ -184,7 +184,7 @@ for btype in btypes:
 		eff[btype][side]["HLT_all"] = eff[btype][side]["HLT_all"] / sumw
 		deff[btype][side]["HLT_all"] = np.sqrt(deff[btype][side]["HLT_all"]) / sumw
 
-		# HLT_Mu9 strategy
+		# HLT_Mu9 combined
 		eff[btype][side]["HLT_Mu9"] = 0.
 		deff[btype][side]["HLT_Mu9"] = 0.
 		sumw = 0.
@@ -201,12 +201,8 @@ for btype in btypes:
 		eff[btype][side]["HLT_Mu9"] = eff[btype][side]["HLT_Mu9"] / sumw
 		deff[btype][side]["HLT_Mu9"] = np.sqrt(deff[btype][side]["HLT_Mu9"]) / sumw
 
-		# HLT_Mu7 strategy
-		eff[btype][side]["HLT_Mu7"] = eff[btype][side]["HLT_Mu7_IP4"]
-		deff[btype][side]["HLT_Mu7"] = deff[btype][side]["HLT_Mu7_IP4"]
-
 		# Convert to TH2Ds, for use with coffea
-		for trigger_strategy in ["HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_all"]:
+		for trigger_strategy in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", "HLT_Mu9", "HLT_all"]:
 			pt_edges = axes["pt"][side.replace("_total", "")].edges()
 			y_edges = axes["y"][side.replace("_total", "")].edges()
 			hist_eff[btype][side][trigger_strategy] = ROOT.TH2D("h_trigeff2D_{}_{}_{}".format(btype, side, trigger_strategy),
@@ -228,7 +224,7 @@ ROOT.gStyle.SetPaintTextFormat("4.3f");
 canvases = {}
 for btype in btypes:
 	for side in ["tag", "probe", "probe_total"]:
-		for trigger_strategy in ["HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_all"]:
+		for trigger_strategy in ["HLT_Mu7_IP4", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_all"]:
 			# 2D color plots of efficiency
 			cname = f"eff2D_{btype}_{side}_{trigger_strategy}"
 			canvases[cname] = ROOT.TCanvas(cname, cname, 800, 600)
@@ -253,13 +249,13 @@ for btype in btypes:
 			canvases[cname] = ROOT.TCanvas(cname, cname, 800, 600)
 			canvases[cname].SetLogy()
 			effhists_y = {}
-			frame = ROOT.TH1F("frame", "frame", 10, 0., 3.)
+			frame = ROOT.TH1F("frame", "frame", 10, 0., 3.5)
 			frame.SetMinimum(1.e-6)
 			frame.SetMaximum(0.5)
 			frame.GetXaxis().SetTitle("|y|")
 			frame.GetYaxis().SetTitle("Efficiency")
 			frame.Draw()
-			legend = ROOT.TLegend(0.6, 0.35, 0.92, 0.8)
+			legend = ROOT.TLegend(0.7, 0.3, 0.85, 0.8)
 			legend.SetBorderSize(0)
 			legend.SetFillColor(0)
 			legend.SetFillStyle(0)

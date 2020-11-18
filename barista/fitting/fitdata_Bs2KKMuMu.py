@@ -1,6 +1,7 @@
 '''
 Fit MC mass distributions
 '''
+import os
 from pprint import pprint
 import ROOT
 from brazil.aguapreta import *
@@ -50,22 +51,25 @@ def plot_data(tree, mass_range=BS_FIT_WINDOW, cut="", tag=""):
 	c.SaveAs("/home/dryu/BFrag/data/fits/data/{}.pdf".format(c.GetName()))
 
 
-def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", binned=False, eff_hist=None):
+def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", binned=False, correct_eff=False):
 	ws = ROOT.RooWorkspace('ws')
 
 	cut = f"{incut} && (mass > {mass_range[0]}) && (mass < {mass_range[1]})"
+	if correct_eff:
+		# Ignore very large weights, which are probably from 0 efficiency bins
+		cut += " && (w_eff < 1.e6)"
 
 	# Turn tree into RooDataSet
 	mass = ws.factory(f"mass[{(mass_range[0]+mass_range[1])/2}, {mass_range[0]}, {mass_range[1]}]")
 	pt = ws.factory(f"pt[10.0, 0.0, 200.0]")
 	y = ws.factory("y[0.0, -5.0, 5.0]")
-	rdataset = ROOT.RooDataSet("fitData", "fitData", ROOT.RooArgSet(mass, pt, y), ROOT.RooFit.Import(tree), ROOT.RooFit.Cut(cut))
 
 	# Correct for efficiency with weights
-	if eff_hist:
-		# Load efficiencies
-		f_eff = ROOT.TFile("/home/dryu/BFrag/data/efficiency/efficiency2D.pkl", "READ")
-		h_eff = f_eff.Get("h_trigeff2D_{}_{}_{}".format(btype, side, trigger_strategy)
+	if correct_eff:
+		w_eff = ws.factory("w_eff[0.0, 1.e5]")
+		rdataset = ROOT.RooDataSet("fitData", "fitData", ROOT.RooArgSet(mass, pt, y, w_eff), ROOT.RooFit.Import(tree), ROOT.RooFit.Cut(cut), ROOT.RooFit.WeightVar("w_eff"))
+	else:
+		rdataset = ROOT.RooDataSet("fitData", "fitData", ROOT.RooArgSet(mass, pt, y), ROOT.RooFit.Import(tree), ROOT.RooFit.Cut(cut))
 
 	ndata = rdataset.sumEntries()
 
@@ -87,9 +91,9 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 	'''
 	# Signal: triple Gaussian
 	mean = ws.factory(f"mean[{0.5*(mass_range[0]+mass_range[1])}, {mass_range[0]}, {mass_range[1]}]")
-	sigma1 = ws.factory("sigma1[0.008, 0.0005, 1.0]")
-	sigma2 = ws.factory("sigma2[0.02, 0.0005, 1.0]")
-	sigma3 = ws.factory("sigma3[0.04, 0.0005, 1.0]")
+	sigma1 = ws.factory("sigma1[0.008, 0.006, 0.25]")
+	sigma2 = ws.factory("sigma2[0.02, 0.006, 0.25]")
+	sigma3 = ws.factory("sigma3[0.04, 0.006, 0.25]")
 	aa = ws.factory(f"aa[0.5, 0.001, 1.0]")
 	bb = ws.factory(f"bb[0.8, 0.001, 1.0]")
 	#signal_tg = ws.factory(f"GenericPdf::signal_tg('TripleGaussian(mass, mean, sigma1, sigma2, sigma3, aa, bb)', {{mass, mean, sigma1, sigma2, sigma3, aa, bb}})")
@@ -105,6 +109,13 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 
 	model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(signal_model, bkgd_exp_model))
 
+	# Tweaks
+	if cut_name == "ptbin_11p0_12p0":
+		aa.setMin(max(aa.getVal() - 0.1, 0.))
+		aa.setMax(min(aa.getVal() + 0.1, 1.0))
+		bb.setMin(max(bb.getVal() - 0.1, 0.))
+		bb.setMax(min(bb.getVal() + 0.1, 1.0))
+
 	# Perform fit
 	fit_args = [rdata, ROOT.RooFit.NumCPU(8), ROOT.RooFit.Save()]
 	if use_mc_constraints:
@@ -118,13 +129,22 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 		for var in [sigma1, sigma2, sigma3, mean, aa, bb]:
 			varname = var.GetName()
 
+			if varname == "nsignal":
+				continue
+
+			# Loose rectangular constraint on mean (via variable range)
+			if varname == "mean":
+				ws.var(varname).setMin(mc_fit_params[cut_name][varname] - 0.1)
+				ws.var(varname).setMax(mc_fit_params[cut_name][varname] + 0.1)
+				continue
+
+			err_multiplier = 1.0
 			param_value = mc_fit_params[cut_name][varname]
-			param_err   = mc_fit_errors[cut_name][varname]
-			# Loosely constrain width
-			if "sigma" in varname:
-				param_err = param_value / 3.
-			elif varname == "mean":
-				param_err = 0.05
+			param_err   = mc_fit_errors[cut_name][varname] * err_multiplier
+
+			# For core width, set very loose constraint
+			if "sigma1" in varname or "sigma2" in varname:
+				param_err = mc_fit_params[cut_name][varname] / 2.
 
 			constraints[varname] = ROOT.RooGaussian(
 				"constr_{}".format(varname), 
@@ -134,6 +154,10 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 				ROOT.RooFit.RooConst(param_err))
 			var.setVal(mc_fit_params[cut_name][varname])
 		fit_args.append(ROOT.RooFit.ExternalConstraints(ROOT.RooArgSet(*(constraints.values()))))
+	if correct_eff:
+		if not binned:
+			fit_args.append(ROOT.RooFit.SumW2Error(True)) # Unbinned + weighted needs special uncertainty treatment
+
 	fit_result = model.fitTo(*fit_args)
 
 	# Generate return info
@@ -144,7 +168,7 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 	getattr(ws, "import")(model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def plot_fit(ws, tag="", text=None, binned=False):
+def plot_fit(ws, tag="", subfolder="", text=None, binned=False, correct_eff=False):
 	ROOT.gStyle.SetOptStat(0)
 	ROOT.gStyle.SetOptTitle(0)
 
@@ -163,7 +187,7 @@ def plot_fit(ws, tag="", text=None, binned=False):
 	top.cd()
 
 	rplot = xvar.frame(ROOT.RooFit.Bins(100))
-	rdataset.plotOn(rplot, ROOT.RooFit.Name("data"))
+	rdataset.plotOn(rplot, ROOT.RooFit.Name("data"), ROOT.RooFit.DataError(ROOT.RooAbsData.SumW2))
 	model.plotOn(rplot, ROOT.RooFit.Name("fit"))
 	model.plotOn(rplot, ROOT.RooFit.Name("signal"), ROOT.RooFit.Components("signal_model"), ROOT.RooFit.LineColor(ROOT.kGreen+2), ROOT.RooFit.FillColor(ROOT.kGreen+2), ROOT.RooFit.FillStyle(3002), ROOT.RooFit.DrawOption("LF"))
 	model.plotOn(rplot, ROOT.RooFit.Name("bkgd_exp"), ROOT.RooFit.Components("bkgd_exp_model"), ROOT.RooFit.LineColor(ROOT.kRed+1))
@@ -194,18 +218,29 @@ def plot_fit(ws, tag="", text=None, binned=False):
 	bottom.Draw()
 	bottom.cd()
 
-	binning = ROOT.RooBinning(100, BS_FIT_WINDOW[0], BS_FIT_WINDOW[1])
-	data_hist = ROOT.RooAbsData.createHistogram(rdataset, "data_hist", xvar, ROOT.RooFit.Binning(binning))
+	binning = ROOT.RooBinning(BS_FIT_NBINS, BS_FIT_WINDOW[0], BS_FIT_WINDOW[1])
+	if binned:
+		data_hist = ROOT.RooAbsData.createHistogram(rdataset, "data_hist", xvar)
+	else:
+		data_hist = ROOT.RooAbsData.createHistogram(rdataset, "data_hist", xvar, ROOT.RooFit.Binning(binning))
+	data_hist.Sumw2()
 	fit_binned = model.generateBinned(ROOT.RooArgSet(xvar), 0, True)
 	fit_hist = fit_binned.createHistogram("model_hist", xvar, ROOT.RooFit.Binning(binning))
+	fit_hist.Sumw2()
 	pull_hist = data_hist.Clone()
 	pull_hist.Reset()
 	chi2 = 0.
 	ndf = -3
 	for xbin in range(1, pull_hist.GetNbinsX()+1):
 		data_val = data_hist.GetBinContent(xbin)
+		data_unc = data_hist.GetBinError(xbin)
 		fit_val = fit_hist.GetBinContent(xbin)
-		pull_val = (data_val - fit_val) / max(math.sqrt(fit_val), 1.e-10)
+		if correct_eff:
+			fit_unc = fit_hist.GetBinError(xbin) * math.sqrt(data_unc**2 / max(data_val, 1.e-10))
+		else:
+			fit_unc = math.sqrt(fit_val)
+		pull_val = (data_val - fit_val) / max(fit_unc, 1.e-10)
+		#print(f"Pull xbin {xbin} = ({data_val} - {fit_val}) / ({fit_unc}) = {pull_val}")
 		pull_hist.SetBinContent(xbin, pull_val)
 		pull_hist.SetBinError(xbin, 1)
 		chi2 += pull_val**2
@@ -236,8 +271,9 @@ def plot_fit(ws, tag="", text=None, binned=False):
 	chi2text.Draw()
 
 	canvas.cd()
-	canvas.SaveAs("{}/{}.png".format(figure_dir, canvas.GetName()))
-	canvas.SaveAs("{}/{}.pdf".format(figure_dir, canvas.GetName()))
+	os.system(f"mkdir -pv {figure_dir}/{subfolder}")
+	canvas.SaveAs("{}/{}/{}.png".format(figure_dir, subfolder, canvas.GetName()))
+	canvas.SaveAs("{}/{}/{}.pdf".format(figure_dir, subfolder, canvas.GetName()))
 
 	ROOT.SetOwnership(canvas, False)
 	ROOT.SetOwnership(top, False)
@@ -257,6 +293,7 @@ if __name__ == "__main__":
 	parser.add_argument("--plots", action="store_true", help="Plot fits")
 	parser.add_argument("--tables", action="store_true", help="Make yield tables")
 	parser.add_argument("--binned", action="store_true", help="Do binned fit")
+	parser.add_argument("--correct_eff", action="store_true", help="Apply efficiency correction before fitting")
 	args = parser.parse_args()
 
 	import glob
@@ -268,17 +305,21 @@ if __name__ == "__main__":
 		cuts = fit_cuts
 	elif args.some:
 		cuts = {"tag": args.some.split(","), "probe": args.some.split(",")}
-		if not set(cuts).issubset(set(fit_cuts + fit_cuts_fine)):
+		if not set(cuts).issubset(set(fit_cuts)):
 			raise ValueError("Unrecognized cuts: {}".format(args.some))
 
+	trigger_strategies_to_use = ["HLT_all", "HLT_Mu7", "HLT_Mu9"] # ["HLT_Mu9_IP5", "HLT_Mu9_IP6"]
 	if args.fits:
 		for side in ["tag", "probe"]:
 			trigger_strategies = {
 				"HLT_all": ["HLT_Mu7_IP4", "HLT_Mu9_IP5_only", "HLT_Mu9_IP6_only", "HLT_Mu12_IP6_only"],
 				"HLT_Mu9": ["HLT_Mu9_IP5", "HLT_Mu9_IP6_only"],
+				"HLT_Mu9_IP5": ["HLT_Mu9_IP5_only"],
+				"HLT_Mu9_IP6": ["HLT_Mu9_IP6_only"],
 				"HLT_Mu7": ["HLT_Mu7_IP4"],
 			}
-			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9"]:
+
+			for trigger_strategy in trigger_strategies_to_use:
 				chain = ROOT.TChain()
 				for trigger in trigger_strategies[trigger_strategy]:
 					tree_name = "Bcands_Bs_{}_{}".format(side, trigger)
@@ -289,13 +330,16 @@ if __name__ == "__main__":
 				for cut_name in cuts[side]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
 					if args.binned:
-						save_tag += "_binned"					
+						save_tag += "_binned"
+					if args.correct_eff:
+						save_tag += "_correcteff"				
 					cut_str = cut_strings[cut_name]
 					plot_data(chain, cut=cut_str, tag="Bs_{}".format(save_tag))
 
-					ws, fit_result = fit_data(chain, incut=cut_str, cut_name=cut_name, binned=args.binned)
+					ws, fit_result = fit_data(chain, incut=cut_str, cut_name=cut_name, binned=args.binned, correct_eff=args.correct_eff)
 					ws.Print()
 					fit_result.Print()
+					print("Writing fit results to Bs/fitws_data_Bs_{}.root".format(save_tag))
 					ws_file = ROOT.TFile("Bs/fitws_data_Bs_{}.root".format(save_tag), "RECREATE")
 					ws.Write()
 					fit_result.Write()
@@ -303,34 +347,45 @@ if __name__ == "__main__":
 
 	if args.plots:
 		for side in ["tag", "probe"]:
-			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9"]:
+			for trigger_strategy in trigger_strategies_to_use:
 				for cut_name in cuts[side]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
 					if args.binned:
 						save_tag += "_binned"
+					if args.correct_eff:
+						save_tag += "_correcteff"				
 					ws_file = ROOT.TFile("Bs/fitws_data_Bs_{}.root".format(save_tag), "READ")
-					#ws_file.ls()
 					ws = ws_file.Get("ws")
-					plot_fit(ws, tag="Bs_{}".format(save_tag), text=fit_text[cut_name], binned=args.binned)
+					if args.binned:
+						subfolder = "binned"
+					else:
+						subfolder = "unbinned"
+					if args.correct_eff:
+						subfolder += "_correcteff"
+					plot_fit(ws, tag="Bs_{}".format(save_tag), subfolder=subfolder, text=fit_text[cut_name], binned=args.binned, correct_eff=args.correct_eff)
 
 	if args.tables and args.all:
 		yields = {}
 		for side in ["tag", "probe"]:
 			yields[side] = {}
-			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9"]:
+			for trigger_strategy in trigger_strategies_to_use:
 				yields[side][trigger_strategy] = {}
 				for cut_name in cuts[side]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
 					if args.binned:
 						save_tag += "_binned"
+					if args.correct_eff:
+						save_tag += "_correcteff"				
 					ws_file = ROOT.TFile("Bs/fitws_data_Bs_{}.root".format(save_tag), "READ")
 					#ws_file.ls()
 					ws = ws_file.Get("ws")
 					yields[side][trigger_strategy][cut_name] = extract_yields(ws)
+		yields_file = "Bs/yields"
 		if args.binned:
-			yields_file = "Bs/yields_binned.pkl"
-		else:
-			yields_file = "Bs/yields.pkl"
+			yields_file += "_binned"
+		if args.correct_eff:
+			yields_file += "_correcteff"
+		yields_file += ".pkl"
 		with open(yields_file, "wb") as f_yields:
 			pickle.dump(yields, f_yields)
 		pprint(yields)

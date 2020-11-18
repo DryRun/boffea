@@ -64,12 +64,16 @@ def kinematic_selection_plot(hname, btype, dataset_name, selection_name, yscale=
 	fig.savefig(f"{figure_directory}/{hname}_{btype}_{dataset_tag}_{selection_name}.png")
 	plt.close(fig)
 
+
+# selection_names = ["inclusive", "reco", "recomatch", "truthmatched"]
+# selection_names.extend([f"recomatch_{trigger}", f"tag_{trigger}", f"tagmatch_{trigger}", f"tagunmatched_{trigger}", f"probe_{trigger}", f"probematch_{trigger}", f"probeunmatched_{trigger}"])
+
+
 # Bu
-'''
 for dataset_name in ["Bu2KJpsi2KMuMu_probefilter", "Bu2KJpsi2KMuMu_inclusive"]:
 	# Reco histograms
 	for hname in ["BuToKMuMu_fit_pt", "BuToKMuMu_fit_eta", "BuToKMuMu_fit_phi", "BuToKMuMu_fit_mass", "BToKMuMu_chi2", "BuToKMuMu_fit_cos2D", "BuToKMuMu_l_xy", "BuToKMuMu_l_xy_sig", "BuToKMuMu_jpsi_mass", "BuToKMuMu_sv_prob"]:
-		for selection in ["inclusive", "reco", "tag", "probe"]:
+		for selection in ["inclusive", "recomatch", "tag_HLT_Mu7_IP5", "probe_HLT_Mu7_IP5"]:
 			if "pt" in hname:
 				yscale = "log"
 			else:
@@ -84,13 +88,13 @@ for dataset_name in ["Bu2KJpsi2KMuMu_probefilter", "Bu2KJpsi2KMuMu_inclusive"]:
 			else:
 				yscale = "linear"
 			kinematic_selection_plot(hname, "Bu", dataset_name, selection, yscale=yscale)
-'''
+
 
 # Bs
 for dataset_name in ["Bs2PhiJpsi2KKMuMu_probefilter", "Bs2PhiJpsi2KKMuMu_inclusive"]:
 	# Reco histograms
 	for hname in ["BsToKKMuMu_fit_pt", "BsToKKMuMu_fit_eta", "BsToKKMuMu_fit_phi", "BsToKKMuMu_fit_mass", "BsToKKMuMu_chi2", "BsToKKMuMu_fit_cos2D", "BsToKKMuMu_l_xy", "BsToKKMuMu_l_xy_sig", "BsToKKMuMu_jpsi_mass", "BsToKKMuMu_phi_mass", "BsToKKMuMu_sv_prob"]:
-		for selection in ["inclusive", "reco", "tag", "probe"]:
+		for selection in ["inclusive", "recomatch", "tag_HLT_Mu7_IP5", "probe_HLT_Mu7_IP5"]:
 			if "pt" in hname:
 				yscale = "log"
 			else:
@@ -111,7 +115,7 @@ for dataset_name in ["Bs2PhiJpsi2KKMuMu_probefilter", "Bs2PhiJpsi2KKMuMu_inclusi
 for dataset_name in ["Bd2KstarJpsi2KPiMuMu_probefilter", "Bd2KstarJpsi2KPiMuMu_inclusive"]:
 	# Reco histograms
 	for hname in ["BdToKPiMuMu_fit_pt", "BdToKPiMuMu_fit_eta", "BdToKPiMuMu_fit_phi", "BdToKPiMuMu_fit_best_mass", "BdToKPiMuMu_chi2", "BdToKPiMuMu_fit_cos2D", "BdToKPiMuMu_l_xy", "BdToKPiMuMu_l_xy_sig", "BdToKPiMuMu_sv_prob", "BdToKPiMuMu_jpsi_mass", "BdToKPiMuMu_fit_best_mkstar", ]:
-		for selection in ["inclusive", "reco", "tag", "probe"]:
+		for selection in ["inclusive", "recomatch", "tag_HLT_Mu7_IP5", "probe_HLT_Mu7_IP5"]:
 			if "pt" in hname:
 				yscale = "log"
 			else:

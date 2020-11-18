@@ -94,7 +94,8 @@ class FFRData:
 		elif self._axis == "y":
 			cuts_tmp = [x for x in cuts_tmp if "ybin" in x]
 		cuts_tmp.sort(key=lambda x: cut_xvals[x][0])
-
+		print("cuts_tmp:")
+		print(cuts_tmp)
 		# Make numpy arrays: x bin boundaries, y=yields
 		self._xbins = np.array(sorted(list(set([cut_xvals[x][0] for x in cuts_tmp] + [cut_xvals[x][1] for x in cuts_tmp]))))
 		for btype in ["Bu", "Bd", "Bs"]:
@@ -300,7 +301,7 @@ class FFRPlot:
 		ax_sd.set_xlabel(self._xlabel)
 		ax_sd.set_xlim(self._xlim)
 		ax_sd.set_ylim(self._ylim)
-		ax_sd.set_ylabel(r"$\mathcal{R}_{su}$")
+		ax_sd.set_ylabel(r"$\mathcal{R}_{sd}$")
 		ax_sd.xaxis.set_ticks_position("both")
 		ax_sd.yaxis.set_ticks_position("both")
 		ax_sd.tick_params(direction="in")
@@ -326,8 +327,8 @@ class FFRPlot:
 				)
 		ax_du.set_xlabel(self._xlabel)
 		ax_du.set_xlim(self._xlim)
-		ax_du.set_ylim(self._ylim)
-		ax_du.set_ylabel(r"$\mathcal{R}_{su}$")
+		ax_du.set_ylim([0., 2.0])
+		ax_du.set_ylabel(r"$\mathcal{R}_{du}$")
 		ax_du.xaxis.set_ticks_position("both")
 		ax_du.yaxis.set_ticks_position("both")
 		ax_du.tick_params(direction="in")
@@ -382,7 +383,7 @@ class FFRPlot:
 		ax_fsfd.set_xlabel(self._xlabel)
 		ax_fsfd.set_xlim(self._xlim)
 		ax_fsfd.set_ylim(self._ylim)
-		ax_fsfd.set_ylabel(r"f_{s}/f_{d}$")
+		ax_fsfd.set_ylabel(r"$f_{s}/f_{d}$")
 		ax_fsfd.xaxis.set_ticks_position("both")
 		ax_fsfd.yaxis.set_ticks_position("both")
 		ax_fsfd.tick_params(direction="in")
@@ -408,8 +409,8 @@ class FFRPlot:
 				)
 		ax_fdfu.set_xlabel(self._xlabel)
 		ax_fdfu.set_xlim(self._xlim)
-		ax_fdfu.set_ylim(self._ylim)
-		ax_fdfu.set_ylabel(r"f_{s}/f_{d}$")
+		ax_fdfu.set_ylim([0., 2.0])
+		ax_fdfu.set_ylabel(r"$f_{d}/f_{u}$")
 		ax_fdfu.xaxis.set_ticks_position("both")
 		ax_fdfu.yaxis.set_ticks_position("both")
 		ax_fdfu.tick_params(direction="in")

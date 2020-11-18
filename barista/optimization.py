@@ -6,7 +6,7 @@ import array
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(False)
-ROOT.gStyle.SetOptStat(False)
+ROOT.gStyle.SetOptTitle(False)
 
 # Load events
 chain_data = ROOT.TChain("Bcands_Bs_opt")
@@ -17,8 +17,8 @@ chain_mc.Add("/home/dryu/BFrag/boffea/barista/fitting/optimization_Bs_mc.root")
 #chain_mc.Add("")
 #chain_mc.Print()
 
-preselection_cuts = "(l1_pt > 1.5) && (l2_pt > 1.5) && (pt < 12.0) && (dm_phi < 0.03) && (k1_pt > 0.5) && (k2_pt > 0.5)"
-training_vars = ["sv_prob", "cos2D", "l_xy_sig", "dm_phi", "k1_pt", "k2_pt"] # , "l1_pt", "l2_pt"
+preselection_cuts = "(l1_pt > 1.5) && (l2_pt > 1.5) && (pt < 12.0) && (dm_phi < 0.01) && (k1_pt > 0.5) && (k2_pt > 0.5) && (l_xy_sig > 2.0) && (cos2D > 0.99) && (sv_prob > 0.07)"
+training_vars = ["cos2D", "l_xy_sig", "k1_pt", "k2_pt"] # , "l1_pt", "l2_pt" # , "dm_phi", "sv_prob"
 
 varprops = {
     "l_xy": "FMax",
@@ -33,7 +33,7 @@ varprops = {
 }
 var_cutranges = {
     #"l_xy": [0.0, 0.5],
-    #"l_xy_sig": [2.0, 5.0], 
+    "l_xy_sig": [1.5, 10.0], 
     #"sv_prob": [0.03, 0.1], 
     #"cos2D": [0.8, 1.0], 
     #"dm_phi": [0.007, 0.030], 
@@ -44,9 +44,9 @@ var_cutranges = {
 }
 bins = {
     "l_xy": (100, 0., 1.0),
-    "l_xy_sig": (100, 0., 7.5),
+    "l_xy_sig": (100, 0., 10.0),
     "sv_prob": (100, 0., 0.5),
-    "cos2D": (100, 0.9, 1.0),
+    "cos2D": (100, 0.98, 1.0001),
     "dm_phi": (100, 0., 0.05),
     "dm_jpsi": (100, 0., 0.5),
     "l1_pt": (100, 0.0, 10.0),
@@ -68,11 +68,11 @@ xlabels = {
     "l_xy": r"L_{xy}",
     "l_xy_sig": r"L_{xy}/#sigma_{L_{xy}}",
     "sv_prob": "SV prob.",
-    "cos2D": r"#cos#theta_{2D}",
-    "dm_phi": r"|M_{K^+K^-} - M_{\phi}| [GeV]",
+    "cos2D": r"cos#theta_{2D}",
+    "dm_phi": r"|M_{K^{+}K^{-}} - M_{\phi}| [GeV]",
     "dm_jpsi": r"|M_{#mu^{+}#mu^{-}} - M_{J/\psi}| [GeV]",
-    "l1_pt": r"p_{T}(#ell_{1}) [GeV]",
-    "l2_pt": r"p_{T}(#ell_{2}) [GeV]",
+    "l1_pt": r"p_{T}(#mu_{1}) [GeV]",
+    "l2_pt": r"p_{T}(#mu_{2}) [GeV]",
     "k1_pt": r"p_{T}(K_{1}^{\pm}) [GeV]",
     "k2_pt": r"p_{T}(K_{2}^{\pm}) [GeV]",
     "mass": "M [GeV]",
@@ -90,8 +90,22 @@ def GetSBFractions(chain_data):
     k1_pt = ws.factory(f"k1_pt[10., 0., 100.]")
     k2_pt = ws.factory(f"k2_pt[10., 0., 100.]")
     dm_phi = ws.factory(f"dm_phi[0.01., 0., 0.5]")
+    l_xy_sig = ws.factory(f"l_xy_sig[5.0, 1.5, 100.0]")
+    cos2D = ws.factory(f"cos2D[0.995, 0.0, 1.0]")
+    sv_prob = ws.factory(f"sv_prob[0.1, 0.0, 1.0]")
     mass.setBins(100)
-    rdataset =  ROOT.RooDataSet("fitData", "fitData", ROOT.RooArgSet(mass, pt, l1_pt, l2_pt, dm_phi, k1_pt, k2_pt), 
+    rdatavars = ROOT.RooArgSet()
+    rdatavars.add(mass)
+    rdatavars.add(pt)
+    rdatavars.add(l1_pt)
+    rdatavars.add(l2_pt)
+    rdatavars.add(dm_phi)
+    rdatavars.add(k1_pt)
+    rdatavars.add(k2_pt)
+    rdatavars.add(l_xy_sig)
+    rdatavars.add(cos2D)
+    rdatavars.add(sv_prob)
+    rdataset =  ROOT.RooDataSet("fitData", "fitData", rdatavars, 
                                 ROOT.RooFit.Import(chain_data), 
                                 ROOT.RooFit.Cut(preselection_cuts)) # 
     rdatahist = ROOT.RooDataHist("fitDataBinned", "fitDataBinned", ROOT.RooArgSet(mass), rdataset)
@@ -129,9 +143,9 @@ def GetSBFractions(chain_data):
     fit_result.Print()
     print("Done with fit.")
 
-    print(BS_MASS)
+    #print(BS_MASS)
     print("sigma = {}".format(ws.var("sigma").getVal()))
-    mass.setRange("sigwin", BS_MASS-0.026, BS_MASS+0.026)
+    mass.setRange("sigwin", ws.var("mean").getVal()-0.015, ws.var("mean").getVal()+0.015)
     sfrac = signal_g.createIntegral(ROOT.RooArgSet(mass), ROOT.RooArgSet(mass), "sigwin")
     sfrac.Print()
     s = sfrac.getVal() * nsignal.getVal()
@@ -157,6 +171,24 @@ def GetSBFractions(chain_data):
     model.plotOn(rplot, ROOT.RooFit.Name("signal"), ROOT.RooFit.Components("signal_model"), ROOT.RooFit.LineColor(ROOT.kGreen+2), ROOT.RooFit.FillColor(ROOT.kGreen+2), ROOT.RooFit.FillStyle(3002), ROOT.RooFit.DrawOption("LF"))
     model.plotOn(rplot, ROOT.RooFit.Name("bkgd_exp"), ROOT.RooFit.Components("bkgd_exp_model"), ROOT.RooFit.LineColor(ROOT.kRed+1))
     rplot.Draw()
+    # Draw lines denoting signal and background windows
+    tline1 = ROOT.TLine(ws.var("mean").getVal() - 0.015, rplot.GetMinimum(), ws.var("mean").getVal() - 0.015, rplot.GetMaximum())
+    tline1.SetLineStyle(3)
+    tline1.SetLineColor(ROOT.kGray)
+    tline1.Draw()
+    tline2 = ROOT.TLine(ws.var("mean").getVal() + 0.015, rplot.GetMinimum(), ws.var("mean").getVal() + 0.015, rplot.GetMaximum())
+    tline2.SetLineStyle(3)
+    tline2.SetLineColor(ROOT.kGray)
+    tline2.Draw()
+
+    tline3 = ROOT.TLine(BS_MASS - 0.05, rplot.GetMinimum(), BS_MASS - 0.05, rplot.GetMaximum())
+    tline3.SetLineStyle(3)
+    tline3.SetLineColor(ROOT.kGray+1)
+    tline3.Draw()
+    tline4 = ROOT.TLine(BS_MASS + 0.05, rplot.GetMinimum(), BS_MASS + 0.05, rplot.GetMaximum())
+    tline4.SetLineStyle(3)
+    tline4.SetLineColor(ROOT.kGray+1)
+    tline4.Draw()
     c_fit.SaveAs("/home/dryu/BFrag/data/optimization/figures/{}.pdf".format(c_fit.GetName()))
 
     return s, b
@@ -179,7 +211,7 @@ def RunMethodCuts(chain_data, chain_mc):
     #        base_cuts += f" && ({var} > {var_cutranges[var][0]})"
     #    base_cuts += f" && ({var} < {var_cutranges[var][1]})"
 
-    dataloader.PrepareTrainingAndTestTree(ROOT.TCut(f"{base_cuts}"), ROOT.TCut(f"{base_cuts} && (TMath::Abs(mass - {BS_MASS}) > 0.1)"), "nTrain_Signal=0:nTrain_Background=20000")
+    dataloader.PrepareTrainingAndTestTree(ROOT.TCut(f"{base_cuts}"), ROOT.TCut(f"{base_cuts} && (TMath::Abs(mass - {BS_MASS}) > 0.05)"), "nTrain_Signal=0:nTrain_Background=20000")
 
     # Specify direction and range of cuts
     opt_list = []
@@ -187,7 +219,7 @@ def RunMethodCuts(chain_data, chain_mc):
     for ivar, var in enumerate(training_vars):
         opt_list.append(f"VarProp[{ivar}]={varprops[var]}")
         if var in var_cutranges:
-            opt_list.append(f"CutRangeMin[{ivar}]={var_cutranges[var][0]}")
+            opt_list.append(f"CutRangeMin[{ivar}]={var_cutranges[var][1]}")
             opt_list.append(f"CutRangeMax[{ivar}]={var_cutranges[var][1]}")
     opt_str = ":".join(opt_list)
     print(opt_str)
@@ -197,6 +229,53 @@ def RunMethodCuts(chain_data, chain_mc):
     factory.EvaluateAllMethods()
 
     tmva_file.Close()
+
+def KinematicPlots(chain_data, chain_mc):
+    print("KinematicPlots")
+    canvases = {}
+    hist_signal = {}
+    hist_bkgd = {}
+    for var in training_vars + ["l1_pt", "l2_pt"]:
+        canvases[var] = ROOT.TCanvas(f"c_{var}", f"c_{var}", 800, 600)
+        hist_signal[var] = ROOT.TH1D(f"h_signal_{var}", f"h_signal_{var}", bins[var][0], bins[var][1], bins[var][2])
+        hist_bkgd[var] = ROOT.TH1D(f"h_bkgd_{var}", f"h_bkgd_{var}", bins[var][0], bins[var][1], bins[var][2])
+
+        print("Preselection cuts:")
+        print(preselection_cuts)
+        chain_mc.Draw(f"{var} >> h_signal_{var}", preselection_cuts)
+        chain_data.Draw(f"{var} >> h_bkgd_{var}", f"{preselection_cuts} && (TMath::Abs(mass - {BS_MASS}) > 0.05)")
+
+        if hist_signal[var].Integral() > 0:
+            hist_signal[var].Scale(1. / hist_signal[var].Integral())
+        if hist_bkgd[var].Integral() > 0:
+            hist_bkgd[var].Scale(1. / hist_bkgd[var].Integral())
+
+        frame = ROOT.TH1D("frame", "frame", bins[var][0], bins[var][1], bins[var][2])
+        frame.SetMaximum(1.2 * max(hist_signal[var].GetMaximum(), hist_bkgd[var].GetMaximum()))
+        frame.GetXaxis().SetTitle(xlabels[var])
+        frame.Draw()
+
+        hist_signal[var].SetLineStyle(1)
+        hist_signal[var].SetLineColor(ROOT.kGreen+3)
+        hist_signal[var].SetLineWidth(2)
+        hist_signal[var].Draw("hist same")
+
+        hist_signal[var].SetLineStyle(2)
+        hist_signal[var].SetLineColor(ROOT.kRed+1)
+        hist_signal[var].SetLineWidth(2)
+        hist_bkgd[var].Draw("hist same")
+
+        legend = ROOT.TLegend(0.7, 0.7, 0.88, 0.8)
+        legend.SetFillStyle(0)
+        legend.SetFillColor(0)
+        legend.SetBorderSize(0)
+        legend.AddEntry(hist_signal[var], "Signal", "l")
+        legend.AddEntry(hist_bkgd[var], "Background", "l")
+        legend.Draw()
+
+        canvases[var].SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{canvases[var].GetName()}.pdf")
+        canvases[var].SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{canvases[var].GetName()}.png")
+
 
 def ComputeSignificance():
     print("ComputeSignificance")
@@ -222,7 +301,7 @@ def ComputeSignificance():
         eff_b = hist_roc.GetBinContent(bin)
         signif = s * eff_s / math.sqrt(s * eff_s + b * eff_b)
         #print(f"eff_s = {eff_s}, eff_b = {eff_b}, signif = {signif}")
-        tg_signif.SetPoint(bin-1, eff_s, signif)
+        tg_signif.SetPoint(bin-1, eff_s, signif)        
 
     # Fit with a polynomial
     tmp = FindMaxSmoothed(tg_signif)
@@ -232,14 +311,18 @@ def ComputeSignificance():
 
     # Plot
     c_signif = ROOT.TCanvas("c_signif", "c_signif", 800, 600)
+    tg_signif.GetHistogram().GetXaxis().SetTitle("#epsilon(signal)")
+    tg_signif.GetHistogram().GetYaxis().SetTitle("s/#sqrt{s+b}")
+    tg_signif.GetXaxis().SetTitle("#epsilon(signal)")
+    tg_signif.GetYaxis().SetTitle("s/#sqrt{s+b}")
     tg_signif.Draw("apl")
     fit_signif.SetLineColor(2)
     fit_signif.SetLineWidth(1)
     fit_signif.Draw("same")
     c_signif.SaveAs("/home/dryu/BFrag/data/optimization/figures/{}.pdf".format(c_signif.GetName()))
+    c_signif.SaveAs("/home/dryu/BFrag/data/optimization/figures/{}.png".format(c_signif.GetName()))
 
-    # Print best cuts
-    print("Best cuts:")
+    # Print cuts
     reader = ROOT.TMVA.Reader("!Color:!Silent")
     containers = {}
     for var in training_vars:
@@ -252,18 +335,35 @@ def ComputeSignificance():
     mcuts = reader.FindCutsMVA("cuts")
     cutsMin = ROOT.std.vector("double")()
     cutsMax = ROOT.std.vector("double")()
+
+    # Print a bunch of points
+    for bin in range(1, hist_roc.GetNbinsX()+1):
+        eff_s = hist_roc.GetXaxis().GetBinCenter(bin)
+        eff_b = hist_roc.GetBinContent(bin)
+        signif = s * eff_s / math.sqrt(s * eff_s + b * eff_b)
+        print("\n\neff_s = {}, eff_b = {}, signif = {}".format(eff_s, eff_b, signif))
+        cutsMin.clear()
+        cutsMax.clear()
+        mcuts.GetCuts(eff_s, cutsMin, cutsMax)
+        for i in range(cutsMin.size()):
+            print(f"{training_vars[i]}: {cutsMin[i]} <===> {cutsMax[i]}")
+
+    print("\n\nBest eff_s = {}".format(best_eff_s))
+    cutsMin.clear()
+    cutsMax.clear()
     mcuts.GetCuts(best_eff_s, cutsMin, cutsMax)
     for i in range(cutsMin.size()):
         print(f"{training_vars[i]}: {cutsMin[i]} <===> {cutsMax[i]}")
-    print("eff_s = {}".format(best_eff_s))
 
 # Find the maximum of a TGraph, first fitting with a polynomial to smooth bumps and then choosing the closest point
 def FindMaxSmoothed(graph):
-    fit = ROOT.TF1("fit_poly3", "[0]*(1-x)*(1-x)*(1-x) + [1]*3*x*(1-x)*(1-x) + [2]*3*x*x*(1-x) + [3]*x**3", 0., 1.)
-    fit.SetParameter(0, 0.25)
-    fit.SetParameter(1, 0.25)
-    fit.SetParameter(2, 0.25)
-    fit.SetParameter(3, 0.25)
+    #fit = ROOT.TF1("fit_poly3", "[0]*(1-x)*(1-x)*(1-x) + [1]*3*x*(1-x)*(1-x) + [2]*3*x*x*(1-x) + [3]*x**3", 0., 1.)
+    fit = ROOT.TF1("fit_poly4", "[0]*(1-x)**4 + [1]*4*x*(1-x)**3 + [2]*6*x**2*(1-x)**2 + [3]*4*x**3*(1-x) + [4]*x**4", 0., 1.)
+    fit.SetParameter(0, 0.2)
+    fit.SetParameter(1, 0.2)
+    fit.SetParameter(2, 0.2)
+    fit.SetParameter(3, 0.2)
+    fit.SetParameter(4, 0.2)
     graph.Fit(fit)
 
     xarr = graph.GetX()
@@ -278,6 +378,7 @@ if __name__ == "__main__":
     parser.add_argument("--step1", action="store_true", help="Step 1: extract s and b from data")
     parser.add_argument("--step2", action="store_true", help="Step 2: run TMVA MethodCuts")
     parser.add_argument("--step3", action="store_true", help="Step 3: make significant plot")
+    parser.add_argument("--kinplots", action="store_true", help="Run KinematicPlots")
     parser.add_argument("--all", action="store_true", help="Run the whole thing")
     args = parser.parse_args()
 
@@ -297,3 +398,5 @@ if __name__ == "__main__":
         RunMethodCuts(chain_data, chain_mc)
     if args.step3 or args.all:
         ComputeSignificance()
+    if args.kinplots or args.all:
+        KinematicPlots(chain_data, chain_mc)

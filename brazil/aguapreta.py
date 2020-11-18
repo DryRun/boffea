@@ -32,32 +32,32 @@ BS_KSTAR_VETO_WINDOW = 0.05
 final_cuts = {
 	"Bs": {
 		"sv_pt": 3.0, 
-		"sv_prob": 0.063, 
-		"cos2D": 0.988, 
-		"l_xy_sig": 3.94, 
-		"dm_phi": 0.017, 
-		"k1_pt": 1.16, 
-		"k2_pt": 0.7, 
+		"sv_prob": 0.07, 
+		"cos2D": 0.997, 
+		"l_xy_sig": 4.0, 
+		"dm_phi": 0.01, 
+		"k1_pt": 0.85, 
+		"k2_pt": 0.6, 
 		"l1_pt": 1.5, # Not optimized 
 		"l2_pt": 1.5, # Not optimized
 		"kstar_veto": BS_KSTAR_VETO_WINDOW,
 	}, 
 	"Bu": {
 		"sv_pt": 3.0, 
-		"sv_prob": 0.063, 
-		"cos2D": 0.988, 
-		"l_xy_sig": 3.94, 
-		"k_pt": 1.16,
+		"sv_prob": 0.07, 
+		"cos2D": 0.997, 
+		"l_xy_sig": 4.0, 
+		"k_pt": 0.85,
 		"l1_pt": 1.5, # Not optimized 
 		"l2_pt": 1.5, # Not optimized
 	}, 
 	"Bd": {
 		"sv_pt": 3.0, 
-		"sv_prob": 0.063, 
-		"cos2D": 0.988, 
-		"l_xy_sig": 3.94, 
-		"k1_pt": 1.16, 
-		"k2_pt": 0.7, 
+		"sv_prob": 0.07, 
+		"cos2D": 0.997, 
+		"l_xy_sig": 4.0, 
+		"k1_pt": 0.85, 
+		"k2_pt": 0.6, 
 		"l1_pt": 1.5, # Not optimized 
 		"l2_pt": 1.5, # Not optimized
 		"kstar_window": KSTAR_WINDOW,

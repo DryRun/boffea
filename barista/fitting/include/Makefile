@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------
 
-PROGRAM = RooHypatia2
+PROGRAM = TripleGaussianPdf2
 
-HDRS = RooHypatia2.h
+HDRS = TripleGaussianPdf2.h
 
-OBJS = RooHypatia2.o\
+OBJS = TripleGaussianPdf2.o\
  dict_$(PROGRAM).o
 
 #-----------------------------------------------------------------------------
@@ -53,6 +53,6 @@ dict_$(PROGRAM).cc: $(HDRS)
 
 clean:
 	@rm -f $(OBJS) $(PROGRAM).so dict_*
- 
+
 
 #------------------------------------------------------------------------

@@ -130,6 +130,13 @@ def coffea2roofit(input_files, input_objs, output_file, output_objs=None, combin
             print("Some input files were skipped due to small size:")
             print(bad_input_files)
 
+def _cancel(job):
+    try:
+        # this is not implemented with parsl AppFutures
+        job.cancel()
+    except NotImplementedError:
+        pass
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Add coffea subjobs back together")
@@ -145,6 +152,8 @@ if __name__ == "__main__":
     runparts = [x.split("/")[-2] for x in runpart_dirs]
     cmerge_args = []
     for runpart in runparts:
+        #if not os.path.isdir(f"{args.dir}/{runpart}/add_eff"):
+        #    raise ValueError(f"{args.dir}/{runpart}/add_eff does not exist. Did you run add_efficiency.py first?")
         output_file = f"{args.dir}/{runpart}.coffea"
         input_files = glob.glob(f"{args.dir}/{runpart}/DataHistograms_Run*_part*subjob*.coffea")
         cmerge_args.append([output_file, input_files, args.force])
@@ -168,7 +177,9 @@ if __name__ == "__main__":
             print("Outstanding: {} / {}".format(len(futures_set), njobs))
             print("Time [s]: {}".format(time.time() - start))
             time.sleep(10)
-    except:
+    except Exception:
+        for job in futures_set:
+            _cancel(job)
         raise
 
     print("...done merging coffea subjobs.")

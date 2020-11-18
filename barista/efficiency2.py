@@ -36,7 +36,7 @@ for btype in btypes:
 
 axes = {}
 axes["pt"] = {
-	"probe": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([5., 10., 15., 20., 25., 30.])), 
+	"probe": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([8., 13., 18., 23., 28., 33.])), 
 	"tag": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0]))
 }
 axes["y"] = {
@@ -239,7 +239,7 @@ for var in vars:
 			"Bu": r"$B^{\pm}$",
 			"Bs": r"$B_{s}$"
 		}
-		for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7"]:
+		for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]:
 			fig, ax = plt.subplots(1, 1, figsize=(10,7))
 			for btype in btypes:
 				#pprint(eff[btype][side][trigger_strategy])
@@ -408,3 +408,93 @@ for var in vars:
 		print(f"{figure_directory}/total_eff_trigratio_{side}_{var}.png")
 		plt.tight_layout()
 		fig.savefig(f"{figure_directory}/total_eff_trigratio_{side}_{var}.png")
+
+
+# Trigger comparison
+for var in vars:
+	for side in ["tag", "probe", "probe_total"]:
+		bin_centers = bigh_truth[var]["Bs"][side.replace("probe_total", "probe")].axis(var).centers()
+		xerrs = (bigh_truth[var]["Bs"][side.replace("probe_total", "probe")].axis(var).edges()[1:] - bigh_truth[var]["Bs"][side.replace("probe_total", "probe")].axis(var).edges()[:-1]) / 2
+		colors = {
+			"HLT_Mu7_IP4": "green", 
+			"HLT_Mu9_IP5": "purple", 
+			"HLT_Mu9_IP6": "blue", 
+			"HLT_Mu12_IP6": "red"
+		}
+		labels = {
+			"Bd": r"$B^{0}$", 
+			"Bu": r"$B^{\pm}$",
+			"Bs": r"$B_{s}$"
+		}
+		markers = {
+			"HLT_Mu7_IP4": "o", 
+			"HLT_Mu9_IP5": "s", 
+			"HLT_Mu9_IP6": "D", 
+			"HLT_Mu12_IP6": "P",
+			"HLT_all": "XYZ"
+		}
+		for btype in btypes:
+			fig, ax = plt.subplots(2, 1, figsize=(10,12))
+			for trigger_strategy in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
+				#pprint(eff[btype][side][trigger_strategy])
+				ax[0].errorbar(
+					x=bin_centers, 
+					y=eff[var][btype][side][trigger_strategy], 
+					xerr=xerrs,
+					yerr=deff[var][btype][side][trigger_strategy], 
+					marker=markers[trigger_strategy], 
+					markersize=10.,
+					color=colors[trigger_strategy],
+					label=trigger_strategy,
+					ls="none",
+					ecolor=colors[trigger_strategy],
+					elinewidth=1
+					)
+			if side == "probe_total":
+				ax[0].set_ylim(1.e-6, 5.e-3)
+			elif side == "tag" or side == "probe":
+				ax[0].set_ylim(1.e-5, 0.5)
+			ax[0].set_yscale("log")
+			if var == "pt":
+				ax[0].set_xlim(0., 45.)
+				ax[0].set_xlabel(r"$p_{T}$ [GeV]")
+			elif var == "y":
+				ax[0].set_xlim(0., 2.5)
+				ax[0].set_xlabel(r"$|y|$")
+			ax[0].set_ylabel("Total efficiency")
+			ax[0].xaxis.set_ticks_position("both")
+			ax[0].yaxis.set_ticks_position("both")
+			ax[0].tick_params(direction="in")
+			ax[0].legend()
+
+			# Ratio
+			for trigger_strategy in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
+				ax[1].errorbar(
+						x=bin_centers, 
+						y=eff[var][btype][side][trigger_strategy] / eff[var][btype][side]["HLT_Mu7_IP4"], 
+						xerr=xerrs,
+						#yerr=deff[var][btype][side][trigger_strategy], 
+						marker=markers[trigger_strategy], 
+						markersize=10.,
+						color=colors[trigger_strategy],
+						#label="{}, {}".format(labels[btype]),
+						ls="none",
+						ecolor=colors[trigger_strategy],
+						elinewidth=1
+
+				)
+			ax[1].set_ylim(0., 1.1)
+			ax[1].set_yscale("linear")
+			if var == "pt":
+				ax[1].set_xlim(0., 45.)
+				ax[1].set_xlabel(r"$p_{T}$ [GeV]")
+			elif var == "y":
+				ax[1].set_xlim(0., 2.5)
+				ax[1].set_xlabel(r"$|y|$")
+			ax[1].set_ylabel("Ratio to HLT_Mu7_IP4")
+			ax[1].xaxis.set_ticks_position("both")
+			ax[1].yaxis.set_ticks_position("both")
+			ax[1].tick_params(direction="in")
+
+			print(f"{figure_directory}/eff_trigcompare_{side}_{btype}_{var}.png")
+			fig.savefig(f"{figure_directory}/eff_trigcompare_{side}_{btype}_{var}.png")

@@ -9,18 +9,18 @@ ROOT.gROOT.SetBatch(True)
 
 #ROOT.gROOT.ProcessLine(open('include/TripleGaussian.cc').read())
 #from ROOT import TripleGaussian
-ROOT.gSystem.Load("include/TripleGaussianPdf.so")
-from ROOT import TripleGaussianPdf
+ROOT.gSystem.Load("include/TripleGaussianPdf2.so")
+from ROOT import TripleGaussianPdf2
 
 figure_dir = "/home/dryu/BFrag/data/fits/mc"
 
 import sys
 sys.path.append(".")
 from fit_settings import fit_cuts, cut_strings, fit_text, \
-	BU_FIT_WINDOW, BD_FIT_WINDOW, BS_FIT_WINDOW, \
+	BU_FIT_WINDOW_MC, BD_FIT_WINDOW_MC, BS_FIT_WINDOW_MC, \
 	BU_FIT_NBINS, BD_FIT_NBINS, BS_FIT_NBINS
 
-def plot_mc(tree, mass_range=BU_FIT_WINDOW, cut="", tag=""):
+def plot_mc(tree, mass_range=BU_FIT_WINDOW_MC, cut="", tag=""):
 	h_mc = ROOT.TH1D("h_mc", "h_mc", 100, mass_range[0], mass_range[1])
 	tree.Draw("mass >> h_mc", cut)
 	c = ROOT.TCanvas("c_mc_{}".format(tag), "c_mc_{}".format(tag), 800, 600)
@@ -30,7 +30,7 @@ def plot_mc(tree, mass_range=BU_FIT_WINDOW, cut="", tag=""):
 	c.SaveAs("/home/dryu/BFrag/data/fits/mc/{}.pdf".format(c.GetName()))
 
 
-def fit_mc(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive"):
+def fit_mc(tree, mass_range=BU_FIT_WINDOW_MC, incut="1", cut_name="inclusive", binned=True):
 	ws = ROOT.RooWorkspace('ws')
 
 	cut = f"{incut} && (mass > {mass_range[0]}) && (mass < {mass_range[1]})"
@@ -41,15 +41,23 @@ def fit_mc(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive"):
 	rdataset = ROOT.RooDataSet("fitMC", "fitMC", ROOT.RooArgSet(mass, pt, y), ROOT.RooFit.Import(tree), ROOT.RooFit.Cut(cut))
 	ndata = rdataset.sumEntries()
 
+	# Optional: bin data
+	if binned:
+		mass.setBins(BU_FIT_NBINS)
+		rdatahist = ROOT.RooDataHist("fitMCBinned", "fitMCBinned", ROOT.RooArgSet(mass), rdataset)
+		rdata = rdatahist
+	else:
+		rdata = rdataset
+
 	# Signal: triple Gaussian
 	mean = ws.factory(f"mean[{0.5*(mass_range[0]+mass_range[1])}, {mass_range[0]}, {mass_range[1]}]")
-	sigma1 = ws.factory("sigma1[0.005, 0.0005, 0.25]")
-	sigma2 = ws.factory("sigma2[0.02, 0.0005, 0.25]")
-	sigma3 = ws.factory("sigma3[0.05, 0.0005, 0.25]")
-	aa = ws.factory(f"aa[0.8, 0.65, 1.0]")
-	bb = ws.factory(f"bb[0.8, 0.65, 1.0]")
-	#signal_tg = ws.factory(f"GenericPdf::signal_tg('TripleGaussian(mass, mean, sigma1, sigma2, sigma3, aa, bb)', {{mass, mean, sigma1, sigma2, sigma3, aa, bb}})")
-	signal_tg = TripleGaussianPdf("signal_tg", "signal_tg", mass, mean, sigma1, sigma2, sigma3, aa, bb)
+	sigma1 = ws.factory("sigma1[0.01, 0.0005, 0.2]")
+	sigma2 = ws.factory("sigma2[0.02, 0.0005, 0.2]")
+	sigma3 = ws.factory("sigma3[0.05, 0.0005, 0.2]")
+	ccore = ws.factory(f"ccore[0.8, 0.001, 1.0]")
+	ctail = ws.factory(f"ctail[0.05, 0.0001, 0.4]")
+	#signal_tg = ws.factory(f"GenericPdf::signal_tg('TripleGaussian(mass, mean, sigma1, sigma2, sigma3, ccore, ctail)', {{mass, mean, sigma1, sigma2, sigma3, ccore, ctail}})")
+	signal_tg = TripleGaussianPdf2("signal_tg", "signal_tg", mass, mean, sigma1, sigma2, sigma3, ccore, ctail)
 	getattr(ws, "import")(signal_tg, ROOT.RooFit.RecycleConflictNodes())
 	nsignal = ws.factory(f"nsignal[{ndata*0.5}, 0.0, {ndata*2.0}]")
 	signal_model = ROOT.RooExtendPdf("signal_model", "signal_model", signal_tg, nsignal)
@@ -57,26 +65,33 @@ def fit_mc(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive"):
 	model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(signal_model))
 
 	# Perform fit
-	##nll = model.createNLL(rdataset, ROOT.RooFit.NumCPU(8))
+	##nll = model.createNLL(rdata, ROOT.RooFit.NumCPU(8))
 	#minimizer = ROOT.RooMinuit(nll)
 	#minimizer.migrad()
 	#minimizer.minos()
-	fit_result = model.fitTo(rdataset, ROOT.RooFit.NumCPU(8), ROOT.RooFit.Save())
+	fit_result = model.fitTo(rdata, ROOT.RooFit.NumCPU(8), ROOT.RooFit.Save())
+	fit_result.Print()
 
 	# Generate return info
 	#fit_result = minimizer.save()
 
 	# Add everything to the workspace
-	getattr(ws, "import")(rdataset)
+	getattr(ws, "import")(rdata)
+	if binned:
+		getattr(ws, "import")(rdataset)
 	getattr(ws, "import")(model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def plot_fit(ws, tag="", text=None):
+def plot_fit(ws, tag="", text=None, binned=False):
 	ROOT.gStyle.SetOptStat(0)
 	ROOT.gStyle.SetOptTitle(0)
 
 	model = ws.pdf("model")
-	rdataset = ws.data("fitMC")
+	#rdata = ws.data("fitMC")
+	if binned:
+		rdata = ws.data("fitMCBinned")
+	else:
+		rdata = ws.data("fitMC")
 	xvar = ws.var("mass")
 
 	canvas = ROOT.TCanvas("c_mcfit_{}".format(tag), "c_mcfit_{}".format(tag), 800, 800)
@@ -88,7 +103,7 @@ def plot_fit(ws, tag="", text=None):
 	top.SetLogy()
 
 	rplot = xvar.frame(ROOT.RooFit.Bins(100))
-	rdataset.plotOn(rplot, ROOT.RooFit.Name("data"))
+	rdata.plotOn(rplot, ROOT.RooFit.Name("data"))
 	model.plotOn(rplot, ROOT.RooFit.Name("fit"))
 	model.plotOn(rplot, ROOT.RooFit.Name("signal"), ROOT.RooFit.Components("signal_model"), ROOT.RooFit.LineColor(ROOT.kGreen+2), ROOT.RooFit.FillColor(ROOT.kGreen+2), ROOT.RooFit.FillStyle(3002), ROOT.RooFit.DrawOption("LF"))
 	rplot.GetXaxis().SetTitleSize(0)
@@ -117,8 +132,8 @@ def plot_fit(ws, tag="", text=None):
 	bottom.Draw()
 	bottom.cd()
 
-	binning = ROOT.RooBinning(100, BU_FIT_WINDOW[0], BU_FIT_WINDOW[1])
-	data_hist = ROOT.RooAbsData.createHistogram(rdataset, "data_hist", xvar, ROOT.RooFit.Binning(binning))
+	binning = ROOT.RooBinning(100, BU_FIT_WINDOW_MC[0], BU_FIT_WINDOW_MC[1])
+	data_hist = ROOT.RooAbsData.createHistogram(rdata, "data_hist", xvar, ROOT.RooFit.Binning(binning))
 	fit_binned = model.generateBinned(ROOT.RooArgSet(xvar), 0, True)
 	fit_hist = fit_binned.createHistogram("model_hist", xvar, ROOT.RooFit.Binning(binning))
 	pull_hist = data_hist.Clone()
@@ -146,7 +161,7 @@ def plot_fit(ws, tag="", text=None):
 	pull_hist.SetMaximum(5.)
 	pull_hist.Draw("p")
 
-	zero = ROOT.TLine(BU_FIT_WINDOW[0], 0., BU_FIT_WINDOW[1], 0.)
+	zero = ROOT.TLine(BU_FIT_WINDOW_MC[0], 0., BU_FIT_WINDOW_MC[1], 0.)
 	zero.SetLineColor(ROOT.kGray)
 	zero.SetLineStyle(3)
 	zero.SetLineWidth(2)
@@ -199,16 +214,21 @@ if __name__ == "__main__":
 			chain.Add(mc_file)
 
 		for cut_name in cuts:
+			print("\n*** Fitting {} ***".format(cut_name))
 			cut_str = cut_strings[cut_name]
-			plot_mc(chain, cut=cut_str, tag="Bu_{}".format(cut_name))
+			#plot_mc(chain, cut=cut_str, tag="Bu_{}".format(cut_name))
 
 			ws, fit_result = fit_mc(chain, incut=cut_str, cut_name=cut_name)
 			ws.Print()
+			print("DEBUG : fit result = ")
 			fit_result.Print()
+			print("DEBUG : writing to " + "Bu/fitws_mc_Bu_{}.root".format(cut_name))
 			ws_file = ROOT.TFile("Bu/fitws_mc_Bu_{}.root".format(cut_name), "RECREATE")
 			ws.Write()
 			fit_result.Write()
 			ws_file.Close()
+
+			print("\nDone fitting {}\n".format(cut_name))
 
 	if args.plots:
 		for cut_name in cuts:
@@ -240,11 +260,17 @@ if __name__ == "__main__":
 			ws_file = ROOT.TFile("Bu/fitws_mc_Bu_{}.root".format(cut_name), "READ")
 			#ws = ws_file.Get("ws")
 			#ws.Print()
-			fit_result = ws_file.Get("fitresult_model_fitMC")
+			fit_result = ws_file.Get("fitresult_model_fitMCBinned")
+			if not fit_result:
+				print("WARNING : Didn't find fit result for {}".format(cut_name))
 			this_final_params = fit_result.floatParsFinal()
+			if cut_name == "ptbin_23p0_26p0":
+				print("DEBUG : Loading fit parameters for ptbin_23p0_26p0")
+				fit_result.Print()
+				this_final_params.Print()
 			covm = fit_result.covarianceMatrix()
-			iaa = -1
-			ibb = -1
+			iccore = -1
+			ictail = -1
 			for i in range(this_final_params.getSize()):
 				parname = this_final_params[i].GetName()
 				if not parname in parnames:
@@ -252,39 +278,42 @@ if __name__ == "__main__":
 				final_params[cut_name][parname] = this_final_params[i].getVal()
 				final_errors[cut_name][parname] = this_final_params[i].getError()
 
-				# Keep track of aa and bb indices
-				if parname == "aa":
-					iaa = i
-				elif parname == "bb":
-					ibb = i
-			aa = final_params[cut_name]["aa"]
-			daa = final_errors[cut_name]["aa"]
-			bb = final_params[cut_name]["bb"]
-			dbb = final_errors[cut_name]["bb"]
-			c1 = aa * max(aa, bb) / (aa + bb)
-			c2 = bb * max(aa, bb) / (aa + bb)
-			if aa > bb:
-				# c1 = aa**2 / (aa + bb)
-				# c2 = aa * bb / (aa + bb)
-				dc1_daa = (((aa + bb) * 2 * aa) - (aa**2)) / (aa + bb)**2
-				dc1_dbb = -1. * aa**2 / (aa + bb)**2
-				dc2_daa = (((aa + bb) * bb) - (aa * bb)) / (aa + bb)**2
-				dc2_dbb = (((aa + bb) * aa) - (aa * bb)) / (aa + bb)**2
+				# Keep track of ccore and ctail indices
+				if parname == "ccore":
+					iccore = i
+				elif parname == "ctail":
+					ictail = i
+			'''
+			# Old stuff for the triangular triple gaussian parametrization
+			ccore = final_params[cut_name]["ccore"]
+			dccore = final_errors[cut_name]["ccore"]
+			ctail = final_params[cut_name]["ctail"]
+			dctail = final_errors[cut_name]["ctail"]
+			c1 = ccore * max(ccore, ctail) / (ccore + ctail)
+			c2 = ctail * max(ccore, ctail) / (ccore + ctail)
+			if ccore > ctail:
+				# c1 = ccore**2 / (ccore + ctail)
+				# c2 = ccore * ctail / (ccore + ctail)
+				dc1_dccore = (((ccore + ctail) * 2 * ccore) - (ccore**2)) / (ccore + ctail)**2
+				dc1_dctail = -1. * ccore**2 / (ccore + ctail)**2
+				dc2_dccore = (((ccore + ctail) * ctail) - (ccore * ctail)) / (ccore + ctail)**2
+				dc2_dctail = (((ccore + ctail) * ccore) - (ccore * ctail)) / (ccore + ctail)**2
 			else:
-				# c1 = aa * bb / (aa + bb)
-				# c2 = bb**2 / (aa + bb)
-				dc1_daa = (((aa + bb) * bb) - (aa * bb)) / (aa + bb)**2
-				dc1_dbb = (((aa + bb) * aa) - (aa * bb)) / (aa + bb)**2
-				dc2_daa = -1. * bb**2 / (aa + bb)**2
-				dc2_dbb = (((aa + bb) * 2 * bb) - (bb**2)) / (aa + bb)**2
-			cov_aa_bb = covm[iaa][ibb]
-			dc1 = math.sqrt(max(0., (dc1_daa * daa)**2 + (dc1_dbb * dbb)**2 + 2 * dc1_daa * dc1_dbb * cov_aa_bb))
-			dc2 = math.sqrt(max(0., (dc2_daa * daa)**2 + (dc2_dbb * dbb)**2 + 2 * dc2_daa * dc2_dbb * cov_aa_bb))
+				# c1 = ccore * ctail / (ccore + ctail)
+				# c2 = ctail**2 / (ccore + ctail)
+				dc1_dccore = (((ccore + ctail) * ctail) - (ccore * ctail)) / (ccore + ctail)**2
+				dc1_dctail = (((ccore + ctail) * ccore) - (ccore * ctail)) / (ccore + ctail)**2
+				dc2_dccore = -1. * ctail**2 / (ccore + ctail)**2
+				dc2_dctail = (((ccore + ctail) * 2 * ctail) - (ctail**2)) / (ccore + ctail)**2
+			cov_ccore_ctail = covm[iccore][ictail]
+			dc1 = math.sqrt(max(0., (dc1_dccore * dccore)**2 + (dc1_dctail * dctail)**2 + 2 * dc1_dccore * dc1_dctail * cov_ccore_ctail))
+			dc2 = math.sqrt(max(0., (dc2_dccore * dccore)**2 + (dc2_dctail * dctail)**2 + 2 * dc2_dccore * dc2_dctail * cov_ccore_ctail))
 
 			final_params[cut_name]["c1"] = c1
 			final_params[cut_name]["c2"] = c2
 			final_errors[cut_name]["c1"] = dc1
 			final_errors[cut_name]["c2"] = dc2
+			'''
 
 		'''
 		for parname in parnames:
@@ -297,6 +326,7 @@ if __name__ == "__main__":
 			pargraph.Fit(constant, "R0")
 			pargraph.Print("all")
 		'''
+		print("Printing parameters and errors:")
 		pprint(final_params)
 		pprint(final_errors)
 		if args.all:

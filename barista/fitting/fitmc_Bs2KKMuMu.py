@@ -9,8 +9,8 @@ ROOT.gROOT.SetBatch(True)
 
 #ROOT.gROOT.ProcessLine(open('include/TripleGaussian.cc').read())
 #from ROOT import TripleGaussian
-ROOT.gSystem.Load("include/TripleGaussianPdf.so")
-from ROOT import TripleGaussianPdf
+ROOT.gSystem.Load("include/TripleGaussianPdf2.so")
+from ROOT import TripleGaussianPdf2
 
 figure_dir = "/home/dryu/BFrag/data/fits/mc"
 
@@ -46,10 +46,14 @@ def plot_mc(tree, mass_range=BS_FIT_WINDOW, cut="", tag=""):
 	c.SaveAs("/home/dryu/BFrag/data/fits/mc/{}.pdf".format(c.GetName()))
 
 
-def fit_mc(tree, mass_range=BS_FIT_WINDOW, incut="1"):
+def fit_mc(tree, mass_range=BS_FIT_WINDOW, incut="1", tag=""):
+	print(incut)
 	ws = ROOT.RooWorkspace('ws')
 
 	cut = f"{incut} && (mass > {mass_range[0]}) && (mass < {mass_range[1]})"
+	if tag == "ptbin_11p0_12p0":
+		print("Tweaking")
+		cut += " && (mass < 5.5)"
 	# Turn tree into RooDataSet
 	mass = ws.factory(f"mass[{(mass_range[0]+mass_range[1])/2}, {mass_range[0]}, {mass_range[1]}]")
 	pt = ws.factory(f"pt[10.0, 0.0, 200.0]")
@@ -59,18 +63,27 @@ def fit_mc(tree, mass_range=BS_FIT_WINDOW, incut="1"):
 
 	# Signal: triple Gaussian
 	mean = ws.factory(f"mean[{0.5*(mass_range[0]+mass_range[1])}, {mass_range[0]}, {mass_range[1]}]")
-	sigma1 = ws.factory("sigma1[0.005, 0.0005, 1.0]")
-	sigma2 = ws.factory("sigma2[0.02, 0.0005, 1.0]")
-	sigma3 = ws.factory("sigma3[0.05, 0.0005, 1.0]")
-	aa = ws.factory(f"aa[0.6, 0.001, 1.0]")
-	bb = ws.factory(f"bb[0.6, 0.001, 1.0]")
+	sigma1 = ws.factory("sigma1[0.005, 0.004, 0.25]")
+	sigma2 = ws.factory("sigma2[0.02, 0.004, 0.25]")
+	sigma3 = ws.factory("sigma3[0.05, 0.004, 0.25]")
+	aa = ws.factory(f"aa[0.5, 0.001, 1.0]")
+	bb = ws.factory(f"bb[0.5, 0.001, 1.0]")
 	#signal_tg = ws.factory(f"GenericPdf::signal_tg('TripleGaussian(mass, mean, sigma1, sigma2, sigma3, aa, bb)', {{mass, mean, sigma1, sigma2, sigma3, aa, bb}})")
-	signal_tg = TripleGaussianPdf("signal_tg", "signal_tg", mass, mean, sigma1, sigma2, sigma3, aa, bb)
+	signal_tg = TripleGaussianPdf2("signal_tg", "signal_tg", mass, mean, sigma1, sigma2, sigma3, aa, bb)
 	getattr(ws, "import")(signal_tg, ROOT.RooFit.RecycleConflictNodes())
 	nsignal = ws.factory(f"nsignal[{ndata*0.5}, 0.0, {ndata*2.0}]")
 	signal_model = ROOT.RooExtendPdf("signal_model", "signal_model", signal_tg, nsignal)
 
 	model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(signal_model))
+
+	# Tweaks for convergence
+	if tag == "ptbin_11p0_12p0":
+		pass
+		#sigma1.setMax(0.1)
+		#sigma2.setMax(0.1)
+		#sigma3.setMax(0.1)
+		#aa.setMax(0.76)
+		#bb.setMax(0.9)
 
 	# Perform fit
 	##nll = model.createNLL(rdataset, ROOT.RooFit.NumCPU(8))
@@ -221,7 +234,7 @@ if __name__ == "__main__":
 			cut_str = cut_strings[cut_name]
 			plot_mc(chain, cut=cut_str, tag="Bs_{}".format(cut_name))
 
-			ws, fit_result = fit_mc(chain, incut=cut_str)
+			ws, fit_result = fit_mc(chain, incut=cut_str, tag=cut_name)
 			ws.Print()
 			fit_result.Print()
 			ws_file = ROOT.TFile("Bs/fitws_mc_Bs_{}.root".format(cut_name), "RECREATE")
