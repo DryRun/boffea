@@ -19,7 +19,7 @@ sys.path.append(".")
 from fit_settings import fit_cuts, cut_strings, fit_text, \
 	BU_FIT_WINDOW_MC, BD_FIT_WINDOW_MC, BS_FIT_WINDOW_MC, \
 	BU_FIT_NBINS, BD_FIT_NBINS, BS_FIT_NBINS, \
-	MakeHypatia2
+	MakeSymHypatia
 rcache = []
 
 
@@ -42,10 +42,12 @@ def fit_mc(tree, mass_range=BU_FIT_WINDOW_MC, incut="1", cut_name="inclusive", b
 		re_match = re_ptcut.search(incut)
 		ptmin = float(re_match.group("ptmin"))
 		ptmax = float(re_match.group("ptmax"))
-		if ptmax - ptmin < 5.0:
-			extra_pt = 5.0 - (ptmax - ptmin)
+		if ptmax - ptmin < 7.5:
+			extra_pt = 7.5 - (ptmax - ptmin)
 			incut = incut.replace("pt > {}".format(ptmin), "pt > {}".format(ptmin - extra_pt / 2.))
 			incut = incut.replace("pt < {}".format(ptmax), "pt < {}".format(ptmax + extra_pt / 2.))
+	if cut_name == "ybin_1p5_1p75" or cut_name == "ybin_1p75_2p0":
+		mass_range = [5.15, 5.4]
 	cut = f"{incut} && (mass > {mass_range[0]}) && (mass < {mass_range[1]})"
 
 	# Turn tree into RooDataSet
@@ -64,7 +66,7 @@ def fit_mc(tree, mass_range=BU_FIT_WINDOW_MC, incut="1", cut_name="inclusive", b
 		rdata = rdataset
 
 	# Signal: Hypatia function
-	signal_hyp = MakeHypatia2(ws, mass_range, rcache=rcache)
+	signal_hyp = MakeSymHypatia(ws, mass_range, rcache=rcache)
 	getattr(ws, "import")(signal_hyp, ROOT.RooFit.RecycleConflictNodes())
 	nsignal = ws.factory(f"nsignal[{ndata*0.5}, 0.0, {ndata*2.0}]")
 	signal_model = ROOT.RooExtendPdf("signal_model", "signal_model", signal_hyp, nsignal)
@@ -72,42 +74,148 @@ def fit_mc(tree, mass_range=BU_FIT_WINDOW_MC, incut="1", cut_name="inclusive", b
 	model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(signal_model))
 
 	# Tweaks
+	if cut_name == "ptbin_12p0_13p0":
+		ws.var('hyp_a').setVal(3.386815155802858)
+		ws.var('hyp_lambda').setVal(-1.2691101086204366)
+		ws.var('hyp_mu').setVal(5.2802650937726)
+		ws.var('hyp_n').setVal(1.1901921443686263)
+		ws.var('hyp_sigma').setVal(0.02837524828019758)
+	elif cut_name == "ptbin_14p0_15p0":
+		ws.var('hyp_a').setVal(3.5673340893868404)
+		ws.var('hyp_lambda').setVal(-1.2573374473317394)
+		ws.var('hyp_mu').setVal(5.280025979857378)
+		ws.var('hyp_n').setVal(1.1193611497398772)
+		ws.var('hyp_sigma').setVal(0.026958320399402953)
+	elif cut_name == "ybin_0p75_1p0" or cut_name == "ybin_0p25_0p5":
+		ws.var('hyp_a').setVal(3.56325251653428)
+		ws.var('hyp_lambda').setVal(-1.5860776603929185)
+		ws.var('hyp_mu').setVal(5.279740259834927)
+		ws.var('hyp_n').setVal(0.5000020086296986)
+		ws.var('hyp_sigma').setVal(0.03665061887058412)
+	elif cut_name == "ybin_1p5_1p75":
+		ws.var('hyp_a').setMin(2.0)
+		ws.var('hyp_a').setVal(3.650591372779841)
+		ws.var('hyp_lambda').setVal(-2.053138446173822)
+		ws.var('hyp_mu').setVal(5.277492617451097)
+		ws.var('hyp_n').setVal(2)
+		ws.var('hyp_sigma').setVal(0.050863683221835154)
+	elif cut_name == "ybin_1p5_1p75":
+		ws.var('hyp_a').setMin(2.0)
+		ws.var('hyp_a').setVal(2.5)
+		ws.var('hyp_lambda').setVal(-2.053138446173822)
+		ws.var('hyp_mu').setVal(5.277492617451097)
+		ws.var('hyp_n').setVal(3.0)
+		ws.var('hyp_sigma').setVal(0.050863683221835154)
+	elif cut_name == "ybin_1p75_2p0":
+		ws.var('hyp_sigma').setVal(0.06)
+
+	'''
 	if cut_name == "ptbin_8p0_13p0":
 		ws.var('hyp_a').setVal(7.275745654055582)
+		#ws.var('hyp_a2').setVal(7.275745654055582)		
 		ws.var('hyp_lambda').setVal(-1.0067107376670137)
 		ws.var('hyp_mu').setVal(5.279661966888891)
 		ws.var('hyp_n').setVal(8.265412496047785)
+		#ws.var('hyp_n2').setVal(8.265412496047785)		
 		ws.var('hyp_sigma').setVal(0.025528613146354573)
-	elif cut_name == "ptbin_15p0_16p0":
-		ws.var('hyp_a').setVal(62.110822807767384)
+	elif cut_name == "ptbin_11p0_12p0" or cut_name == "ptbin_10p0_11p0" or cut_name == "ptbin_12p0_13p0" or cut_name == "inclusive":
+		ws.var('hyp_a').setVal(6.641113571220526)
+		#ws.var('hyp_a2').setVal(6.641113571220526)		
+		ws.var('hyp_lambda').setVal(-1.1427511878656773)
+		ws.var('hyp_mu').setVal(5.280033853167267)
+		ws.var('hyp_n').setVal(0.500380069381496)
+		#ws.var('hyp_n2').setVal(0.500380069381496)		
+		ws.var('hyp_sigma').setVal(0.027263835445174116)
+	elif cut_name == "ptbin_13p0_14p0": 
+		ws.var('hyp_a').setVal(4.098838030245997)
+		#ws.var('hyp_a2').setVal(84.02652476227416)
+		ws.var('hyp_lambda').setVal(-1.2600957756675726)
+		ws.var('hyp_mu').setVal(5.2801108553608795)
+		ws.var('hyp_n').setVal(0.500018322140428)
+		#ws.var('hyp_n2').setVal(0.735157026018763)
+		ws.var('hyp_sigma').setVal(0.026695544175453105)
+		ws.var('nsignal').setVal(9097.021260376974)
+	elif cut_name == "ptbin_15p0_16p0" or cut_name == "ptbin_13p0_18p0":
+		ws.var('hyp_a').setVal(5)
+		#ws.var('hyp_a2').setVal(5)		
 		ws.var('hyp_lambda').setVal(-1.2472323943707782)
 		ws.var('hyp_mu').setVal(5.280327479922378)
 		ws.var('hyp_n').setVal(7.375310140389502e-07)
+		#ws.var('hyp_n2').setVal(7.375310140389502e-07)		
 		ws.var('hyp_sigma').setVal(0.026784749158424062)
 		ws.var('nsignal').setVal(3761.96071872678)
 	elif cut_name == "ptbin_18p0_23p0" \
 		or cut_name == "ptbin_18p0_20p0" \
 		or cut_name == "ptbin_16p0_18p0":
-		ws.var('hyp_a').setVal(9.635504664390693)
+		ws.var('hyp_a').setVal(5)
+		#ws.var('hyp_a2').setVal(5)		
 		ws.var('hyp_lambda').setVal(-1.1403319564083407)
 		ws.var('hyp_mu').setVal(5.279257602044328)
 		ws.var('hyp_n').setVal(5.606733613136833)
+		#ws.var('hyp_n2').setVal(5.606733613136833)		
 		ws.var('hyp_sigma').setVal(0.024140061131064254)
+	elif cut_name == "ptbin_23p0_28p0" or cut_name == "ptbin_26p0_29p0":
+		ws.var('hyp_a').setVal(5)
+		#ws.var('hyp_a2').setVal(5)		
+		ws.var('hyp_lambda').setVal(-1.1403319564083407)
+		ws.var('hyp_mu').setVal(5.279257602044328)
+		ws.var('hyp_n').setVal(5.606733613136833)
+		#ws.var('hyp_n2').setVal(5.606733613136833)		
+		ws.var('hyp_sigma').setVal(0.024140061131064254)
+	elif cut_name == "ptbin_29p0_34p0" or cut_name == "ptbin_34p0_45p0":
+		ws.var('hyp_a').setVal(1.5000038914473408)
+		#ws.var('hyp_a2').setVal(1.5000038914473408)		
+		ws.var('hyp_lambda').setVal(-1.5069293094758294)
+		ws.var('hyp_mu').setVal(5.279348036994916)
+		ws.var('hyp_n').setVal(3.3435488374681617)
+		#ws.var('hyp_n2').setVal(3.3435488374681617)		
+		ws.var('hyp_sigma').setVal(0.02934758343510314)
+
+	elif cut_name == "ybin_0p0_0p25":
+		ws.var("hyp_a").setVal(1.5000189727317448)
+		ws.var("hyp_a").setMin(1.3)
+		ws.var("hyp_lambda").setVal(-2.701193266084048)
+		ws.var("hyp_mu").setVal(5.279697621492577)
+		ws.var("hyp_n").setVal(1.7375285014517434)
+		ws.var("hyp_sigma").setVal(0.02800542858363888)
+		ws.var("nsignal").setVal(4874)
+	elif cut_name == "ybin_0p25_0p5":
+		ws.var('hyp_a').setVal(1.8562932288678495)
+		#ws.var('hyp_a2').setVal(1.8562932288678495)		
+		ws.var('hyp_lambda').setVal(-2.148967160060706)
+		ws.var('hyp_mu').setVal(5.279306716727721)
+		ws.var('hyp_n').setVal(1.77367683473856)
+		#ws.var('hyp_n2').setVal(1.77367683473856)		
+		ws.var('hyp_sigma').setVal(0.031176524193378317)
+		ws.var('nsignal').setVal(4713.016784980348)
+	elif cut_name == "ybin_0p75_1p0":
+		ws.var('hyp_a').setVal(22.279724510193837)
+		#ws.var('hyp_a2').setVal(10.946535752800338)
+		ws.var('hyp_lambda').setVal(-1.625582749494109)
+		ws.var('hyp_mu').setVal(5.279301558989023)
+		ws.var('hyp_n').setVal(2.790682028946305)
+		#ws.var('hyp_n2').setVal(2.6397502195924134)
+		ws.var('hyp_sigma').setVal(0.026193245865654385)
+
 	elif cut_name == "ybin_1p25_1p5":
-		ws.var('hyp_a').setVal(40.92480088013374)
+		ws.var('hyp_a').setVal(5)
+		#ws.var('hyp_a2').setVal(5)		
 		ws.var('hyp_lambda').setVal(-1.468838761142754)
 		ws.var('hyp_mu').setVal(5.279297279329609)
 		ws.var('hyp_n').setVal(0.6721768715035447)
+		#ws.var('hyp_n2').setVal(0.6721768715035447)		
 		ws.var('hyp_sigma').setVal(0.04327205409255316)
-
 	elif cut_name == "ybin_1p75_2p0":
 		ws.var('hyp_a').setVal(3.0569513567559827)
+		#ws.var('hyp_a2').setVal(3.0569513567559827)		
 		ws.var('hyp_lambda').setVal(-1.4835065290891034)
 		ws.var('hyp_mu').setVal(5.276668272043223)
 		ws.var('hyp_n').setVal(1.5467417558961083)
+		#ws.var('hyp_n2').setVal(1.5467417558961083)		
 		ws.var('hyp_n').setMin(1.0)
+		#ws.var('hyp_n2').setMin(1.0)
 		ws.var('hyp_sigma').setVal(0.058803608523859206)
-
+	'''
 
 	# Perform fit
 	##nll = model.createNLL(rdata, ROOT.RooFit.NumCPU(8))
@@ -127,7 +235,7 @@ def fit_mc(tree, mass_range=BU_FIT_WINDOW_MC, incut="1", cut_name="inclusive", b
 	getattr(ws, "import")(model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def plot_fit(ws, tag="", text=None, binned=False):
+def plot_fit(ws, fit_result, tag="", text=None, binned=False):
 	ROOT.gStyle.SetOptStat(0)
 	ROOT.gStyle.SetOptTitle(0)
 
@@ -184,7 +292,7 @@ def plot_fit(ws, tag="", text=None, binned=False):
 	pull_hist = data_hist.Clone()
 	pull_hist.Reset()
 	chi2 = 0.
-	ndf = -7
+	ndf = -5
 	for xbin in range(1, pull_hist.GetNbinsX()+1):
 		data_val = data_hist.GetBinContent(xbin)
 		fit_val = fit_hist.GetBinContent(xbin)
@@ -275,12 +383,17 @@ if __name__ == "__main__":
 
 			print("\nDone fitting {}\n".format(cut_name))
 
+			# Clear cache
+			del ws
+			rcache = []
+
 	if args.plots:
 		for cut_name in cuts:
 			ws_file = ROOT.TFile("Bu/fitws_hyp_mc_Bu_{}.root".format(cut_name), "READ")
 			#ws_file.ls()
 			ws = ws_file.Get("ws")
-			plot_fit(ws, tag="Bu_hyp_{}".format(cut_name), text=fit_text[cut_name])
+			fit_result = ws_file.Get("fitresult_model_fitMC")
+			plot_fit(ws, fit_result, tag="Bu_hyp_{}".format(cut_name), text=fit_text[cut_name])
 
 	if args.tables:
 		print("\n\n*** Printing tables ***\n")
@@ -321,7 +434,7 @@ if __name__ == "__main__":
 				final_params[cut_name][parname] = this_final_params[i].getVal()
 				final_errors[cut_name][parname] = this_final_params[i].getError()
 		print("Printing parameters and errors:")
-		for cut_name in cuts:
+		for cut_name in sorted(cuts):
 			for parname in final_params[cut_name]:
 				print(f"{cut_name} \t {parname} = {final_params[cut_name][parname]} +/- {final_errors[cut_name][parname]}")
 		#pprint(final_params)

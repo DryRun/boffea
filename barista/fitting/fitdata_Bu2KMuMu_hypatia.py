@@ -29,7 +29,7 @@ sys.path.append(".")
 from fit_settings import fit_cuts, cut_strings, fit_text, \
 	BU_FIT_WINDOW, BD_FIT_WINDOW, BS_FIT_WINDOW, \
 	BU_FIT_NBINS, BD_FIT_NBINS, BS_FIT_NBINS, \
-	MakeSymHypatia
+	MakeHypatia
 
 # Enums for PDFs
 from enum import Enum
@@ -57,7 +57,7 @@ def plot_data(tree, mass_range=BU_FIT_WINDOW, cut="", tag=""):
 	c.SaveAs("/home/dryu/BFrag/data/fits/data/{}.pdf".format(c.GetName()))
 
 
-def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", binned=False, correct_eff=False, save_tag=None):
+def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", binned=False, correct_eff=False, save_tag=None, trigger_strategy=None):
 
 	ws = ROOT.RooWorkspace('ws')
 
@@ -88,13 +88,13 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 		rdata = rdataset
 
 	# Signal: hypatia
-	signal_hyp = MakeSymHypatia(ws, mass_range, rcache=rcache)
+	signal_hyp = MakeHypatia(ws, mass_range, rcache=rcache)
 	getattr(ws, "import")(signal_hyp, ROOT.RooFit.RecycleConflictNodes())
 	nsignal = ws.factory(f"nsignal[{ndata*0.5}, 0.0, {ndata*2.0}]")
 	signal_model = ROOT.RooExtendPdf("signal_model", "signal_model", signal_hyp, nsignal)
 
 	# Background model: exponential + (Bu > Jpsi pi gaussian) + (partial reco ERF)
-	bkgd_exp = ws.factory(f"Exponential::bkgd_exp(mass, alpha[-3.66, -100., -0.01])")
+	bkgd_exp = ws.factory(f"Exponential::bkgd_exp(mass, alpha[-3.75, -20., -0.1])")
 	nbkgd_exp = ws.factory(f"nbkgd[{ndata*0.1}, 0.0, {ndata*2.0}]")
 	bkgd_exp_model = ROOT.RooExtendPdf("bkgd_exp_model", "bkgd_exp_model", bkgd_exp, nbkgd_exp)
 
@@ -106,7 +106,7 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 	bkgd_jpsipi_model = make_JpsiPi(ws, cut_name)
 
 	erfc_x0 = ws.factory(f"erfc_x0[5.12, 5.07, 5.2]")
-	erfc_width = ws.factory(f"erfc_width[0.02, 0.012, 0.04]")
+	erfc_width = ws.factory(f"erfc_width[0.015, 0.012, 0.04]")
 	bkgd_erfc = ws.factory(f"GenericPdf::bkgd_erfc('MyErfc(mass, erfc_x0, erfc_width)', {{mass, erfc_x0, erfc_width}})")
 	#erfc_arg = ROOT.RooFormulaVar("erfc_arg", "erfc_arg", "(mass - erfc_x) / (erfc_width)", ROOT.RooArgList(mass, erfc_x, erfc_width))
 	#erfc_tf1 = ROOT.TF1("erfc", pyerfc, BU_FIT_WINDOW[0], 5.2, 2)
@@ -115,7 +115,7 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 	#x = ROOT.x
 	#erfc_pdf = ROOT.myerfc
 	#erfc_pdf = ROOT.RooFit.bindPdf("Erfc", erf, erfc_arg)
-	nbkgd_erfc = ws.factory(f"nbkgd_erfc[{ndata*0.1}, 0.0, {ndata*2.0}]")
+	nbkgd_erfc = ws.factory(f"nbkgd_erfc[{ndata*0.03}, 0.0, {ndata*2.0}]")
 	bkgd_erfc_model = ROOT.RooExtendPdf("bkgd_erfc_model", "bkgd_erfc_model", bkgd_erfc, nbkgd_erfc)
 
 	# For ptbin 5-10, it looks like there's no partial background? Not resolvable, anyways.
@@ -155,61 +155,61 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 		pprint(mc_fit_params[cut_name])
 		print("Constraint widths:")
 		pprint(mc_fit_errors[cut_name])
-		for varname in ["hyp_lambda", "hyp_sigma", "hyp_mu", "hyp_a", "hyp_n"]:
-			var = ws.var(varname)
-			print("Adding constraint for {}".format(varname))
-			var.setVal(mc_fit_params[cut_name][varname])
-
-			# Loose rectangular constraint on mean (via variable range)
-			if varname == "hyp_mu":
-				ws.var(varname).setMin(mc_fit_params[cut_name][varname] - 0.1)
-				ws.var(varname).setMax(mc_fit_params[cut_name][varname] + 0.1)
-				continue
+		for param_name in ["hyp_lambda", "hyp_sigma", "hyp_mu", "hyp_a", "hyp_n", "hyp_a2", "hyp_n2"]:
+			var = ws.var(param_name)
+			print("Adding constraint for {}".format(param_name))
+			var.setVal(mc_fit_params[cut_name][param_name.replace("2", "")])
 
 			err_multiplier = 1.0
-			param_val = mc_fit_params[cut_name][varname]
-			param_err   = mc_fit_errors[cut_name][varname] * err_multiplier
-			if param_err < 1.e-5:
-				print("WARNING : Param {} has small error {}".format(varname, param_err))
+			param_val = mc_fit_params[cut_name][param_name.replace("2", "")]
+			param_err   = mc_fit_errors[cut_name][param_name.replace("2", "")] * err_multiplier
+			if param_err < 1.e-6:
+				print("WARNING : Param {} has small error {}".format(param_name, param_err))
 				raise ValueError("Quitting")
 				sys.exit(1)
 
-			# For core width parameters, set very loose constraint
-			if varname in ["hyp_lambda", "hyp_sigma"]:
-				param_err = max(abs(mc_fit_params[cut_name][varname] / 2.), param_err * 10.)
-
-				constraints[varname] = ROOT.RooGaussian(
-					"constr_{}".format(varname), 
-					"constr_{}".format(varname), 
-					var, 
-					ROOT.RooFit.RooConst(param_val),
-					ROOT.RooFit.RooConst(param_err))
-				print(constraints[varname])
+			# Loose rectangular constraint on mean (via variable range)
+			if "hyp_mu" in param_name:
+				ws.var(param_name).setMin(mc_fit_params[cut_name][param_name] - 0.1)
+				ws.var(param_name).setMax(mc_fit_params[cut_name][param_name] + 0.1)
 				continue
 
-			# For tail parameters, constrain to MC
-			#if varname == "hyp_a":
-			#	constraints[varname] = ROOT.RooGaussian(
-			#		"constr_{}".format(varname), 
-			#		"constr_{}".format(varname), 
-			#		var, 
-			#		ROOT.RooFit.RooConst(param_val),
-			#		ROOT.RooFit.RooConst(5.0))
-			#	print(constraints[varname])
-			#	continue
-			#elif varname == "hyp_n":
-			#	if param_err < 1.0:
-			#		param_err = 1.0
-			#	elif param_err > 10.:
-			#		param_err = 10
-			#	constraints[varname] = ROOT.RooGaussian(
-			#		"constr_{}".format(varname), 
-			#		"constr_{}".format(varname), 
-			#		var, 
-			#		ROOT.RooFit.RooConst(param_val),
-			#		ROOT.RooFit.RooConst(param_err))
-			#	print(constraints[varname])
-			#	continue
+			# Fix tails
+			if "hyp_a" in param_name or "hyp_n" in param_name:
+				ws.var(param_name).setVal(param_val)
+				ws.var(param_name).setConstant(True)
+				continue
+
+			if "hyp_lambda" in param_name or "hyp_sigma" in param_name:
+				# For core width parameters, set very loose constraint
+				param_err = max(abs(param_val / 2.), param_err * 10.)
+			#if "hyp_sigma" in param_name:
+			#	param_val = param_val * 1.2
+			#elif "hyp_n" in param_name:
+			#	# Tail exponent n: restrict to max of n/10
+			#	param_err = min(param_err, abs(param_val / 20.))
+			#elif "hyp_a" in param_name:
+			#	# Tail distance from core: restrict to max of 0.5
+			#	param_err = min(param_err, 0.25)
+
+			# Adjust variable value and range to match constraints
+			ws.var(param_name).setVal(param_val)
+			param_min = max(ws.var(param_name).getMin(), param_val - 10. * param_err)
+			param_max = min(ws.var(param_name).getMax(), param_val + 10. * param_err)
+			if "hyp_lambda" in param_name:
+				param_max = min(0., param_max)
+			elif "hyp_a" in param_name or "hyp_n" in param_name or "hyp_sigma" in param_name:
+				param_min = max(0., param_min)
+			ws.var(param_name).setMin(param_min)
+			ws.var(param_name).setMax(param_max)
+
+			constraints[param_name] = ROOT.RooGaussian(
+				"constr_{}".format(param_name), 
+				"constr_{}".format(param_name), 
+				var, 
+				ROOT.RooFit.RooConst(param_val),
+				ROOT.RooFit.RooConst(param_err))
+			print(constraints[param_name])
 
 	# Probe: use tag fits to constrain erfc parameters
 	if "probe" in save_tag and not "tag_probebins" in save_tag:
@@ -241,18 +241,251 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 				)
 
 	# Tweaks
-	if cut_name == "ptbin_29p0_34p0":
-		ws.var("alpha").setVal(-3.0485e+00)
-		ws.var("erfc_width").setVal(1.4661e-02)
-		ws.var("erfc_x0").setVal(5.1386e+00)
-		ws.var("hyp_a").setVal(1.1789e+01)
-		ws.var("hyp_lambda").setVal(-1.1097e+00)
-		ws.var("hyp_mu").setVal(5.2774e+00)
-		ws.var("hyp_n").setVal(2.4134e+01)
-		ws.var("hyp_sigma").setVal(2.7240e-02)
-		#ws.var("nbkgd").setVal(5.5906e+02)
-		#ws.var("nbkgd_erfc").setVal(1.7425e+02)
-		#ws.var("nsignal").setVal(1.4614e+03)
+	if cut_name == "ptbin_8p0_13p0":
+		ws.var('alpha').setVal(-3.1524e-01)
+		ws.var('erfc_width').setVal(3.5406e-02)
+		ws.var('erfc_x0').setVal(5.1271e+00)
+		ws.var('hyp_lambda').setVal(-3.4036e-01)
+		ws.var('hyp_mu').setVal(5.2782e+00)
+		ws.var('hyp_sigma').setVal(1.8653e-02)
+
+	if cut_name == "ptbin_13p0_18p0" and (trigger_strategy == "HLT_Mu9" or trigger_strategy == "HLT_all"):
+		ws.var('alpha').setVal(-4)
+		ws.var('erfc_width').setVal(0.02)
+		ws.var('erfc_x0').setVal(5.1387e+00)
+		#ws.var('hyp_a').setVal(3.0510e+00)
+		#ws.var('hyp_a2').setVal(3.05)
+		ws.var('hyp_lambda').setVal(-1.3698e+00)
+		ws.var('hyp_mu').setVal(5.2790e+00)
+		#ws.var('hyp_n').setVal(1.1105e+00)
+		#ws.var('hyp_n2').setVal(1.1902e+00)
+		ws.var('hyp_sigma').setVal(3.3608e-02)
+		ws.var('nbkgd').setVal(2.2665e+03)
+		ws.var('nbkgd_erfc').setVal(4e+02)
+		ws.var('nsignal').setVal(2.5e+03)
+	elif cut_name == "ptbin_11p0_12p0" and binned == False:
+		if trigger_strategy == "HLT_Mu7":
+			ws.var('erfc_x0').setVal(5.1421e+00)
+			ws.var('hyp_a').setVal(1.0001e+00)
+			ws.var('hyp_a2').setVal(1.0036e+00)
+			ws.var('hyp_lambda').setVal(-1.0237e+00)
+			ws.var('hyp_mu').setVal(5.2783e+00)
+			ws.var('hyp_n').setVal(2.1542e+00)
+			ws.var('hyp_n2').setVal(4.1932e+00)
+			ws.var('hyp_sigma').setVal(2.5424e-02)
+			ws.var('nbkgd').setVal(4.0560e+03)
+			ws.var('nbkgd_erfc').setVal(6.9992e+02)
+			ws.var('nsignal').setVal(4.7809e+03)
+		elif trigger_strategy == "HLT_all":
+			ws.var('erfc_width').setVal(0.02)
+			ws.var('erfc_x0').setVal(5.1421e+00)
+			ws.var('hyp_a').setVal(1.0001e+00)
+			ws.var('hyp_a2').setVal(1.0036e+00)
+			ws.var('hyp_lambda').setVal(-1.0237e+00)
+			ws.var('hyp_mu').setVal(5.2783e+00)
+			ws.var('hyp_n').setVal(2.1542e+00)
+			ws.var('hyp_n2').setVal(4.1932e+00)
+			ws.var('hyp_sigma').setVal(2.5424e-02)
+			ws.var('nbkgd').setVal(4.1040e+03 * 1.3)
+			ws.var('nbkgd_erfc').setVal(7.6900e+02)
+			ws.var('nsignal').setVal(5.0345e+03 * 0.7)
+
+		#ws.var('alpha').setVal(-1.0)
+		#ws.var('erfc_width').setVal(0.03)
+		#ws.var('erfc_x0').setVal(5.1501e+00)
+		#ws.var('hyp_lambda').setVal(-1.0571e+00)
+		#ws.var('hyp_mu').setVal(5.2782e+00)
+		#ws.var('hyp_sigma').setVal(3.0e-02)
+		#ws.var("hyp_a").setConstant(False)
+		#ws.var("hyp_n").setConstant(False)
+		#ws.var("hyp_a2").setConstant(False)
+		#ws.var("hyp_n2").setConstant(False)
+		#for param_name in ["hyp_a", "hyp_n", "hyp_a2", "hyp_n2"]:
+		#	param_val = mc_fit_params[cut_name][param_name.replace("2", "")]
+		#	param_err   = mc_fit_errors[cut_name][param_name.replace("2", "")]
+		#	constraints[param_name] = ROOT.RooGaussian(
+		#		"constr_{}".format(param_name), 
+		#		"constr_{}".format(param_name), 
+		#		ws.var(param_name), 
+		#		ROOT.RooFit.RooConst(param_val),
+		#		ROOT.RooFit.RooConst(param_err))
+		#	print(constraints[param_name])
+	elif cut_name == "ptbin_11p0_12p0" and trigger_strategy == "HLT_Mu7":
+		ws.var('alpha').setVal(-1.0)
+		ws.var('erfc_width').setVal(0.03)
+		ws.var('erfc_x0').setVal(5.1501e+00)
+		ws.var('hyp_lambda').setVal(-1.0571e+00)
+		ws.var('hyp_mu').setVal(5.2782e+00)
+		ws.var('hyp_sigma').setVal(3.0e-02)
+	elif cut_name == "ptbin_11p0_12p0" and trigger_strategy == "HLT_all":
+		ws.var('alpha').setVal(-1.0)
+		ws.var('erfc_width').setVal(0.03)
+		ws.var('erfc_x0').setVal(5.1501e+00)
+		ws.var('hyp_lambda').setVal(-1.0571e+00)
+		ws.var('hyp_mu').setVal(5.2782e+00)
+		ws.var('hyp_sigma').setVal(3.0e-02)
+		ws.var("hyp_a").setConstant(False)
+		ws.var("hyp_n").setConstant(False)
+		ws.var("hyp_a2").setConstant(False)
+		ws.var("hyp_n2").setConstant(False)
+		for param_name in ["hyp_a", "hyp_n", "hyp_a2", "hyp_n2"]:
+			param_val = mc_fit_params[cut_name][param_name.replace("2", "")]
+			param_err   = mc_fit_errors[cut_name][param_name.replace("2", "")]
+			constraints[param_name] = ROOT.RooGaussian(
+				"constr_{}".format(param_name), 
+				"constr_{}".format(param_name), 
+				ws.var(param_name), 
+				ROOT.RooFit.RooConst(param_val),
+				ROOT.RooFit.RooConst(param_err))
+			print(constraints[param_name])
+
+	elif cut_name == "ptbin_12p0_13p0" and trigger_strategy == "HLT_all":
+		ws.var('alpha').setVal(-2.5045e-01)
+		ws.var('erfc_width').setVal(4.0000e-02)
+		ws.var('erfc_x0').setVal(5.1448e+00)
+		ws.var('hyp_lambda').setVal(-9.9087e-01)
+		ws.var('hyp_mu').setVal(5.2786e+00)
+		ws.var('hyp_sigma').setVal(2.4339e-02)
+	elif cut_name == "ptbin_14p0_15p0" and trigger_strategy == "HLT_Mu9":
+		ws.var('alpha').setVal(-1.0482e+00)
+		ws.var('erfc_width').setVal(2.1694e-02)
+		ws.var('erfc_x0').setVal(5.1384e+00)
+		ws.var('hyp_lambda').setVal(-1.3219e+00)
+		ws.var('hyp_mu').setVal(5.2786e+00)
+		ws.var('hyp_sigma').setVal(2.6376e-02)
+		ws.var('nbkgd').setVal(11e+03)
+		ws.var('nbkgd_erfc').setVal(2.0624e+03)
+		ws.var('nsignal').setVal(1.2e+04)
+		ws.var("hyp_a").setConstant(False)
+		ws.var("hyp_n").setConstant(False)
+		ws.var("hyp_a2").setConstant(False)
+		ws.var("hyp_n2").setConstant(False)
+		for param_name in ["hyp_a", "hyp_n", "hyp_a2", "hyp_n2"]:
+			param_val = mc_fit_params[cut_name][param_name.replace("2", "")]
+			param_err   = mc_fit_errors[cut_name][param_name.replace("2", "")]
+			constraints[param_name] = ROOT.RooGaussian(
+				"constr_{}".format(param_name), 
+				"constr_{}".format(param_name), 
+				ws.var(param_name), 
+				ROOT.RooFit.RooConst(param_val),
+				ROOT.RooFit.RooConst(param_err))
+			print(constraints[param_name])
+
+	elif cut_name == "ptbin_18p0_23p0" and trigger_strategy == "HLT_Mu9":
+		ws.var('alpha').setVal(-2.7233e+00)
+		ws.var('erfc_width').setVal(1.3189e-02)
+		ws.var('erfc_x0').setVal(5.1374e+00)
+		ws.var('hyp_lambda').setVal(-1.2549e+00)
+		ws.var('hyp_mu').setVal(5.2789e+00)
+		ws.var('hyp_sigma').setVal(2.8928e-02)
+		ws.var('nbkgd').setVal(2.0167e+03)
+		ws.var('nbkgd_erfc').setVal(2.2775e+02)
+		ws.var('nsignal').setVal(3.3314e+03)
+	elif cut_name == "ptbin_23p0_26p0" and trigger_strategy == "HLT_Mu7":
+		ws.var('alpha').setVal(-3.1736e+00)
+		ws.var('erfc_width').setVal(2.1022e-02)
+		ws.var('erfc_x0').setVal(5.1374e+00)
+		ws.var('hyp_lambda').setVal(-1.4819e+00)
+		ws.var('hyp_mu').setVal(5.2783e+00)
+		ws.var('hyp_sigma').setVal(2.7475e-02)
+	elif cut_name == "ptbin_26p0_29p0" and trigger_strategy == "HLT_Mu7":
+		ws.var('alpha').setVal(-3.6885e+00)
+		ws.var('erfc_width').setVal(2.1711e-02)
+		ws.var('erfc_x0').setVal(5.1377e+00)
+		ws.var('hyp_lambda').setVal(-1.4327e+00)
+		ws.var('hyp_mu').setVal(5.2783e+00)
+		ws.var('hyp_sigma').setVal(2.7220e-02)
+	elif cut_name == "ptbin_26p0_29p0" and trigger_strategy == "HLT_Mu9":
+		ws.var('alpha').setVal(-3.5400e+00)
+		ws.var('erfc_width').setVal(2.2533e-02)
+		ws.var('erfc_x0').setVal(5.1380e+00)
+		ws.var('hyp_lambda').setVal(-1.4295e+00)
+		ws.var('hyp_mu').setVal(5.2783e+00)
+		ws.var('hyp_sigma').setVal(2.7239e-02)
+	elif binned == False and cut_name == "ptbin_29p0_34p0":
+		ws.var('alpha').setVal(-4.1479e+00)
+		ws.var('erfc_width').setVal(1.9055e-02)
+		ws.var('erfc_x0').setVal(5.1386e+00)
+		ws.var('hyp_a').setVal(2.2064e+00)
+		ws.var('hyp_a2').setVal(2.5859e+00)
+		ws.var('hyp_lambda').setVal(-1.5183e+00)
+		ws.var('hyp_mu').setVal(5.2783e+00)
+		ws.var('hyp_n').setVal(2.3674e+00)
+		ws.var('hyp_n2').setVal(3.1220e+00)
+		ws.var('hyp_sigma').setVal(2.9200e-02 * 0.6)
+	elif cut_name == "ptbin_29p0_34p0" and trigger_strategy == "HLT_Mu9":
+		ws.var('alpha').setVal(-1)
+		ws.var('erfc_width').setVal(1.9959e-02 * 0.8)
+		ws.var('erfc_x0').setVal(5.1388e+00)
+		ws.var('hyp_lambda').setVal(-1.4988e+00)
+		ws.var('hyp_mu').setVal(5.2783e+00)
+		ws.var('hyp_sigma').setVal(2.8921e-02 * 1.1)
+		ws.var('nbkgd').setVal(4.2433e+04 * 1.1)
+		ws.var('nbkgd_erfc').setVal(1.3199e+04)
+		ws.var('nsignal').setVal(1.4591e+05 * 0.9)
+		ws.var("hyp_a").setConstant(False)
+		ws.var("hyp_n").setConstant(False)
+		ws.var("hyp_a2").setConstant(False)
+		ws.var("hyp_n2").setConstant(False)
+		for param_name in ["hyp_a", "hyp_n", "hyp_a2", "hyp_n2"]:
+			param_val = mc_fit_params[cut_name][param_name.replace("2", "")]
+			param_err   = mc_fit_errors[cut_name][param_name.replace("2", "")]
+			constraints[param_name] = ROOT.RooGaussian(
+				"constr_{}".format(param_name), 
+				"constr_{}".format(param_name), 
+				ws.var(param_name), 
+				ROOT.RooFit.RooConst(param_val),
+				ROOT.RooFit.RooConst(param_err))
+			print(constraints[param_name])
+	elif cut_name == "ptbin_29p0_34p0" and trigger_strategy == "HLT_all":
+		ws.var('alpha').setVal(-4.3807e+00)
+		ws.var('erfc_width').setVal(1.9508e-02)
+		ws.var('erfc_x0').setVal(5.1390e+00)
+		ws.var('hyp_lambda').setVal(-1.5076e+00)
+		ws.var('hyp_mu').setVal(5.2783e+00)
+		ws.var('hyp_sigma').setVal(2.9081e-02)
+	elif cut_name == "ptbin_34p0_45p0" and trigger_strategy == "HLT_Mu9":
+		ws.var('alpha').setVal(-4.2233e+00)
+		ws.var('erfc_width').setVal(2.3392e-02)
+		ws.var('erfc_x0').setVal(5.1384e+00)
+		ws.var('hyp_lambda').setVal(-1.4072e+00)
+		ws.var('hyp_mu').setVal(5.2783e+00)
+		ws.var('hyp_sigma').setVal(2.8652e-02)
+
+	elif cut_name == "ybin_1p5_1p75" and trigger_strategy == "HLT_Mu9":
+		ws.var("hyp_a").setConstant(False)
+		ws.var("hyp_n").setConstant(False)
+		ws.var("hyp_a2").setConstant(False)
+		ws.var("hyp_n2").setConstant(False)
+		for param_name in ["hyp_a", "hyp_n", "hyp_a2", "hyp_n2"]:
+			param_val = mc_fit_params[cut_name][param_name.replace("2", "")]
+			param_err   = mc_fit_errors[cut_name][param_name.replace("2", "")]
+			constraints[param_name] = ROOT.RooGaussian(
+				"constr_{}".format(param_name), 
+				"constr_{}".format(param_name), 
+				ws.var(param_name), 
+				ROOT.RooFit.RooConst(param_val),
+				ROOT.RooFit.RooConst(param_err))
+			print(constraints[param_name])
+			ws.var(param_name).setVal(param_val)
+			ws.var(param_name).setMin(max(0.01, param_val - 50.*param_err))
+			ws.var(param_name).setMax(param_val + 50.*param_err)
+
+	#if cut_name == "ptbin_29p0_34p0":
+	#	ws.var('alpha').setVal(-3.6526e+00)
+	#	ws.var('erfc_width').setVal(1.8052e-02)
+	#	ws.var('erfc_x0').setVal(5.1364e+00)
+	#	ws.var('frac_jpsipi').setVal(4.0000e-02)
+	#	ws.var('hyp_a').setVal(2.0008e+00)
+	#	ws.var('hyp_a2').setVal(3.1134e+00)
+	#	ws.var('hyp_lambda').setVal(-1.4896e+00)
+	#	ws.var('hyp_mu').setVal(5.2783e+00)
+	#	ws.var('hyp_n').setVal(1.3298e+00)
+	#	ws.var('hyp_n2').setVal(2.3424e+00)
+	#	ws.var('hyp_sigma').setVal(2.8878e-02)
+	#	ws.var('nbkgd').setVal(4.1284e+04)
+	#	ws.var('nbkgd_erfc').setVal(1.8924e+04)
+	#	ws.var('nsignal').setVal(1.8592e+05)
 
 
 	if len(constraints):
@@ -261,6 +494,8 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 	if correct_eff:
 		if not binned:
 			fit_args.append(ROOT.RooFit.SumW2Error(True)) # Unbinned + weighted needs special uncertainty treatment
+
+	#ws.var("frac_jpsipi").setConstant(False)
 
 	fit_result = model.fitTo(*fit_args)
 
@@ -273,7 +508,7 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 	getattr(ws, "import")(bkgd_jpsipi_model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def plot_fit(ws, tag="", subfolder="", text=None, binned=False, correct_eff=False):
+def plot_fit(ws, fit_result, tag="", subfolder="", text=None, binned=False, correct_eff=False):
 	ROOT.gStyle.SetOptStat(0)
 	ROOT.gStyle.SetOptTitle(0)
 
@@ -321,6 +556,19 @@ def plot_fit(ws, tag="", subfolder="", text=None, binned=False, correct_eff=Fals
 		textbox.SetNDC()
 		textbox.Draw()
 
+	# Draw lines at tail starts
+	xtail_left  = ws.var("hyp_mu").getVal() + ws.var("hyp_a").getVal() * ws.var("hyp_sigma").getVal()
+	xtail_right = ws.var("hyp_mu").getVal() - ws.var("hyp_a2").getVal() * ws.var("hyp_sigma").getVal()
+	line_left   = ROOT.TLine(xtail_left, rplot.GetMinimum(), xtail_left, rplot.GetMaximum())
+	line_left.SetLineStyle(3)
+	line_left.SetLineColor(ROOT.kGray)
+	line_right  = ROOT.TLine(xtail_right, rplot.GetMinimum(), xtail_right, rplot.GetMaximum())
+	line_right.SetLineStyle(3)
+	line_right.SetLineColor(ROOT.kGray)
+	line_left.Draw()
+	line_right.Draw()
+
+
 	canvas.cd()
 	bottom = ROOT.TPad("bottom", "bottom", 0., 0., 1., 0.5)
 	bottom.SetTopMargin(0.02)
@@ -339,7 +587,7 @@ def plot_fit(ws, tag="", subfolder="", text=None, binned=False, correct_eff=Fals
 	pull_hist = data_hist.Clone()
 	pull_hist.Reset()
 	chi2 = 0.
-	ndf = -5
+	ndf = -9
 	for xbin in range(1, pull_hist.GetNbinsX()+1):
 		data_val = data_hist.GetBinContent(xbin)
 		data_unc = data_hist.GetBinError(xbin)
@@ -383,6 +631,12 @@ def plot_fit(ws, tag="", subfolder="", text=None, binned=False, correct_eff=Fals
 	canvas.SaveAs("{}/{}/{}.png".format(figure_dir, subfolder, canvas.GetName()))
 	canvas.SaveAs("{}/{}/{}.pdf".format(figure_dir, subfolder, canvas.GetName()))
 
+	top.SetLogy()
+	rplot.SetMinimum(max(data_hist.GetMinimum() / 10., 0.1))
+	rplot.SetMaximum(data_hist.GetMaximum() * 30.)
+	canvas.SaveAs("{}/{}/{}_logy.png".format(figure_dir, subfolder, canvas.GetName()))
+	#canvas.SaveAs("{}/{}/{}.pdf".format(figure_dir, subfolder, canvas.GetName()))
+
 	ROOT.SetOwnership(canvas, False)
 	ROOT.SetOwnership(top, False)
 	ROOT.SetOwnership(bottom, False)
@@ -397,7 +651,10 @@ def make_JpsiPi(ws, cut_name):
 	c_cb_jpsipi = ws.factory("c_cb_jpsipi[0.9, 0.75, 1.0]")
 	bkgd_jpsipi_pdf = ROOT.RooAddPdf("bkgd_jpsipi_pdf", "bkgd_jpsipi_pdf", ROOT.RooArgList(bkgd_jpsipi_cb, bkgd_jpsipi_gauss), ROOT.RooArgList(c_cb_jpsipi))
 	getattr(ws, "import")(bkgd_jpsipi_pdf, ROOT.RooFit.RecycleConflictNodes())
-	n_jpsipi = ROOT.RooFormulaVar("n_jpsipi", "n_jpsipi", "0.04 * nsignal", ROOT.RooArgList(ws.var("nsignal")))
+	#frac_jpsipi = ws.factory("frac_jpsipi[0.03846918489, 0.03846918489*0.9, 0.03846918489*1.1]")
+	#getattr(ws, "import")(frac_jpsipi)
+	#n_jpsipi = ROOT.RooFormulaVar("n_jpsipi", "n_jpsipi", "frac_jpsipi * nsignal", ROOT.RooArgList(frac_jpsipi, ws.var("nsignal")))
+	n_jpsipi = ROOT.RooFormulaVar("n_jpsipi", "n_jpsipi", "0.03846918489 * nsignal", ROOT.RooArgList(ws.var("nsignal")))
 	bkgd_jpsipi_model = ROOT.RooExtendPdf("bkgd_jpsipi_model", "bkgd_jpsipi_model", bkgd_jpsipi_pdf, n_jpsipi)
 	getattr(ws, "import")(bkgd_jpsipi_model, ROOT.RooFit.RecycleConflictNodes())
 
@@ -453,16 +710,20 @@ if __name__ == "__main__":
 		cuts_list = args.some.split(",")
 		if not set(cuts_list).issubset(set(fit_cuts["tag"] + fit_cuts["probe"])):
 			raise ValueError("Unrecognized cuts: {}".format(args.some))
-		cuts = {"tag": cuts_list, "probe": cuts_list}
+		cuts = {"tag": [x for x in cuts_list if x in fit_cuts["tag"]], "probe": [x for x in cuts_list if x in fit_cuts["probe"]]}
 
+	trigger_strategies_to_run = ["HLT_all", "HLT_Mu7", "HLT_Mu9"] # "HLT_all", "HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_Mu9_IP6"
 	if args.fits:
-		for side in ["tag", "tag_probebins", "probe"]:#, "tag"]:
+		for side in ["tag", "tag_probebins", "probe"]: #, "tag_probebins", "probe"
 			trigger_strategies = {
 				"HLT_all": ["HLT_Mu7_IP4", "HLT_Mu9_IP5_only", "HLT_Mu9_IP6_only", "HLT_Mu12_IP6_only"],
 				"HLT_Mu9": ["HLT_Mu9_IP5", "HLT_Mu9_IP6_only"],
 				"HLT_Mu7": ["HLT_Mu7_IP4"],
+				"HLT_Mu9_IP5": ["HLT_Mu9_IP5"],
+				"HLT_Mu9_IP6": ["HLT_Mu9_IP6"],				
+				#"HLT_Mu9_IP5&6": ["HLT_Mu9_IP6"],				
 			}
-			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9"]:
+			for trigger_strategy in trigger_strategies_to_run:
 				print("\n*** Fitting {} / {} ***".format(side, trigger_strategy))
 				chain = ROOT.TChain()
 				for trigger in trigger_strategies[trigger_strategy]:
@@ -487,7 +748,7 @@ if __name__ == "__main__":
 					cut_str = cut_strings[cut_name]
 					plot_data(chain, cut=cut_str, tag="Bu_{}".format(save_tag))
 
-					ws, fit_result = fit_data(chain, incut=cut_str, cut_name=cut_name, binned=args.binned, correct_eff=args.correct_eff, save_tag=save_tag)
+					ws, fit_result = fit_data(chain, incut=cut_str, cut_name=cut_name, binned=args.binned, correct_eff=args.correct_eff, save_tag=save_tag, trigger_strategy=trigger_strategy)
 					ws.Print()
 					fit_result.Print()
 					print("DEBUG : Saving to Bu/fitws_hyp_data_Bu_{}.root".format(save_tag))
@@ -496,9 +757,13 @@ if __name__ == "__main__":
 					fit_result.Write()
 					ws_file.Close()
 
+					# Clear cache
+					del ws
+					rcache = []
+
 	if args.plots:
 		for side in ["probe", "tag"]:
-			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9"]:
+			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]:
 				for cut_name in cuts[side]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
 					if args.binned:
@@ -507,19 +772,23 @@ if __name__ == "__main__":
 						save_tag += "_correcteff"				
 					ws_file = ROOT.TFile("Bu/fitws_hyp_data_Bu_{}.root".format(save_tag), "READ")
 					ws = ws_file.Get("ws")
+					fit_result_name = "fitresult_model_fitData"
+					if args.binned:
+						fit_result_name += "Binned"
+					fit_result = ws_file.Get(fit_result_name)
 					if args.binned:
 						subfolder = "binned"
 					else:
 						subfolder = "unbinned"
 					if args.correct_eff:
 						subfolder += "_correcteff"
-					plot_fit(ws, tag="Bu_hyp_{}".format(save_tag), subfolder=subfolder, text=fit_text[cut_name], binned=args.binned, correct_eff=args.correct_eff)
+					plot_fit(ws, fit_result, tag="Bu_hyp_{}".format(save_tag), subfolder=subfolder, text=fit_text[cut_name], binned=args.binned, correct_eff=args.correct_eff)
 
 	if args.tables and args.all:
 		yields = {}
 		for side in ["probe", "tag"]:
 			yields[side] = {}
-			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9"]:
+			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]:
 				yields[side][trigger_strategy] = {}
 				for cut_name in cuts[side]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
@@ -556,7 +825,7 @@ if __name__ == "__main__":
 						continue
 					ws_file = ROOT.TFile(fitresult_file, "READ")
 					#ws_file.ls()
-					fit_result = ws_file.Get("fitresult_model_fitData")
+					fit_result = ws_file.Get(f"fitresult_model_fitData{'Binned' if args.binned else ''}")
 					print("\n*** Printing fit results for {} ***".format(save_tag))
 					fit_result.Print()
 

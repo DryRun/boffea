@@ -19,7 +19,7 @@ figure_dir = "/home/dryu/BFrag/data/fits/mc"
 import sys
 sys.path.append(".")
 from fit_settings import fit_cuts, cut_strings, fit_text, \
-	BU_FIT_WINDOW, BD_FIT_WINDOW, BS_FIT_WINDOW, \
+	BU_FIT_WINDOW, BD_FIT_WINDOW_MC, BS_FIT_WINDOW, \
 	BU_FIT_NBINS, BD_FIT_NBINS, BS_FIT_NBINS, \
 	MakeHypatia
 
@@ -41,7 +41,7 @@ def pyerfc(x, par):
 	erfc_arg = (x - par[0]) / par[1]
 	return ROOT.TMath.Erfc(erfc_arg)
 
-def plot_mc(tree, mass_range=BD_FIT_WINDOW, cut="", tag=""):
+def plot_mc(tree, mass_range=BD_FIT_WINDOW_MC, cut="", tag=""):
 	h_mc = ROOT.TH1D("h_mc", "h_mc", 100, mass_range[0], mass_range[1])
 	tree.Draw("mass >> h_mc", cut)
 	c = ROOT.TCanvas("c_mc_prefit_{}".format(tag), "c_mc_prefit_{}".format(tag), 800, 600)
@@ -94,7 +94,7 @@ def make_signal_pdf_swap(ws, mass_range, tag=""):
 	rcache.extend([mean_swap, sigma_cb_swap, alpha_swap, n_swap, signal_cb_swap, sigma_gauss_swap, signal_gauss_swap, c_g_swap, signal_pdf_swap])
 	return signal_pdf_swap
 
-def prefit_swap(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
+def prefit_swap(tree, mass_range=BD_FIT_WINDOW_MC, incut="1", cut_name=""):
 	ws = ROOT.RooWorkspace('ws')
 
 	# Slightly widen pT window, to min of 5 GeV
@@ -125,7 +125,24 @@ def prefit_swap(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
 	model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(signal_model))
 
 	# Tweaks
-	if cut_name == "ybin_2p0_2p25":
+	if cut_name == "ptbin_18p0_23p0":
+		ws.var('hyp_a2_swap').setVal(1.1814947473238022)
+		ws.var('hyp_a_swap').setVal(1.000010172674482)
+		ws.var('hyp_lambda_swap').setVal(-1.0110260364034875)
+		ws.var('hyp_mu_swap').setVal(5.270952003726063)
+		ws.var('hyp_n2_swap').setVal(9.546749330441738)
+		ws.var('hyp_n_swap').setVal(1.4447861355453673)
+		ws.var('hyp_sigma_swap').setVal(0.05163858030661708)
+		ws.var('nsignal').setVal(1238.3738659491905)
+	if cut_name == "ybin_1p25_1p5":
+		ws.var('hyp_a2_swap').setVal(3.4047199109683257)
+		ws.var('hyp_a_swap').setVal(2.0621031227832667)
+		ws.var('hyp_lambda_swap').setVal(-1.0351673822334977)
+		ws.var('hyp_mu_swap').setVal(5.272492714427145)
+		ws.var('hyp_n2_swap').setVal(1.454022150015001)
+		ws.var('hyp_n_swap').setVal(0.7500010047786843)
+		ws.var('hyp_sigma_swap').setVal(0.0546412261032807)
+	elif cut_name == "ybin_2p0_2p25":
 		ws.var('hyp_a_swap').setVal(2.000000013543677)
 		ws.var('hyp_a2_swap').setVal(3.875191685296117)
 		ws.var('hyp_lambda_swap').setVal(-0.6759677950257732)
@@ -151,7 +168,7 @@ def prefit_swap(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
 	getattr(ws, "import")(model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def prefit_main(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
+def prefit_main(tree, mass_range=BD_FIT_WINDOW_MC, incut="1", cut_name=""):
 	ws = ROOT.RooWorkspace('ws')
 
 	# Slightly widen pT window, to min of 5 GeV
@@ -179,14 +196,35 @@ def prefit_main(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
 	model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(signal_model))
 
 	# Tweaks
-	if cut_name == "ptbin_11p0_12p0":
-		ws.var('hyp_a_main').setVal(6.174781687368999)
-		ws.var('hyp_a2_main').setVal(2.0000022412537932)
-		ws.var('hyp_lambda_main').setVal(-1.3094224965625045)
-		ws.var('hyp_mu_main').setVal(5.280238411047284)
-		ws.var('hyp_n_main').setVal(0.500000710886777)
-		ws.var('hyp_n2_main').setVal(6.6574429821435785)
-		ws.var('hyp_sigma_main').setVal(0.028357370691639856)
+	if cut_name == "ptbin_8p0_13p0":
+		ws.var('hyp_a2_main').setVal(3.0166316850763604)
+		ws.var('hyp_a_main').setVal(1.3247060189573312)
+		ws.var('hyp_lambda_main').setVal(-1.5701757556712703)
+		ws.var('hyp_mu_main').setVal(5.280201604272436)
+		ws.var('hyp_n2_main').setVal(2.439309935467755)
+		ws.var('hyp_n_main').setVal(4.054074828747565)
+		ws.var('hyp_sigma_main').setVal(0.031599156831873865)
+		ws.var('nsignal').setVal(3466.000966465568)
+
+	elif cut_name == "ptbin_10p0_11p0":
+		ws.var('hyp_a2_main').setVal(3.0166316850763604)
+		ws.var('hyp_a_main').setVal(1.3247060189573312)
+		ws.var('hyp_lambda_main').setVal(-1.5701757556712703)
+		ws.var('hyp_mu_main').setVal(5.280201604272436)
+		ws.var('hyp_n2_main').setVal(2.439309935467755)
+		ws.var('hyp_n_main').setVal(4.054074828747565)
+		ws.var('hyp_sigma_main').setVal(0.031599156831873865)
+		ws.var('nsignal').setVal(3466.00096646556)
+
+	elif cut_name == "ptbin_11p0_12p0":
+		ws.var('hyp_a2_main').setVal(1.4269e+00)
+		ws.var('hyp_a_main').setVal(2.3290e+00)
+		ws.var('hyp_lambda_main').setVal(-1.3839e+00)
+		ws.var('hyp_mu_main').setVal(5.2798e+00)
+		ws.var('hyp_n2_main').setVal(7.4331e+00)
+		ws.var('hyp_n_main').setVal(3.2587e+00)
+		ws.var('hyp_sigma_main').setVal(2.7878e-02)
+		ws.var('nsignal').setVal(4.3360e+03)
 	elif cut_name == "ptbin_12p0_13p0":
 		ws.var('hyp_a2_main').setVal(2.000000003386235)
 		ws.var('hyp_a_main').setVal(6.682127051344376)
@@ -196,15 +234,16 @@ def prefit_main(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
 		ws.var('hyp_n_main').setVal(0.5000000000024518)
 		ws.var('hyp_sigma_main').setVal(0.026083238573931192)
 	elif cut_name == "ptbin_13p0_14p0":
-		ws.var('hyp_a2_main').setVal(2.000005451554139)
-		ws.var('hyp_a_main').setVal(25.19944763922372)
-		ws.var('hyp_lambda_main').setVal(-1.1246079990270275)
-		ws.var('hyp_mu_main').setVal(5.280150228957284)
-		ws.var('hyp_n2_main').setVal(11.428457263395346)
-		ws.var('hyp_n_main').setVal(1.514297504786334)
-		ws.var('hyp_sigma_main').setVal(0.021623492155214086)
+		ws.var('hyp_a2_main').setVal(1.238891230479982)
+		ws.var('hyp_a_main').setVal(3.999967030747436)
+		ws.var('hyp_lambda_main').setVal(-1.1035689430183826)
+		ws.var('hyp_mu_main').setVal(5.280143986674646)
+		ws.var('hyp_n2_main').setVal(14.573728640079578)
+		ws.var('hyp_n_main').setVal(2.632324978737071)
+		ws.var('hyp_sigma_main').setVal(0.02280626295882743)
+		ws.var('nsignal').setVal(6492.006927750405)
 
-	elif cut_name in ["ptbin_13p0_18p0", "ptbin_14p0_15p0", "ptbin_15p0_16p0"]:
+	elif cut_name in ["ptbin_13p0_18p0", "ptbin_14p0_15p0", "ptbin_15p0_16p0", "ptbin_16p0_18p0"]:
 		ws.var('hyp_a2_main').setVal(2.000019978561138)
 		ws.var('hyp_a_main').setVal(13.736644780905044)
 		ws.var('hyp_lambda_main').setVal(-1.1025031727755312)
@@ -221,9 +260,22 @@ def prefit_main(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
 		ws.var('hyp_n2_main').setVal(3.324680960391312)
 		ws.var('hyp_n_main').setVal(2.6330046498400064)
 		ws.var('hyp_sigma_main').setVal(0.031119329497233214)
+	elif cut_name == "ybin_0p75_1p0":
+		ws.var('hyp_a2_main').setVal(1.0291860080905224)
+		ws.var('hyp_a_main').setVal(1.0021805534021924)
+		ws.var('hyp_lambda_main').setVal(-2.9994647552467297)
+		ws.var('hyp_mu_main').setVal(5.280108006035953)
+		ws.var('hyp_n2_main').setVal(5.293698196501729)
+		ws.var('hyp_n_main').setVal(3.4386725707412826)
+		ws.var('hyp_sigma_main').setVal(0.03781430702924993)
+		ws.var('nsignal').setVal(4872.067235193253)
 
 	# Perform fit
-	fit_result = model.fitTo(rdataset, ROOT.RooFit.NumCPU(8), ROOT.RooFit.Save())
+	print("jkl Variables at start of fit {}:".format(cut_name))
+	for param_name in ["hyp_a2_main", "hyp_a_main", "hyp_lambda_main", "hyp_mu_main", "hyp_n2_main", "hyp_n_main", "hyp_sigma_main"]:
+		print("\t{} \t = {}".format(param_name, ws.var(param_name).getVal()))
+
+	fit_result = model.fitTo(rdataset, ROOT.RooFit.NumCPU(1), ROOT.RooFit.Save())
 
 	# Add everything to the workspace
 	getattr(ws, "import")(rdataset)
@@ -233,7 +285,7 @@ def prefit_main(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name=""):
 	return ws, fit_result
 
 
-def fit_mc(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name="inclusive"):
+def fit_mc(tree, mass_range=BD_FIT_WINDOW_MC, incut="1", cut_name="inclusive"):
 	ws = ROOT.RooWorkspace('ws')
 
 	cut = f"{incut} && (mass > {mass_range[0]}) && (mass < {mass_range[1]})"
@@ -294,7 +346,7 @@ def fit_mc(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name="inclusive"):
 	getattr(ws, "import")(model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def plot_fit(ws, tag="", text=None):
+def plot_fit(ws, fit_result, tag="", text=None):
 	print("\n*** In plot_fit ***")
 	ws.Print()
 	ROOT.gStyle.SetOptStat(0)
@@ -327,6 +379,7 @@ def plot_fit(ws, tag="", text=None):
 
 	l = ROOT.TLegend(0.6, 0.45, 0.88, 0.88)
 	l.SetFillColor(0)
+	l.SetFillStyle(0)
 	l.SetBorderSize(0)
 	l.AddEntry("data", "Data", "lp")
 	l.AddEntry("fit", "Total fit", "l")
@@ -344,7 +397,7 @@ def plot_fit(ws, tag="", text=None):
 	bottom.Draw()
 	bottom.cd()
 
-	binning = ROOT.RooBinning(100, BD_FIT_WINDOW[0], BD_FIT_WINDOW[1])
+	binning = ROOT.RooBinning(100, BD_FIT_WINDOW_MC[0], BD_FIT_WINDOW_MC[1])
 	data_hist = ROOT.RooAbsData.createHistogram(rdataset, "data_hist", xvar, ROOT.RooFit.Binning(binning))
 	fit_binned = model.generateBinned(ROOT.RooArgSet(xvar), 0, True)
 	fit_hist = fit_binned.createHistogram("model_hist", xvar, ROOT.RooFit.Binning(binning))
@@ -373,7 +426,7 @@ def plot_fit(ws, tag="", text=None):
 	pull_hist.SetMaximum(5.)
 	pull_hist.Draw("p")
 
-	zero = ROOT.TLine(BD_FIT_WINDOW[0], 0., BD_FIT_WINDOW[1], 0.)
+	zero = ROOT.TLine(BD_FIT_WINDOW_MC[0], 0., BD_FIT_WINDOW_MC[1], 0.)
 	zero.SetLineColor(ROOT.kGray)
 	zero.SetLineStyle(3)
 	zero.SetLineWidth(2)
@@ -427,17 +480,19 @@ if __name__ == "__main__":
 		for side in ["recomatch", "recomatchswap"]:
 			final_params[side] = {}
 			final_errors[side] = {}
-			chain = ROOT.TChain("Bcands_{}_Bd2KsJpsi2KPiMuMu_probefilter".format(side))
-			#chain.Add("data_Run2018C_part3.root")
-			#chain.Add("data_Run2018D_part1.root")
-			#chain.Add("data_Run2018D_part2.root")
-			for mc_file in mc_files:
-				chain.Add(mc_file)
 
-			for cut_name in cuts:
+			for cut_name in sorted(cuts):
 				print(f"\n*** Prefitting {side} {cut_name} ***")
+
+				chain = ROOT.TChain("Bcands_{}_Bd2KsJpsi2KPiMuMu_probefilter".format(side))
+				#chain.Add("data_Run2018C_part3.root")
+				#chain.Add("data_Run2018D_part1.root")
+				#chain.Add("data_Run2018D_part2.root")
+				for mc_file in mc_files:
+					chain.Add(mc_file)
+
 				cut_str = cut_strings[cut_name]
-				plot_mc(chain, cut=cut_str, tag="Bd_{}_{}".format(side, cut_name))
+				#plot_mc(chain, cut=cut_str, tag="Bd_{}_{}".format(side, cut_name))
 
 				if side == "recomatch":
 					ws, fit_result = prefit_main(chain, incut=cut_str, cut_name=cut_name)
@@ -446,7 +501,7 @@ if __name__ == "__main__":
 				ws.Print()
 				fit_result.Print()
 
-				plot_fit(ws, tag="prefit_Bd_hyp_{}_{}".format(side, cut_name), text=fit_text[cut_name])
+				plot_fit(ws, fit_result, tag="prefit_Bd_hyp_{}_{}".format(side, cut_name), text=fit_text[cut_name])
 
 				ws_file = ROOT.TFile("Bd/prefitws_hyp_mc_Bd_{}_{}.root".format(side, cut_name), "RECREATE")
 				ws.Write()
@@ -462,6 +517,11 @@ if __name__ == "__main__":
 					parname = this_final_params[i].GetName()
 					final_params[side][cut_name][parname] = this_final_params[i].getVal()
 					final_errors[side][cut_name][parname] = this_final_params[i].getError()
+
+				# Clear cache
+				rcache = []
+				del ws
+
 		pprint(final_params)
 		pprint(final_errors)
 		if args.all:
@@ -499,13 +559,15 @@ if __name__ == "__main__":
 			ws.Write()
 			fit_result.Write()
 			ws_file.Close()
+			del ws
 
 	if args.plots:
 		for cut_name in cuts:
 			ws_file = ROOT.TFile("Bd/fitws_hyp_mc_Bd_{}.root".format(cut_name), "READ")
 			#ws_file.ls()
 			ws = ws_file.Get("ws")
-			plot_fit(ws, tag="Bd_hyp_{}".format(cut_name), text=fit_text[cut_name])
+			fit_result = ws_file.Get("fitresult_model_fitMC")
+			plot_fit(ws, fit_result, tag="Bd_hyp_{}".format(cut_name), text=fit_text[cut_name])
 
 
 	if args.tables:
