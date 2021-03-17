@@ -1,0 +1,8 @@
+cp Bu/fitparams_MC_Bu_hypatia.pkl Bu/fitparams_MC_Bu_hypatia_frozen.pkl
+cp Bu/fiterrs_MC_Bu_hypatia.pkl Bu/fiterrs_MC_Bu_hypatia_frozen.pkl
+cp Bd/prefitparams_MC_Bd_hypatia.pkl Bd/prefitparams_MC_Bd_hypatia_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_hypatia.pkl Bd/prefiterrs_MC_Bd_hypatia_frozen.pkl
+cp Bd/fitparams_MC_Bd_hypatia.pkl Bd/fitparams_MC_Bd_hypatia_frozen.pkl
+cp Bd/fiterrs_MC_Bd_hypatia.pkl Bd/fiterrs_MC_Bd_hypatia_frozen.pkl
+cp Bs/fitparams_MC_Bs_hypatia.pkl Bs/fitparams_MC_Bs_hypatia_frozen.pkl
+cp Bs/fiterrs_MC_Bs_hypatia.pkl Bs/fiterrs_MC_Bs_hypatia_frozen.pkl
