@@ -12,7 +12,7 @@ import mplhep
 plt.style.use(mplhep.style.LHCb)
 plt.tight_layout()
 
-figure_directory = "/home/dryu/BFrag/data/efficiency/reweighted/figures"
+figure_directory = os.path.expandvars("$BDATA/efficiency/reweighted/figures")
 
 triggers = ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]
 btypes = ["Bu", "Bs", "Bd"]
@@ -267,7 +267,7 @@ for var in vars:
 				for i in range(len(eff[var][btype][side][trigger_strategy])):
 					eff_deff[var][btype][side][trigger_strategy].append((eff[var][btype][side][trigger_strategy][i], deff[var][btype][side][trigger_strategy][i]))
 
-with open("/home/dryu/BFrag/data/efficiency/efficiency3.pkl", "wb") as f:
+with open(os.path.expandvars("$BDATA/efficiency/efficiency3.pkl"), "wb") as f:
 	pickle.dump(eff_deff, f)
 
 
