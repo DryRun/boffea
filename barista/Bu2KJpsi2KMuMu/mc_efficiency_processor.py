@@ -54,11 +54,14 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     for trigger in self._triggers:
       self._Bcand_selections.append(f"tagmatch_{trigger}")
       self._Bcand_selections.append(f"probematch_{trigger}")
+
+      self._Bcand_selections.append(f"tagMaxPtmatch_{trigger}")
+      self._Bcand_selections.append(f"probeMaxPtmatch_{trigger}")
     for selection_name in self._Bcand_selections:
       self._accumulator[f"Bcands_{selection_name}"] = processor.defaultdict_accumulator(partial(Bcand_accumulator, cols=["pt", "eta", "y", "phi", "mass"]))
 
     self._accumulator["nMuon"]          = hist.Hist("Events", dataset_axis, hist.Bin("nMuon", r"Number of muons", 11,-0.5, 10.5))
-    self._accumulator["nMuon_isTrig"]   = hist.Hist("Events", dataset_axis, hist.Bin("nMuon_isTrig", r"Number of triggering muons", 11,-0.5, 10.5))
+    #self._accumulator["nMuon_isTrig"]   = hist.Hist("Events", dataset_axis, hist.Bin("nMuon_isTrig", r"Number of triggering muons", 11,-0.5, 10.5))
     self._accumulator["Muon_pt"]        = hist.Hist("Events", dataset_axis, hist.Bin("Muon_pt", r"Muon $p_{T}$ [GeV]", 100, 0.0, 100.0))
     self._accumulator["Muon_pt_isTrig"] = hist.Hist("Events", dataset_axis, hist.Bin("Muon_pt_isTrig", r"Triggering muon $p_{T}$ [GeV]", 100, 0.0, 100.0))
 
@@ -227,10 +230,10 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     # Tag/probe selection
     """
     reco_bukmumu.add_attributes(
-                  Muon1IsTrig = reco_muons.isTriggering[reco_bukmumu.l1_idx], 
-                  Muon2IsTrig = reco_muons.isTriggering[reco_bukmumu.l2_idx])
+                  Muon1IsTrig = reco_muons.isTriggeringFull[reco_bukmumu.l1_idx], 
+                  Muon2IsTrig = reco_muons.isTriggeringFull[reco_bukmumu.l2_idx])
     reco_bukmumu.add_attributes(MuonIsTrigCount = reco_bukmumu.Muon1IsTrig.astype(int) + reco_bukmumu.Muon2IsTrig.astype(int))
-    event_ntriggingmuons = reco_muons.isTriggering.astype(int).sum()
+    event_ntriggingmuons = reco_muons.isTriggeringFull.astype(int).sum()
     reco_bukmumu.add_attributes(TagCount = reco_bukmumu.MuonIsTrigCount.ones_like() * event_ntriggingmuons - reco_bukmumu.MuonIsTrigCount)
     """
     tagmuon_ptcuts = {
@@ -238,33 +241,57 @@ class MCEfficencyProcessor(processor.ProcessorABC):
      "HLT_Mu9_IP5": 9*1.05,
      "HLT_Mu9_IP6": 9*1.05,
      "HLT_Mu12_IP6": 12*1.05,
-    }        
+    }
+    tagmuon_ipcuts = {
+     "HLT_Mu7_IP4": 4 * 1.05, 
+     "HLT_Mu9_IP5": 5 * 1.05, 
+     "HLT_Mu9_IP6": 5 * 1.05, 
+     "HLT_Mu12_IP6": 6 * 1.05, 
+    }
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
       reco_bukmumu.add_attributes(**{
-        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l1_idx],
-        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l2_idx],
-        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l1_idx] & (reco_muons.pt[reco_bukmumu.l1_idx] > tagmuon_ptcuts[trigger]),
-        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l2_idx] & (reco_muons.pt[reco_bukmumu.l2_idx] > tagmuon_ptcuts[trigger]),
+        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l1_idx],
+        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l2_idx],
+        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l1_idx]\
+                                        & (reco_muons.pt[reco_bukmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bukmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l2_idx]\
+                                        & (reco_muons.pt[reco_bukmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bukmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
       })
+      reco_bukmumu.add_attributes(**{
+        f"Muon1IsTrigMaxPt_{trigger}": getattr(reco_bukmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l1_idx] == reco_muons.pt.max()),
+        f"Muon2IsTrigMaxPt_{trigger}": getattr(reco_bukmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l2_idx] == reco_muons.pt.max()),
+      })
+
       reco_bukmumu.add_attributes(**{
         f"MuonIsTrigCount_{trigger}": getattr(reco_bukmumu, f"Muon1IsTrig_{trigger}").astype(int) + getattr(reco_bukmumu, f"Muon2IsTrig_{trigger}").astype(int)
       })
-      event_ntriggingmuons = getattr(reco_muons, f"isTriggering_{trigger}").astype(int).sum()
+      event_ntriggingmuons = getattr(reco_muons, f"isTriggeringFull_{trigger}").astype(int).sum()
       reco_bukmumu.add_attributes(**{
         f"TagCount_{trigger}": getattr(reco_bukmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggingmuons - getattr(reco_bukmumu, f"MuonIsTrigCount_{trigger}")
       })
+
+      reco_bukmumu.add_attributes(**{
+        f"MuonIsTrigCountMaxPt_{trigger}": getattr(reco_bukmumu, f"Muon1IsTrigMaxPt_{trigger}").astype(int) + getattr(reco_bukmumu, f"Muon2IsTrigMaxPt_{trigger}").astype(int)
+      })
+      event_ntriggeringmuons_maxpt =  getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_muons.pt == reco_muons.pt.max()].astype(int).sum()
+      reco_bukmumu.add_attributes(**{
+        f"TagCountMaxPt_{trigger}": getattr(reco_bukmumu, f"MuonIsTrigCountMaxPt_{trigger}").ones_like() * event_ntriggeringmuons_maxpt - getattr(reco_bukmumu, f"MuonIsTrigCountMaxPt_{trigger}"),
+      })
+
     reco_bukmumu.add_attributes(l_xy_sig = where(reco_bukmumu.l_xy_unc > 0, reco_bukmumu.l_xy / reco_bukmumu.l_xy_unc, -1.e20))
 
     # General selection
-    trigger_masks = {}
-    trigger_masks["inclusive"] = np.full_like(df["HLT_Mu7_IP4"], True)
-    trigger_masks["HLT_Mu7_IP4"] = (df["HLT_Mu7_IP4"] == 1)
-    trigger_masks["HLT_Mu9_IP5"] = (df["HLT_Mu9_IP5"] == 1)
-    trigger_masks["HLT_Mu9_IP6"] = (df["HLT_Mu9_IP6"] == 1)
-    trigger_masks["HLT_Mu12_IP6"] = (df["HLT_Mu12_IP6"] == 1)
-    trigger_masks["HLT_Mu9_IP5|HLT_Mu9_IP6"] = trigger_masks["HLT_Mu9_IP5"] | trigger_masks["HLT_Mu9_IP6"]
-    trigger_masks["HLT_Mu9_IP5&~HLT_Mu7_IP4"] = trigger_masks["HLT_Mu9_IP5"] & ~trigger_masks["HLT_Mu7_IP4"]
-    nominal_trigmask = trigger_masks["HLT_Mu9_IP5|HLT_Mu9_IP6"]
+    #trigger_masks = {}
+    #trigger_masks["inclusive"] = np.full_like(df["HLT_Mu7_IP4"], True)
+    #trigger_masks["HLT_Mu7_IP4"] = (df["HLT_Mu7_IP4"] == 1)
+    #trigger_masks["HLT_Mu9_IP5"] = (df["HLT_Mu9_IP5"] == 1)
+    #trigger_masks["HLT_Mu9_IP6"] = (df["HLT_Mu9_IP6"] == 1)
+    #trigger_masks["HLT_Mu12_IP6"] = (df["HLT_Mu12_IP6"] == 1)
+    #trigger_masks["HLT_Mu9_IP5|HLT_Mu9_IP6"] = trigger_masks["HLT_Mu9_IP5"] | trigger_masks["HLT_Mu9_IP6"]
+    #trigger_masks["HLT_Mu9_IP5&~HLT_Mu7_IP4"] = trigger_masks["HLT_Mu9_IP5"] & ~trigger_masks["HLT_Mu7_IP4"]
+    #nominal_trigmask = trigger_masks["HLT_Mu9_IP5|HLT_Mu9_IP6"]
 
     reco_bukmumu_mask_template = reco_bukmumu.pt.ones_like().astype(bool)
     selections = {}
@@ -300,7 +327,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selections["recomatch"]    = selections["reco"] & selections["truthmatched"]
 
     for trigger in self._triggers:
-      trigger_mask = (df[trigger] == 1) * reco_bukmumu_mask_template
+      trigger_mask = ((df[trigger] == 1) & (df[l1_seeds[trigger]] == 1)) * reco_bukmumu_mask_template # 
       selections[f"recomatch_{trigger}"]    = selections["recomatch"] & trigger_mask
 
       selections[f"tag_{trigger}"]            = selections[f"reco"] & trigger_mask & (getattr(reco_bukmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bukmumu, f"Muon2IsTrigTight_{trigger}"))
@@ -310,6 +337,18 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       selections[f"probe_{trigger}"]          = selections[f"reco"] & trigger_mask & (getattr(reco_bukmumu, f"TagCount_{trigger}") >= 1)
       selections[f"probematch_{trigger}"]     = selections[f"probe_{trigger}"] & selections["truthmatched"]
       selections[f"probeunmatched_{trigger}"] = selections[f"probe_{trigger}"] & (~selections["truthmatched"])
+
+      selections[f"tagMaxPt_{trigger}"]            = selections["reco"] & trigger_mask & \
+                                                      (
+                                                        (getattr(reco_bukmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l1_idx] == reco_muons.pt.max())) \
+                                                        | (getattr(reco_bukmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l2_idx] == reco_muons.pt.max()))
+                                                      )
+      selections[f"tagMaxPtmatch_{trigger}"]       = selections[f"tagMaxPt_{trigger}"] & selections["truthmatched"]
+      selections[f"tagMaxPtunmatched_{trigger}"]   = selections[f"tagMaxPt_{trigger}"] & (~selections["truthmatched"])
+
+      selections[f"probeMaxPt_{trigger}"]          = selections["reco"] & trigger_mask & (getattr(reco_bukmumu, f"TagCountMaxPt_{trigger}") >= 1)
+      selections[f"probeMaxPtmatch_{trigger}"]     = selections[f"probeMaxPt_{trigger}"] & selections["truthmatched"]
+      selections[f"probeMaxPtunmatched_{trigger}"] = selections[f"probeMaxPt_{trigger}"] & (~selections["truthmatched"])
 
     # If more than one B is selected, choose best chi2
     selections["recomatch"] = selections["recomatch"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["recomatch"]].min())
@@ -323,6 +362,9 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       selections[f"probe_{trigger}"] = selections[f"probe_{trigger}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probe_{trigger}"]].min())
       selections[f"probematch_{trigger}"] = selections[f"probematch_{trigger}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probematch_{trigger}"]].min())
       selections[f"probeunmatched_{trigger}"] = selections[f"probeunmatched_{trigger}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probeunmatched_{trigger}"]].min())
+
+      selections[f"tagMaxPtmatch_{trigger}"]     = selections[f"tagMaxPtmatch_{trigger}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"tagMaxPtmatch_{trigger}"]].min())
+      selections[f"probeMaxPtmatch_{trigger}"] = selections[f"probeMaxPtmatch_{trigger}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections[f"probeMaxPtmatch_{trigger}"]].min())
 
     # Fill cutflow
     cumulative_selection = copy.deepcopy(reco_bukmumu_mask_template)
@@ -359,7 +401,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
 
     # Fill reco histograms
     output["nMuon"].fill(dataset=dataset_name, nMuon=df["nMuon"])
-    output["nMuon_isTrig"].fill(dataset=dataset_name, nMuon_isTrig=reco_muons.pt[reco_muons.isTriggering==1].count())
+    #output["nMuon_isTrig"].fill(dataset=dataset_name, nMuon_isTrig=reco_muons.pt[reco_muons.isTriggering==1].count())
     output["Muon_pt"].fill(dataset=dataset_name, Muon_pt=reco_muons.pt.flatten())
     output["Muon_pt_isTrig"].fill(dataset=dataset_name, Muon_pt_isTrig=reco_muons.pt[reco_muons.isTriggering==1].flatten())
 
@@ -611,8 +653,9 @@ if __name__ == "__main__":
   in_txt = {
       #"Bu2KJpsi2KMuMu_probefilter_unconstr": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BuToKJpsi_ToMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
       #"Bu2KJpsi2KMuMu_inclusive_unconstr": "/home/dryu/BFrag/CMSSW_10_2_18/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/data/skim_directory/v1_6/files_BuToJpsiK_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
-      "Bu2KJpsi2KMuMu_probefilter": "/home/dryu/BFrag/boffea/barista/filelists/v2_6/files_BuToKJpsi_ToMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
-      "Bu2KJpsi2KMuMu_inclusive": "/home/dryu/BFrag/boffea/barista/filelists/v2_6/files_BuToJpsiK_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      "Bu2KJpsi2KMuMu_probefilter": "/home/dryu/BFrag/boffea/barista/filelists/frozen/files_BuToKJpsi_ToMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      "Bu2KJpsi2KMuMu_inclusive": "/home/dryu/BFrag/boffea/barista/filelists/frozen/files_BuToJpsiK_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      "Bu2KJpsi2KMuMu_mufilter": "/home/dryu/BFrag/boffea/barista/filelists/frozen/files_BuToKJpsi_ToMuMu_MuFilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
   }
   dataset_files = {}
   for dataset_name, filelistpath in in_txt.items():

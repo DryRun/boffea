@@ -232,12 +232,22 @@ class MCEfficencyProcessor(processor.ProcessorABC):
      "HLT_Mu9_IP6": 9*1.05,
      "HLT_Mu12_IP6": 12*1.05,
     }
+    tagmuon_ipcuts = {
+     "HLT_Mu7_IP4": 4 * 1.05, 
+     "HLT_Mu9_IP5": 5 * 1.05, 
+     "HLT_Mu9_IP6": 5 * 1.05, 
+     "HLT_Mu12_IP6": 6 * 1.05, 
+    }    
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
       reco_bukmumu.add_attributes(**{
         f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l1_idx],
         f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l2_idx],
-        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l1_idx] & (reco_muons.pt[reco_bukmumu.l1_idx] > tagmuon_ptcuts[trigger]),
-        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l2_idx] & (reco_muons.pt[reco_bukmumu.l2_idx] > tagmuon_ptcuts[trigger]),
+        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l1_idx] \
+                                        & (reco_muons.pt[reco_bukmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (reco_muons.dxySig[reco_bukmumu.l1_idx] > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l2_idx] \
+                                        & (reco_muons.pt[reco_bukmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (reco_muons.dxySig[reco_bukmumu.l2_idx] > tagmuon_ipcuts[trigger]),
       })
       reco_bukmumu.add_attributes(**{
         f"MuonIsTrigCount_{trigger}": getattr(reco_bukmumu, f"Muon1IsTrig_{trigger}").astype(int) + getattr(reco_bukmumu, f"Muon2IsTrig_{trigger}").astype(int)
@@ -339,6 +349,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selection_names = ["inclusive", "reco", "recomatch", "truthmatched"]
     for trigger in self._triggers:
       selection_names.extend([f"tag_{trigger}", f"tagmatch_{trigger}", f"tagunmatched_{trigger}", f"probe_{trigger}", f"probematch_{trigger}", f"probeunmatched_{trigger}"])
+      selection_names.extend([f"tagHiPtmatch_{trigger}", f"probeHiPtmatch_{trigger}"])
     for selection_name in selection_names:
       output["BuToKMuMu_fit_pt_y_mass"].fill(dataset=dataset_name, selection=selection_name, 
                                             fit_pt=reco_bukmumu.fit_pt[selections[selection_name]].flatten(),

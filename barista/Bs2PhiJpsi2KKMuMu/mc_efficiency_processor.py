@@ -53,6 +53,10 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     for trigger in self._triggers:
       self._Bcand_selections.append(f"tagmatch_{trigger}")
       self._Bcand_selections.append(f"probematch_{trigger}")
+
+      self._Bcand_selections.append(f"tagMaxPtmatch_{trigger}")
+      self._Bcand_selections.append(f"probeMaxPtmatch_{trigger}")
+      #self._Bcand_selections.append(f"probeJmatch_{trigger}")
     for selection_name in self._Bcand_selections:
       self._accumulator[f"Bcands_{selection_name}"] = processor.defaultdict_accumulator(partial(Bcand_accumulator, cols=["pt", "eta", "y", "phi", "mass"]))
 
@@ -66,7 +70,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     ])) 
 
     self._accumulator["nMuon"]          = hist.Hist("Events", dataset_axis, hist.Bin("nMuon", r"Number of muons", 11,-0.5, 10.5))
-    self._accumulator["nMuon_isTrig"]   = hist.Hist("Events", dataset_axis, hist.Bin("nMuon_isTrig", r"Number of triggering muons", 11,-0.5, 10.5))
+    #self._accumulator["nMuon_isTrig"]   = hist.Hist("Events", dataset_axis, hist.Bin("nMuon_isTrig", r"Number of triggering muons", 11,-0.5, 10.5))
     self._accumulator["Muon_pt"]        = hist.Hist("Events", dataset_axis, hist.Bin("Muon_pt", r"Muon $p_{T}$ [GeV]", 100, 0.0, 100.0))
     self._accumulator["Muon_pt_isTrig"] = hist.Hist("Events", dataset_axis, hist.Bin("Muon_pt_isTrig", r"Triggering muon $p_{T}$ [GeV]", 100, 0.0, 100.0))
 
@@ -302,11 +306,11 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     # Tag/probe selection
     """ Old, before separating by trigger
     reco_bskkmumu.add_attributes(
-                  Muon1IsTrig = reco_muons.isTriggering[reco_bskkmumu.l1_idx], 
-                  Muon2IsTrig = reco_muons.isTriggering[reco_bskkmumu.l2_idx])
+                  Muon1IsTrig = reco_muons.isTriggeringFull[reco_bskkmumu.l1_idx], 
+                  Muon2IsTrig = reco_muons.isTriggeringFull[reco_bskkmumu.l2_idx])
     reco_bskkmumu.add_attributes(MuonIsTrigCount = reco_bskkmumu.Muon1IsTrig.astype(int) + reco_bskkmumu.Muon2IsTrig.astype(int))
-    event_ntriggingmuons = reco_muons.isTriggering.astype(int).sum()
-    reco_bskkmumu.add_attributes(TagCount = reco_bskkmumu.MuonIsTrigCount.ones_like() * event_ntriggingmuons - reco_bskkmumu.MuonIsTrigCount)
+    event_ntriggeringmuons = reco_muons.isTriggeringFull.astype(int).sum()
+    reco_bskkmumu.add_attributes(TagCount = reco_bskkmumu.MuonIsTrigCount.ones_like() * event_ntriggeringmuons - reco_bskkmumu.MuonIsTrigCount)
 
     reco_bskkmumu.add_attributes(l_xy_sig = where(reco_bskkmumu.l_xy_unc > 0, reco_bskkmumu.l_xy / reco_bskkmumu.l_xy_unc, -1.e20))
     """
@@ -315,21 +319,46 @@ class MCEfficencyProcessor(processor.ProcessorABC):
      "HLT_Mu9_IP5": 9*1.05,
      "HLT_Mu9_IP6": 9*1.05,
      "HLT_Mu12_IP6": 12*1.05,
-    }    
+    }
+    tagmuon_ipcuts = {
+     "HLT_Mu7_IP4": 4 * 1.05, 
+     "HLT_Mu9_IP5": 5 * 1.05, 
+     "HLT_Mu9_IP6": 5 * 1.05, 
+     "HLT_Mu12_IP6": 6 * 1.05, 
+    }
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
       reco_bskkmumu.add_attributes(**{
-        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l1_idx],
-        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l2_idx],
-        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l1_idx] & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts[trigger]),
-        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l2_idx] & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts[trigger]),
+        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx],
+        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx],
+        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
       })
+      reco_bskkmumu.add_attributes(**{
+        f"Muon1IsTrigMaxPt_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l1_idx] == reco_muons.pt.max()),
+        f"Muon2IsTrigMaxPt_{trigger}": getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l2_idx] == reco_muons.pt.max()),
+      })
+
       reco_bskkmumu.add_attributes(**{
         f"MuonIsTrigCount_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrig_{trigger}").astype(int) + getattr(reco_bskkmumu, f"Muon2IsTrig_{trigger}").astype(int)
       })
-      event_ntriggingmuons = getattr(reco_muons, f"isTriggering_{trigger}").astype(int).sum()
+      event_ntriggeringmuons = getattr(reco_muons, f"isTriggeringFull_{trigger}").astype(int).sum()
       reco_bskkmumu.add_attributes(**{
-        f"TagCount_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggingmuons - getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}"),
+        f"TagCount_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggeringmuons - getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}"),
       })
+
+      reco_bskkmumu.add_attributes(**{
+        f"MuonIsTrigCountMaxPt_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrigMaxPt_{trigger}").astype(int) + getattr(reco_bskkmumu, f"Muon2IsTrigMaxPt_{trigger}").astype(int)
+      })
+      event_ntriggeringmuons_maxpt =  getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_muons.pt == reco_muons.pt.max()].astype(int).sum()
+      reco_bskkmumu.add_attributes(**{
+        f"TagCountMaxPt_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCountMaxPt_{trigger}").ones_like() * event_ntriggeringmuons_maxpt - getattr(reco_bskkmumu, f"MuonIsTrigCountMaxPt_{trigger}"),
+      })
+
+
     reco_bskkmumu.add_attributes(l_xy_sig = where(reco_bskkmumu.l_xy_unc > 0, reco_bskkmumu.l_xy / reco_bskkmumu.l_xy_unc, -1.e20))
 
     # General selection
@@ -339,8 +368,8 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selections["l_xy_sig"] = (abs(reco_bskkmumu.l_xy_sig) > final_cuts["Bs"]["l_xy_sig"])
     selections["sv_prob"]  = (reco_bskkmumu.sv_prob > final_cuts["Bs"]["sv_prob"])
     selections["cos2D"]    = (reco_bskkmumu.fit_cos2D > final_cuts["Bs"]["cos2D"])
-    selections["l1"] = (reco_bskkmumu.l1_pt > final_cuts["Bs"]["l1_pt"])
-    selections["l2"] = (reco_bskkmumu.l2_pt > final_cuts["Bs"]["l2_pt"])
+    selections["Bs"]["l1"] =  (reco_bskkmumu.l1_pt > final_cuts["Bs"]["l1_pt"]) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
+    selections["Bs"]["l2"] =  (reco_bskkmumu.l2_pt > final_cuts["Bs"]["l2_pt"]) & (abs(reco_bskkmumu.l2_eta) < 2.4) & (reco_bskkmumu.l2_softId)
     #selections["l1"]       = (reco_bskkmumu.l1_pt > 1.5) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
     #selections["l2"]       = (abs(reco_bskkmumu.l2_eta) < 2.4) & (reco_bskkmumu.l2_softId)
     #selections["l2"]       = (selections["l2"] & where(abs(reco_bskkmumu.l2_eta) < 1.4, 
@@ -384,15 +413,29 @@ class MCEfficencyProcessor(processor.ProcessorABC):
 
 
     for trigger in self._triggers:
-      trigger_mask = (df[trigger] == 1) * reco_bskkmumu_mask_template
+      trigger_mask = ((df[trigger] == 1) & (df[l1_seeds[trigger]] == 1)) * reco_bskkmumu_mask_template # 
 
       selections[f"recomatch_{trigger}"]      = selections["reco"] & trigger_mask
+
       selections[f"tag_{trigger}"]            = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}"))
       selections[f"tagmatch_{trigger}"]       = selections[f"tag_{trigger}"] & selections["truthmatched"]
       selections[f"tagunmatched_{trigger}"]   = selections[f"tag_{trigger}"] & (~selections["truthmatched"])
+
       selections[f"probe_{trigger}"]          = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"TagCount_{trigger}") >= 1)
       selections[f"probematch_{trigger}"]     = selections[f"probe_{trigger}"] & selections["truthmatched"]
       selections[f"probeunmatched_{trigger}"] = selections[f"probe_{trigger}"] & (~selections["truthmatched"])
+
+      selections[f"tagMaxPt_{trigger}"]            = selections["reco"] & trigger_mask & \
+                                                      (
+                                                        (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l1_idx] == reco_muons.pt.max())) \
+                                                        | (getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l2_idx] == reco_muons.pt.max()))
+                                                      )
+      selections[f"tagMaxPtmatch_{trigger}"]       = selections[f"tagMaxPt_{trigger}"] & selections["truthmatched"]
+      selections[f"tagMaxPtunmatched_{trigger}"]   = selections[f"tagMaxPt_{trigger}"] & (~selections["truthmatched"])
+
+      selections[f"probeMaxPt_{trigger}"]          = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"TagCountMaxPt_{trigger}") >= 1)
+      selections[f"probeMaxPtmatch_{trigger}"]     = selections[f"probeMaxPt_{trigger}"] & selections["truthmatched"]
+      selections[f"probeMaxPtunmatched_{trigger}"] = selections[f"probeMaxPt_{trigger}"] & (~selections["truthmatched"])
 
     # If more than one B is selected, choose best chi2
     selections["recomatch"] = selections["recomatch"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["recomatch"]].min())
@@ -404,6 +447,9 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       selections[f"probe_{trigger}"]          = selections[f"probe_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probe_{trigger}"]].min())
       selections[f"probematch_{trigger}"]     = selections[f"probematch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probematch_{trigger}"]].min())
       selections[f"probeunmatched_{trigger}"] = selections[f"probeunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeunmatched_{trigger}"]].min())
+
+      selections[f"tagMaxPtmatch_{trigger}"]       = selections[f"tagMaxPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMaxPtmatch_{trigger}"]].min())
+      selections[f"probeMaxPtmatch_{trigger}"]     = selections[f"probeMaxPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMaxPtmatch_{trigger}"]].min())
 
     # Fill cutflow
     cumulative_selection = reco_bskkmumu.pt.ones_like().astype(bool)
@@ -426,7 +472,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
 
     # Fill reco histograms
     output["nMuon"].fill(dataset=dataset_name, nMuon=df["nMuon"])
-    output["nMuon_isTrig"].fill(dataset=dataset_name, nMuon_isTrig=reco_muons.pt[reco_muons.isTriggering==1].count())
+    #output["nMuon_isTrig"].fill(dataset=dataset_name, nMuon_isTrig=reco_muons.pt[reco_muons.isTriggering==1].count())
     output["Muon_pt"].fill(dataset=dataset_name, Muon_pt=reco_muons.pt.flatten())
     output["Muon_pt_isTrig"].fill(dataset=dataset_name, Muon_pt_isTrig=reco_muons.pt[reco_muons.isTriggering==1].flatten())
 
@@ -817,11 +863,14 @@ if __name__ == "__main__":
   in_txt = {
       #"Bs2PhiJpsi2KKMuMu_probefilter_noconstr": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v1_7/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
       #"Bs2PhiJpsi2KKMuMu_inclusive_noconstr": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v1_6/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
-      "Bs2PhiJpsi2KKMuMu_probefilter": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
-      "Bs2PhiJpsi2KKMuMu_inclusive": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_6/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
       #"Bs2PhiJpsi2KKMuMu_probefilter_lzma6": "/home/dryu/BFrag/boffea/barista/filelists/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_lzma.txt",
       #"Bs2PhiJpsi2KKMuMu_probefilter_zlib6": "/home/dryu/BFrag/boffea/barista/filelists/v1_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen_zlib.txt",
       #"Bs2PhiJpsi2KKMuMu_probefilter_veryloose": "/home/dryu/BFrag/boffea/barista/filelists/v1_5_veryloose/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt",
+      #"Bs2PhiJpsi2KKMuMu_probefilter": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_6/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
+      #"Bs2PhiJpsi2KKMuMu_inclusive": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/v2_6/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
+      "Bs2PhiJpsi2KKMuMu_probefilter": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/frozen/files_BsToPhiJpsi_ToKKMuMu_probefilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
+      "Bs2PhiJpsi2KKMuMu_inclusive": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/frozen/files_BsToJpsiPhi_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
+      "Bs2PhiJpsi2KKMuMu_mufilter": os.path.expandvars("$HOME/BFrag/boffea/barista/filelists/frozen/files_BsToPhiJpsi_ToMuMu_MuFilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen.txt"),
   }
   dataset_files = {}
   for dataset_name, filelistpath in in_txt.items():
