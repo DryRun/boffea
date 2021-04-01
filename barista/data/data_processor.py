@@ -42,7 +42,7 @@ class DataProcessor(processor.ProcessorABC):
     self._triggers = ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]
     self._trigger_strategies = self._triggers + ["HLT_Mu9_IP5_only", "HLT_Mu9_IP6_only", "HLT_Mu12_IP6_only"] #  - probably useless
 
-    for side in ["tag", "probe"]:
+    for side in ["tag", "probe"]: #, "tagMaxPt", "probeMaxPt"]:
       for trigger_strategy in self._trigger_strategies:
         selection_name = f"{side}_{trigger_strategy}"
         for bflavor in ["Bu", "Bd", "Bs"]:
@@ -218,56 +218,116 @@ class DataProcessor(processor.ProcessorABC):
      "HLT_Mu9_IP6": 9*1.05,
      "HLT_Mu12_IP6": 12*1.05,
     }        
+    tagmuon_ipcuts = {
+     "HLT_Mu7_IP4": 4 * 1.05, 
+     "HLT_Mu9_IP5": 5 * 1.05, 
+     "HLT_Mu9_IP6": 5 * 1.05, 
+     "HLT_Mu12_IP6": 6 * 1.05, 
+    }        
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
       reco_bskkmumu.add_attributes(**{
-        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l1_idx],
-        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l2_idx],
-        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l1_idx] & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts[trigger]),
-        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bskkmumu.l2_idx] & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts[trigger]),
+        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx],
+        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx],
+        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
       })
+      #reco_bskkmumu.add_attributes(**{
+      #  f"Muon1IsTrigMaxPt_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l1_idx] == reco_muons.pt.max()),
+      #  f"Muon2IsTrigMaxPt_{trigger}": getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l2_idx] == reco_muons.pt.max()),
+      #})
+
       reco_bskkmumu.add_attributes(**{
         f"MuonIsTrigCount_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrig_{trigger}").astype(int) + getattr(reco_bskkmumu, f"Muon2IsTrig_{trigger}").astype(int)
       })
-      event_ntriggingmuons = getattr(reco_muons, f"isTriggering_{trigger}").astype(int).sum()
+      event_ntriggeringmuons = getattr(reco_muons, f"isTriggeringFull_{trigger}").astype(int).sum()
       reco_bskkmumu.add_attributes(**{
-        f"TagCount_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggingmuons - getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}")
+        f"TagCount_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggeringmuons - getattr(reco_bskkmumu, f"MuonIsTrigCount_{trigger}")
       })
 
+      #reco_bskkmumu.add_attributes(**{
+      #  f"MuonIsTrigCountMaxPt_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrigMaxPt_{trigger}").astype(int) + getattr(reco_bskkmumu, f"Muon2IsTrigMaxPt_{trigger}").astype(int)
+      #})
+      #event_ntriggeringmuons_maxpt =  getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_muons.pt == reco_muons.pt.max()].astype(int).sum()
+      #reco_bskkmumu.add_attributes(**{
+      #  f"TagCountMaxPt_{trigger}": getattr(reco_bskkmumu, f"MuonIsTrigCountMaxPt_{trigger}").ones_like() * event_ntriggeringmuons_maxpt - getattr(reco_bskkmumu, f"MuonIsTrigCountMaxPt_{trigger}"),
+      #})
+
+
       reco_bukmumu.add_attributes(**{
-        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l1_idx],
-        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l2_idx],
-        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l1_idx] & (reco_muons.pt[reco_bukmumu.l1_idx] > tagmuon_ptcuts[trigger]),
-        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bukmumu.l2_idx] & (reco_muons.pt[reco_bukmumu.l2_idx] > tagmuon_ptcuts[trigger]),
+        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l1_idx],
+        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l2_idx],
+        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l1_idx] \
+                                        & (reco_muons.pt[reco_bukmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bukmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l2_idx] \
+                                        & (reco_muons.pt[reco_bukmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bukmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
       })
+      #reco_bukmumu.add_attributes(**{
+      #  f"Muon1IsTrigMaxPt_{trigger}": getattr(reco_bukmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l1_idx] == reco_muons.pt.max()),
+      #  f"Muon2IsTrigMaxPt_{trigger}": getattr(reco_bukmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l2_idx] == reco_muons.pt.max()),
+      #})
+
       reco_bukmumu.add_attributes(**{
         f"MuonIsTrigCount_{trigger}": getattr(reco_bukmumu, f"Muon1IsTrig_{trigger}").astype(int) + getattr(reco_bukmumu, f"Muon2IsTrig_{trigger}").astype(int)
       })
-      event_ntriggingmuons = getattr(reco_muons, f"isTriggering_{trigger}").astype(int).sum()
+      event_ntriggeringmuons = getattr(reco_muons, f"isTriggeringFull_{trigger}").astype(int).sum()
       reco_bukmumu.add_attributes(**{
-        f"TagCount_{trigger}": getattr(reco_bukmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggingmuons - getattr(reco_bukmumu, f"MuonIsTrigCount_{trigger}")
+        f"TagCount_{trigger}": getattr(reco_bukmumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggeringmuons - getattr(reco_bukmumu, f"MuonIsTrigCount_{trigger}")
       })
 
+      #reco_bukmumu.add_attributes(**{
+      #  f"MuonIsTrigCountMaxPt_{trigger}": getattr(reco_bukmumu, f"Muon1IsTrigMaxPt_{trigger}").astype(int) + getattr(reco_bukmumu, f"Muon2IsTrigMaxPt_{trigger}").astype(int)
+      #})
+      #event_ntriggeringmuons_maxpt =  getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_muons.pt == reco_muons.pt.max()].astype(int).sum()
+      #reco_bukmumu.add_attributes(**{
+      #  f"TagCountMaxPt_{trigger}": getattr(reco_bukmumu, f"MuonIsTrigCountMaxPt_{trigger}").ones_like() * event_ntriggeringmuons_maxpt - getattr(reco_bukmumu, f"MuonIsTrigCountMaxPt_{trigger}"),
+      #})
+
+
       reco_bdkpimumu.add_attributes(**{
-        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bdkpimumu.l1_idx],
-        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bdkpimumu.l2_idx],
-        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bdkpimumu.l1_idx] & (reco_muons.pt[reco_bdkpimumu.l1_idx] > tagmuon_ptcuts[trigger]),
-        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggering_{trigger}")[reco_bdkpimumu.l2_idx] & (reco_muons.pt[reco_bdkpimumu.l2_idx] > tagmuon_ptcuts[trigger]),
+        f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bdkpimumu.l1_idx],
+        f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bdkpimumu.l2_idx],
+        f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bdkpimumu.l1_idx] \
+                                                & (reco_muons.pt[reco_bdkpimumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                                & (abs(reco_muons.dxySig[reco_bdkpimumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bdkpimumu.l2_idx] \
+                                                & (reco_muons.pt[reco_bdkpimumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                                & (abs(reco_muons.dxySig[reco_bdkpimumu.l1_idx]) > tagmuon_ipcuts[trigger]),
       })
+      #reco_bdkpimumu.add_attributes(**{
+      #  f"Muon1IsTrigMaxPt_{trigger}": getattr(reco_bdkpimumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bdkpimumu.l1_idx] == reco_muons.pt.max()),
+      #  f"Muon2IsTrigMaxPt_{trigger}": getattr(reco_bdkpimumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bdkpimumu.l2_idx] == reco_muons.pt.max()),
+      #})
+
       reco_bdkpimumu.add_attributes(**{
         f"MuonIsTrigCount_{trigger}": getattr(reco_bdkpimumu, f"Muon1IsTrig_{trigger}").astype(int) + getattr(reco_bdkpimumu, f"Muon2IsTrig_{trigger}").astype(int)
       })
-      event_ntriggingmuons = getattr(reco_muons, f"isTriggering_{trigger}").astype(int).sum()
+      event_ntriggeringmuons = getattr(reco_muons, f"isTriggeringFull_{trigger}").astype(int).sum()
       reco_bdkpimumu.add_attributes(**{
-        f"TagCount_{trigger}": getattr(reco_bdkpimumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggingmuons - getattr(reco_bdkpimumu, f"MuonIsTrigCount_{trigger}")
+        f"TagCount_{trigger}": getattr(reco_bdkpimumu, f"MuonIsTrigCount_{trigger}").ones_like() * event_ntriggeringmuons - getattr(reco_bdkpimumu, f"MuonIsTrigCount_{trigger}")
       })
+
+      #reco_bdkpimumu.add_attributes(**{
+      #  f"MuonIsTrigCountMaxPt_{trigger}": getattr(reco_bdkpimumu, f"Muon1IsTrigMaxPt_{trigger}").astype(int) + getattr(reco_bdkpimumu, f"Muon2IsTrigMaxPt_{trigger}").astype(int)
+      #})
+      #event_ntriggeringmuons_maxpt =  getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_muons.pt == reco_muons.pt.max()].astype(int).sum()
+      #reco_bdkpimumu.add_attributes(**{
+      #  f"TagCountMaxPt_{trigger}": getattr(reco_bdkpimumu, f"MuonIsTrigCountMaxPt_{trigger}").ones_like() * event_ntriggeringmuons_maxpt - getattr(reco_bdkpimumu, f"MuonIsTrigCountMaxPt_{trigger}"),
+      #})
+
 
     '''
     reco_bskkmumu.add_attributes(
                   Muon1IsTrig = reco_muons.isTriggering[reco_bskkmumu.l1_idx], 
                   Muon2IsTrig = reco_muons.isTriggering[reco_bskkmumu.l2_idx])
     reco_bskkmumu.add_attributes(MuonIsTrigCount = reco_bskkmumu.Muon1IsTrig.astype(int) + reco_bskkmumu.Muon2IsTrig.astype(int))
-    event_ntriggingmuons = reco_muons.isTriggering.astype(int).sum()
-    reco_bskkmumu.add_attributes(TagCount = reco_bskkmumu.MuonIsTrigCount.ones_like() * event_ntriggingmuons - reco_bskkmumu.MuonIsTrigCount)
+    event_ntriggeringmuons = reco_muons.isTriggering.astype(int).sum()
+    reco_bskkmumu.add_attributes(TagCount = reco_bskkmumu.MuonIsTrigCount.ones_like() * event_ntriggeringmuons - reco_bskkmumu.MuonIsTrigCount)
     '''
     reco_bskkmumu.add_attributes(l_xy_sig = where(reco_bskkmumu.l_xy_unc > 0, reco_bskkmumu.l_xy / reco_bskkmumu.l_xy_unc, -1.e20))
 
@@ -276,8 +336,8 @@ class DataProcessor(processor.ProcessorABC):
                   Muon1IsTrig = reco_muons.isTriggering[reco_bukmumu.l1_idx], 
                   Muon2IsTrig = reco_muons.isTriggering[reco_bukmumu.l2_idx])
     reco_bukmumu.add_attributes(MuonIsTrigCount = reco_bukmumu.Muon1IsTrig.astype(int) + reco_bukmumu.Muon2IsTrig.astype(int))
-    event_ntriggingmuons = reco_muons.isTriggering.astype(int).sum()
-    reco_bukmumu.add_attributes(TagCount = reco_bukmumu.MuonIsTrigCount.ones_like() * event_ntriggingmuons - reco_bukmumu.MuonIsTrigCount)
+    event_ntriggeringmuons = reco_muons.isTriggering.astype(int).sum()
+    reco_bukmumu.add_attributes(TagCount = reco_bukmumu.MuonIsTrigCount.ones_like() * event_ntriggeringmuons - reco_bukmumu.MuonIsTrigCount)
     '''
     reco_bukmumu.add_attributes(l_xy_sig = where(reco_bukmumu.l_xy_unc > 0, reco_bukmumu.l_xy / reco_bukmumu.l_xy_unc, -1.e20))
 
@@ -286,18 +346,16 @@ class DataProcessor(processor.ProcessorABC):
                   Muon1IsTrig = reco_muons.isTriggering[reco_bdkpimumu.l1_idx], 
                   Muon2IsTrig = reco_muons.isTriggering[reco_bdkpimumu.l2_idx])
     reco_bdkpimumu.add_attributes(MuonIsTrigCount = reco_bdkpimumu.Muon1IsTrig.astype(int) + reco_bdkpimumu.Muon2IsTrig.astype(int))
-    event_ntriggingmuons = reco_muons.isTriggering.astype(int).sum()
-    reco_bdkpimumu.add_attributes(TagCount = reco_bdkpimumu.MuonIsTrigCount.ones_like() * event_ntriggingmuons - reco_bdkpimumu.MuonIsTrigCount)
+    event_ntriggeringmuons = reco_muons.isTriggering.astype(int).sum()
+    reco_bdkpimumu.add_attributes(TagCount = reco_bdkpimumu.MuonIsTrigCount.ones_like() * event_ntriggeringmuons - reco_bdkpimumu.MuonIsTrigCount)
     '''
     reco_bdkpimumu.add_attributes(l_xy_sig = where(reco_bdkpimumu.l_xy_unc > 0, reco_bdkpimumu.l_xy / reco_bdkpimumu.l_xy_unc, -1.e20))
 
     # General selection
     trigger_masks = {}
     trigger_masks["inclusive"] = np.full_like(df["HLT_Mu7_IP4"], True)
-    trigger_masks["HLT_Mu7_IP4"] = (df["HLT_Mu7_IP4"] == 1)
-    trigger_masks["HLT_Mu9_IP5"] = (df["HLT_Mu9_IP5"] == 1)
-    trigger_masks["HLT_Mu9_IP6"] = (df["HLT_Mu9_IP6"] == 1)
-    trigger_masks["HLT_Mu12_IP6"] = (df["HLT_Mu12_IP6"] == 1)
+    for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
+      trigger_masks[trigger] = (df[trigger] == 1) & (df[l1_seeds[trigger]] == 1)
 
     trigger_masks["HLT_Mu9_IP5_only"]  = trigger_masks["HLT_Mu9_IP5"] & ~trigger_masks["HLT_Mu7_IP4"]
     trigger_masks["HLT_Mu9_IP6_only"]  = trigger_masks["HLT_Mu9_IP6"] & (~trigger_masks["HLT_Mu9_IP5"]) & (~trigger_masks["HLT_Mu7_IP4"])
@@ -353,9 +411,20 @@ class DataProcessor(processor.ProcessorABC):
 
       selections["Bs"][f"recotrig_{trigger_strategy}"]   = selections["Bs"]["reco"] & (trigger_mask * reco_bskkmumu_mask_template).astype(bool)
       selections["Bs"][f"tag_{trigger_strategy}"]   = selections["Bs"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}"))
-      selections["Bs"][f"tag_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tag_{trigger_strategy}"]].min())
       selections["Bs"][f"probe_{trigger_strategy}"] = selections["Bs"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bskkmumu, f"TagCount_{trigger}") >= 1)
+
+      #selections["Bs"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bs"][f"recotrig_{trigger_strategy}"] & \
+      #                                                  (
+      #                                                    (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l1_idx] == reco_muons.pt.max())) \
+      #                                                    | (getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l2_idx] == reco_muons.pt.max()))
+      #                                                  )
+      #selections["Bs"][f"probeMaxPt_{trigger_strategy}"] = selections["Bs"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bskkmumu, f"TagCountMaxPt_{trigger}") >= 1)
+
+      # If more than one, choose lowest chi^2
+      selections["Bs"][f"tag_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tag_{trigger_strategy}"]].min())
       selections["Bs"][f"probe_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probe_{trigger_strategy}"]].min())
+      #selections["Bs"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bs"][f"tagMaxPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagMaxPt_{trigger_strategy}"]].min())
+      #selections["Bs"][f"probeMaxPt_{trigger_strategy}"] = selections["Bs"][f"probeMaxPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeMaxPt_{trigger_strategy}"]].min())
       #selections["Bs"][f"recotrig_{trigger_strategy}_sideband"] = selections["Bs"][f"recotrig_{trigger_strategy}"] & (abs(reco_bskkmumu.fit_mass - BS_MASS) > 0.1)
 
     # Fill cutflows
@@ -424,9 +493,20 @@ class DataProcessor(processor.ProcessorABC):
 
       selections["Bu"][f"recotrig_{trigger_strategy}"]   = selections["Bu"]["reco"] & (trigger_mask * reco_bukmumu_mask_template).astype(bool)
       selections["Bu"][f"tag_{trigger_strategy}"]   = selections["Bu"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bukmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bukmumu, f"Muon2IsTrigTight_{trigger}"))
-      selections["Bu"][f"tag_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tag_{trigger_strategy}"]].min())
       selections["Bu"][f"probe_{trigger_strategy}"] = selections["Bu"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bukmumu, f"TagCount_{trigger}") >= 1)
+
+      #selections["Bu"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bu"][f"recotrig_{trigger_strategy}"] & \
+      #                                                  (
+      #                                                    (getattr(reco_bukmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l1_idx] == reco_muons.pt.max())) \
+      #                                                    | (getattr(reco_bukmumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bukmumu.l2_idx] == reco_muons.pt.max()))
+      #                                                  )
+      #selections["Bu"][f"probeMaxPt_{trigger_strategy}"] = selections["Bu"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bukmumu, f"TagCountMaxPt_{trigger}") >= 1)
+
+      selections["Bu"][f"tag_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tag_{trigger_strategy}"]].min())
       selections["Bu"][f"probe_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probe_{trigger_strategy}"]].min())
+      #selections["Bu"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bu"][f"tagMaxPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagMaxPt_{trigger_strategy}"]].min())
+      #selections["Bu"][f"probeMaxPt_{trigger_strategy}"] = selections["Bu"][f"probeMaxPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeMaxPt_{trigger_strategy}"]].min())
+
       #selections["Bu"][f"recotrig_{trigger_strategy}_sideband"] = selections["Bu"][f"recotrig_{trigger_strategy}"] & (abs(reco_bukmumu.fit_mass - BU_MASS) > 0.1)
 
     # Fill cutflow
@@ -487,10 +567,21 @@ class DataProcessor(processor.ProcessorABC):
 
       selections["Bd"][f"recotrig_{trigger_strategy}"]   = selections["Bd"]["reco"] & (trigger_mask * reco_bdkpimumu_mask_template).astype(bool)
       selections["Bd"][f"tag_{trigger_strategy}"]   = selections["Bd"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bdkpimumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bdkpimumu, f"Muon2IsTrigTight_{trigger}"))
-      selections["Bd"][f"tag_{trigger_strategy}"]   = selections["Bd"][f"tag_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tag_{trigger_strategy}"]].min())
       selections["Bd"][f"probe_{trigger_strategy}"] = selections["Bd"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bdkpimumu, f"TagCount_{trigger}") >= 1)
-      selections["Bd"][f"probe_{trigger_strategy}"] = selections["Bd"][f"probe_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probe_{trigger_strategy}"]].min())
       #selections["Bd"][f"recotrig_{trigger_strategy}_sideband"] = selections["Bd"][f"recotrig_{trigger_strategy}"] & (abs(reco_bdkpimumu.fit_mass - BD_MASS) > 0.1)
+
+      #selections["Bd"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bd"][f"recotrig_{trigger_strategy}"] & \
+      #                                                  (
+      #                                                    (getattr(reco_bdkpimumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bdkpimumu.l1_idx] == reco_muons.pt.max())) \
+      #                                                    | (getattr(reco_bdkpimumu, f"Muon2IsTrigTight_{trigger}") & (reco_muons.pt[reco_bdkpimumu.l2_idx] == reco_muons.pt.max()))
+      #                                                  )
+      #selections["Bd"][f"probeMaxPt_{trigger_strategy}"] = selections["Bd"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bdkpimumu, f"TagCountMaxPt_{trigger}") >= 1)
+
+      selections["Bd"][f"tag_{trigger_strategy}"]   = selections["Bd"][f"tag_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tag_{trigger_strategy}"]].min())
+      selections["Bd"][f"probe_{trigger_strategy}"] = selections["Bd"][f"probe_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probe_{trigger_strategy}"]].min())
+      #selections["Bd"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bd"][f"tagMaxPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagMaxPt_{trigger_strategy}"]].min())
+      #selections["Bd"][f"probeMaxPt_{trigger_strategy}"] = selections["Bd"][f"probeMaxPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeMaxPt_{trigger_strategy}"]].min())
+
 
     # Fill cutflow
     for trigger_strategy in self._trigger_strategies:
@@ -537,7 +628,7 @@ class DataProcessor(processor.ProcessorABC):
         pt=reco_bskkmumu.fit_pt[svprob_opt_selection].flatten(), 
         mass=reco_bskkmumu.fit_mass[svprob_opt_selection].flatten())
 
-    for selection_name in ["inclusive"] + [f"recotrig_{x}" for x in self._trigger_strategies] + [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies]: # + [f"recotrig_{x}_sideband" for x in self._trigger_strategies]:
+    for selection_name in ["inclusive"] + [f"recotrig_{x}" for x in self._trigger_strategies] + [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies]: # + [f"tagMaxPt_{x}" for x in self._trigger_strategies] + [f"probeMaxPt_{x}" for x in self._trigger_strategies]: # + [f"recotrig_{x}_sideband" for x in self._trigger_strategies]:
       output["BuToKMuMu_fit_pt_absy_mass"].fill(dataset=dataset_name, selection=selection_name, 
                                               fit_pt=reco_bukmumu.fit_pt[selections["Bu"][selection_name]].flatten(),
                                               fit_absy=np.abs(reco_bukmumu.fit_y[selections["Bu"][selection_name]].flatten()),
@@ -623,7 +714,7 @@ class DataProcessor(processor.ProcessorABC):
       output["NM1_BsToKKMuMu_cos2D"].fill(dataset=dataset_name, selection="f{selection}", cos2D=reco_bskkmumu.fit_cos2D[nm1_selections["Bs"][f"cos2D_{selection}"]].flatten())
 
     # Tree outputs
-    for selection_name in [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies]:
+    for selection_name in [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies]: # + [f"tagMaxPt_{x}" for x in self._trigger_strategies] + [f"probeMaxPt_{x}" for x in self._trigger_strategies]:
       #for key in output.keys():
       #  #if "Bcands_Bu" in key:
       #  #  print(key)
