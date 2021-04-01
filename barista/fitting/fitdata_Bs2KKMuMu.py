@@ -21,9 +21,12 @@ import sys
 sys.path.append(".")
 from fit_settings import fit_cuts, cut_strings, fit_text, \
 	BU_FIT_WINDOW, BD_FIT_WINDOW, BS_FIT_WINDOW, \
-	BU_FIT_NBINS, BD_FIT_NBINS, BS_FIT_NBINS
+	BU_FIT_NBINS, BD_FIT_NBINS, BS_FIT_NBINS, \
+	MakeSymHypatia
 
 use_mc_constraints = True
+
+rcache = [] # Prevent RooFit objects from disappearing
 
 # Enums for PDFs
 from enum import Enum

@@ -27,15 +27,6 @@ def pyerfc(x, par):
 	erfc_arg = (x - par[0]) / par[1]
 	return ROOT.TMath.Erfc(erfc_arg)
 
-def plot_mc(tree, mass_range=BS_FIT_WINDOW, cut="", tag=""):
-	h_mc = ROOT.TH1D("h_mc", "h_mc", 100, mass_range[0], mass_range[1])
-	tree.Draw("mass >> h_mc", cut)
-	c = ROOT.TCanvas("c_mc_{}".format(tag), "c_mc_{}".format(tag), 800, 600)
-	h_mc.SetMarkerStyle(20)
-	h_mc.GetXaxis().SetTitle("Fitted M_{J/#Psi K^{+}K^{-}} [GeV]")
-	h_mc.Draw()
-	c.SaveAs("/home/dryu/BFrag/data/fits/mc/{}.pdf".format(c.GetName()))
-
 import re
 re_ptcut = re.compile("\(pt \> (?P<ptmin>\d+\.\d+)\) && \(pt < (?P<ptmax>\d+\.\d+)\)")
 def fit_mc(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name=""):
@@ -68,7 +59,7 @@ def fit_mc(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name=""):
 	model = ROOT.RooAddPdf("model", "model", ROOT.RooArgList(signal_model))
 
 	# Tweaks
-	if cut_name == "ptbin_20p0_23p0" or cut_name == "ptbin_18p0_20p0":
+	if cut_name == "ptbin_20p0_23p0" or cut_name == "ptbin_18p0_20p0" or cut_name == "ptbin_16p0_18p0":
 		ws.var('hyp_a').setVal(1.3343536631565844)
 		ws.var('hyp_lambda').setVal(-1.0188861578823865)
 		ws.var('hyp_mu').setVal(5.367383710855175)
@@ -87,14 +78,14 @@ def fit_mc(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name=""):
 		ws.var('hyp_mu').setVal(5.3670243896118475)
 		ws.var('hyp_n').setVal(7.520065932798015)
 		ws.var('hyp_sigma').setVal(0.013348095459792361)
-	elif cut_name == "ybin_0p0_0p25":
-		ws.var('hyp_a').setVal(5)
+	elif cut_name == "ybin_0p0_0p25" or cut_name == "ybin_0p25_0p5":
+		ws.var('hyp_a').setVal(10)
 		ws.var('hyp_lambda').setVal(-2.3077468252815088)
 		ws.var('hyp_mu').setVal(5.367377390841137)
 		ws.var('hyp_n').setVal(5.343132835540865)
 		ws.var('hyp_sigma').setVal(0.018490119893094497)
 	elif cut_name == "ybin_1p0_1p25":
-		ws.var('hyp_a').setVal(90.48430114972814)
+		ws.var('hyp_a').setVal(10)
 		ws.var('hyp_lambda').setVal(-1.906980676697593)
 		ws.var('hyp_mu').setVal(5.367222659859475)
 		ws.var('hyp_n').setVal(18.140293764367716)
@@ -116,7 +107,7 @@ def fit_mc(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name=""):
 	getattr(ws, "import")(model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def plot_fit(ws, tag="", text=None):
+def plot_fit(ws, fit_result, tag="", text=None):
 	ROOT.gStyle.SetOptStat(0)
 	ROOT.gStyle.SetOptTitle(0)
 
@@ -169,7 +160,7 @@ def plot_fit(ws, tag="", text=None):
 	pull_hist = data_hist.Clone()
 	pull_hist.Reset()
 	chi2 = 0.
-	ndf = -7
+	ndf = -5
 	for xbin in range(1, pull_hist.GetNbinsX()+1):
 		data_val = data_hist.GetBinContent(xbin)
 		fit_val = fit_hist.GetBinContent(xbin)
@@ -258,12 +249,17 @@ if __name__ == "__main__":
 			fit_result.Write()
 			ws_file.Close()
 
+			# Clear cache
+			del ws
+			rcache = []
+
 	if args.plots:
 		for cut_name in cuts:
 			ws_file = ROOT.TFile("Bs/fitws_hyp_mc_Bs_{}.root".format(cut_name), "READ")
 			#ws_file.ls()
 			ws = ws_file.Get("ws")
-			plot_fit(ws, tag="Bs_hyp_{}".format(cut_name), text=fit_text[cut_name])
+			fit_result = ws_file.Get("fitresult_model_fitMC")
+			plot_fit(ws, fit_result, tag="Bs_hyp_{}".format(cut_name), text=fit_text[cut_name])
 
 	if args.tables:
 		print("\n\n*** Printing tables ***\n")

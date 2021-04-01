@@ -111,63 +111,81 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 		pprint(mc_fit_params[cut_name])
 		print("Constraint widths:")
 		pprint(mc_fit_errors[cut_name])
-		for varname in ["hyp_lambda", "hyp_sigma", "hyp_mu", "hyp_a", "hyp_n"]:
-			var = ws.var(varname)
-			print("Adding constraint for {}".format(varname))
-			var.setVal(mc_fit_params[cut_name][varname])
-
-			# Loose rectangular constraint on mean (via variable range)
-			if varname == "hyp_mu":
-				ws.var(varname).setMin(mc_fit_params[cut_name][varname] - 0.1)
-				ws.var(varname).setMax(mc_fit_params[cut_name][varname] + 0.1)
-				continue
+		for param_name in ["hyp_lambda", "hyp_sigma", "hyp_mu", "hyp_a", "hyp_n"]:
+			var = ws.var(param_name)
+			print("Adding constraint for {}".format(param_name))
+			var.setVal(mc_fit_params[cut_name][param_name])
 
 			err_multiplier = 1.0
-			param_val = mc_fit_params[cut_name][varname]
-			param_err   = mc_fit_errors[cut_name][varname] * err_multiplier
+			param_val = mc_fit_params[cut_name][param_name]
+			param_err   = mc_fit_errors[cut_name][param_name] * err_multiplier
+
+			# Loose rectangular constraint on mean (via variable range)
+			if param_name == "hyp_mu":
+				ws.var(param_name).setMin(param_val - 0.1)
+				ws.var(param_name).setMax(param_val + 0.1)
+				continue
+
 			if param_err < 1.e-5:
-				print("WARNING : Param {} has small error {}".format(varname, param_err))
+				print("WARNING : Param {} has small error {}".format(param_name, param_err))
 				raise ValueError("Quitting")
 				sys.exit(1)
 
-			# For core width parameters, set very loose constraint
-			if varname in ["hyp_lambda", "hyp_sigma"]:
-				param_err = max(abs(mc_fit_params[cut_name][varname] / 2.), param_err * 10.)
-
-				constraints[varname] = ROOT.RooGaussian(
-					"constr_{}".format(varname), 
-					"constr_{}".format(varname), 
-					var, 
-					ROOT.RooFit.RooConst(param_val),
-					ROOT.RooFit.RooConst(param_err))
-				print(constraints[varname])
+			# Fix tails
+			if "hyp_a" in param_name or "hyp_n" in param_name:
+				ws.var(param_name).setVal(param_val)
+				ws.var(param_name).setConstant(True)
 				continue
 
-			# For tail parameters, constrain to MC
-			if varname == "hyp_a":
-				constraints[varname] = ROOT.RooGaussian(
-					"constr_{}".format(varname), 
-					"constr_{}".format(varname), 
-					var, 
-					ROOT.RooFit.RooConst(param_val),
-					ROOT.RooFit.RooConst(0.5))
-				print(constraints[varname])
-				continue
-			elif varname == "hyp_n":
-				constraints[varname] = ROOT.RooGaussian(
-					"constr_{}".format(varname), 
-					"constr_{}".format(varname), 
-					var, 
-					ROOT.RooFit.RooConst(param_val),
-					ROOT.RooFit.RooConst(min(param_err, param_val / 10.)))
-				print(constraints[varname])
-				continue
+			if param_name in ["hyp_lambda", "hyp_sigma"]:
+				# For core width parameters, set very loose constraint
+				param_err = max(abs(mc_fit_params[cut_name][param_name] / 2.), param_err * 10.)
+			elif "hyp_n" in param_name:
+				# Tail exponent n: restrict to max of n/10
+				param_err = min(param_err, abs(param_val / 10.))
+			elif "hyp_a" in param_name:
+				# Tail distance from core: restrict to max of 0.5
+				param_err = min(param_err, 0.5)
+
+			# Adjust variable value and range to match constraints
+			ws.var(param_name).setVal(param_val)
+			param_min = max(ws.var(param_name).getMin(), param_val - 10. * param_err)
+			param_max = min(ws.var(param_name).getMax(), param_val + 10. * param_err)
+			if "hyp_lambda" in param_name:
+				param_max = min(0., param_max)
+			elif "hyp_a" in param_name or "hyp_n" in param_name or "hyp_sigma" in param_name:
+				param_min = max(0., param_min)
+			ws.var(param_name).setMin(param_min)
+			ws.var(param_name).setMax(param_max)
+
+			constraints[param_name] = ROOT.RooGaussian(
+				"constr_{}".format(param_name), 
+				"constr_{}".format(param_name), 
+				var, 
+				ROOT.RooFit.RooConst(param_val),
+				ROOT.RooFit.RooConst(param_err))
+			print(constraints[param_name])
 
 	if len(constraints):
 		fit_args.append(ROOT.RooFit.ExternalConstraints(ROOT.RooArgSet(*(constraints.values()))))
 	if correct_eff:
 		if not binned:
 			fit_args.append(ROOT.RooFit.SumW2Error(True)) # Unbinned + weighted needs special uncertainty treatment
+
+	if cut_name == "ptbin_18p0_23p0":
+		ws.var("alpha").setVal(-3.0107e+00)
+		ws.var("hyp_a").setVal(1.5000e+00)
+		ws.var("hyp_lambda").setVal(-1.0902e+00)
+		ws.var("hyp_mu").setVal(5.3667e+00)
+		ws.var("hyp_n").setVal(6.3850e+00)
+		ws.var("hyp_sigma").setVal(1.3932e-02)
+	elif cut_name == "ybin_0p0_0p25":
+		ws.var('alpha').setVal(-3.5850e+00)
+		ws.var('hyp_a').setVal(1.0000e+01)
+		ws.var('hyp_lambda').setVal(-2.8720e+00)
+		ws.var('hyp_mu').setVal(5.3668e+00)
+		ws.var('hyp_n').setVal(5.2368e+00)
+		ws.var('hyp_sigma').setVal(1.7720e-02)
 
 	fit_result = model.fitTo(*fit_args)
 
@@ -179,7 +197,7 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 	getattr(ws, "import")(model, ROOT.RooFit.RecycleConflictNodes())
 	return ws, fit_result
 
-def plot_fit(ws, tag="", subfolder="", text=None, binned=False, correct_eff=False):
+def plot_fit(ws, fit_result, tag="", subfolder="", text=None, binned=False, correct_eff=False):
 	ROOT.gStyle.SetOptStat(0)
 	ROOT.gStyle.SetOptTitle(0)
 
@@ -241,7 +259,7 @@ def plot_fit(ws, tag="", subfolder="", text=None, binned=False, correct_eff=Fals
 	pull_hist = data_hist.Clone()
 	pull_hist.Reset()
 	chi2 = 0.
-	ndf = -3
+	ndf = -6
 	for xbin in range(1, pull_hist.GetNbinsX()+1):
 		data_val = data_hist.GetBinContent(xbin)
 		data_unc = data_hist.GetBinError(xbin)
@@ -305,6 +323,7 @@ if __name__ == "__main__":
 	parser.add_argument("--tables", action="store_true", help="Make yield tables")
 	parser.add_argument("--binned", action="store_true", help="Do binned fit")
 	parser.add_argument("--correct_eff", action="store_true", help="Apply efficiency correction before fitting")
+	parser.add_argument("--fitparams", action="store_true", help="Print fit parameters")
 	args = parser.parse_args()
 
 	import glob
@@ -319,15 +338,17 @@ if __name__ == "__main__":
 		if not set(cuts).issubset(set(fit_cuts)):
 			raise ValueError("Unrecognized cuts: {}".format(args.some))
 
-	trigger_strategies_to_run = ["HLT_Mu9_IP5", "HLT_Mu9_IP6"] ["HLT_all", "HLT_Mu7", "HLT_Mu9"]
+	trigger_strategies_to_run = ["HLT_all", "HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_Mu9_IP6"] # "HLT_all", "HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_Mu9_IP6"
 	if args.fits:
 		for side in ["tag", "probe"]:
+		#for side in ["tagMaxPt", "probeMaxPt"]:
 			trigger_strategies = {
 				"HLT_all": ["HLT_Mu7_IP4", "HLT_Mu9_IP5_only", "HLT_Mu9_IP6_only", "HLT_Mu12_IP6_only"],
 				"HLT_Mu9": ["HLT_Mu9_IP5", "HLT_Mu9_IP6_only"],
-				"HLT_Mu9_IP5": ["HLT_Mu9_IP5_only"],
-				"HLT_Mu9_IP6": ["HLT_Mu9_IP6_only"],
+				"HLT_Mu9_IP5": ["HLT_Mu9_IP5"],
+				"HLT_Mu9_IP6": ["HLT_Mu9_IP6"],
 				"HLT_Mu7": ["HLT_Mu7_IP4"],
+
 			}
 
 			for trigger_strategy in trigger_strategies_to_run:
@@ -338,7 +359,7 @@ if __name__ == "__main__":
 						chain.Add(f"{data_file}/{tree_name}")
 
 				print("Total entries = {}".format(chain.GetEntries()))
-				for cut_name in cuts[side]:
+				for cut_name in cuts[side.replace("MaxPt", "")]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
 					if args.binned:
 						save_tag += "_binned"
@@ -356,10 +377,16 @@ if __name__ == "__main__":
 					fit_result.Write()
 					ws_file.Close()
 
+					# Clear cache
+					del ws
+					rcache = []
+
+
 	if args.plots:
 		for side in ["tag", "probe"]:
+		#for side in ["tagMaxPt", "probeMaxPt"]:
 			for trigger_strategy in trigger_strategies_to_run:
-				for cut_name in cuts[side]:
+				for cut_name in cuts[side.replace("MaxPt", "")]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
 					if args.binned:
 						save_tag += "_binned"
@@ -367,21 +394,26 @@ if __name__ == "__main__":
 						save_tag += "_correcteff"				
 					ws_file = ROOT.TFile("Bs/fitws_hyp_data_Bs_{}.root".format(save_tag), "READ")
 					ws = ws_file.Get("ws")
+					fit_result_name = "fitresult_model_fitData"
+					if args.binned:
+						fit_result_name += "Binned"
+					fit_result = ws_file.Get(fit_result_name)
 					if args.binned:
 						subfolder = "binned"
 					else:
 						subfolder = "unbinned"
 					if args.correct_eff:
 						subfolder += "_correcteff"
-					plot_fit(ws, tag="Bs_hyp_{}".format(save_tag), subfolder=subfolder, text=fit_text[cut_name], binned=args.binned, correct_eff=args.correct_eff)
+					plot_fit(ws, fit_result, tag="Bs_hyp_{}".format(save_tag), subfolder=subfolder, text=fit_text[cut_name], binned=args.binned, correct_eff=args.correct_eff)
 
 	if args.tables and args.all:
 		yields = {}
 		for side in ["tag", "probe"]:
+		#for side in ["tagMaxPt", "probeMaxPt"]:
 			yields[side] = {}
 			for trigger_strategy in trigger_strategies_to_run:
 				yields[side][trigger_strategy] = {}
-				for cut_name in cuts[side]:
+				for cut_name in cuts[side.replace("MaxPt", "")]:
 					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
 					if args.binned:
 						save_tag += "_binned"
@@ -391,7 +423,8 @@ if __name__ == "__main__":
 					#ws_file.ls()
 					ws = ws_file.Get("ws")
 					yields[side][trigger_strategy][cut_name] = extract_yields(ws)
-		yields_file = "Bs/yields_hyp"
+		#yields_file = "Bs/yields_hyp"
+		yields_file = "Bs/yields_maxPt_hyp"
 		if args.binned:
 			yields_file += "_binned"
 		if args.correct_eff:
@@ -400,3 +433,22 @@ if __name__ == "__main__":
 		with open(yields_file, "wb") as f_yields:
 			pickle.dump(yields, f_yields)
 		pprint(yields)
+
+	if args.fitparams:
+		for side in ["probe", "tag"]:
+			for trigger_strategy in ["HLT_all", "HLT_Mu7", "HLT_Mu9"]:
+				for cut_name in cuts[side]:
+					save_tag = "{}_{}_{}".format(side, cut_name, trigger_strategy)
+					if args.binned:
+						save_tag += "_binned"
+					if args.correct_eff:
+						save_tag += "_correcteff"
+					fitresult_file = "Bs/fitws_hyp_data_Bs_{}.root".format(save_tag)
+					if not os.path.isfile(fitresult_file):
+						print("No fit result for {}, skipping. I was looking for {}.".format(save_tag, fitresult_file))
+						continue
+					ws_file = ROOT.TFile(fitresult_file, "READ")
+					#ws_file.ls()
+					fit_result = ws_file.Get(f"fitresult_model_fitData{'Binned' if args.binned else ''}")
+					print("\n*** Printing fit results for {} ***".format(save_tag))
+					fit_result.Print()
