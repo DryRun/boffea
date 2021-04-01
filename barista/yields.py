@@ -54,7 +54,7 @@ def style_graph(graph, btype):
 
 # Load yields from RooFit result
 def load_yields(btype, binned=False, correct_eff=False):
-	yields_file = f"/home/dryu/BFrag/boffea/barista/fitting/{btype}/yields"
+	yields_file = f"/home/dryu/BFrag/boffitting/barista/fitting/{btype}/yields_hyp"
 	if binned:
 		yields_file += "_binned"
 	if correct_eff:
@@ -62,6 +62,8 @@ def load_yields(btype, binned=False, correct_eff=False):
 	yields_file += ".pkl"
 	with open(yields_file, "rb") as f:
 		yields = pickle.load(f)
+	print("DEBUG : Printing yield keys")
+	print(yields["probe"].keys())
 	return yields
 
 def yield_pt_graph(yields, normalize_bin_width=None):
@@ -144,10 +146,14 @@ def yield_y_graph(yields):
 	return tg
 
 def yield_y_plot(yields, save_tag, correct_eff=False):
+	print("\n*** Making y plot {} ***".format(save_tag))
 	canvas = ROOT.TCanvas(f"c_yield_y_{save_tag}", f"c_yield_y_{save_tag}", 800, 600)
 	legend = ROOT.TLegend(0.6, 0.62, 0.88, 0.87)
 	legend.SetFillColor(0)
+	legend.SetFillStyle(0)
 	legend.SetBorderSize(0)
+
+	pprint(yields)
 
 	graphs = {}
 	for btype, yields_btype in yields.items():
@@ -184,12 +190,13 @@ def yield_y_plot(yields, save_tag, correct_eff=False):
 
 
 if __name__ == "__main__":
-	for binned in [True, False]:#, False]:
+	for binned in [True]:#, False]:
 		for correct_eff in [False]: # False
-			for side in ["tag", "probe"]:
-				for trigger_strategy in ['HLT_all', 'HLT_Mu7', 'HLT_Mu9']:
+			for side in ["tag", "probe"]: # , "tagMaxPt", "probeMaxPt"
+				for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]:
 					yields = {}
 					for btype in ["Bu", "Bd", "Bs"]:
+						print(btype)
 						yields[btype] = load_yields(btype, binned)[side][trigger_strategy]
 					save_tag = f"{side}_{trigger_strategy}"
 					if binned:

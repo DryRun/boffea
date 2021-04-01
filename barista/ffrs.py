@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import pickle
 import numpy as np
 from pprint import pprint
@@ -66,16 +67,16 @@ class FFRData:
 		self._dyields = {}
 		yield_files = {
 			"Bs": {
-				"binned": "/home/dryu/BFrag/boffea/barista/fitting/Bs/yields_binned.pkl",
-				"unbinned": "/home/dryu/BFrag/boffea/barista/fitting/Bs/yields.pkl",
+				"binned": "/home/dryu/BFrag/boffitting/barista/fitting/Bs/yields_hyp_binned.pkl",
+				"unbinned": "/home/dryu/BFrag/boffitting/barista/fitting/Bs/yields_hyp.pkl",
 			},
 			"Bu": {
-				"binned": "/home/dryu/BFrag/boffea/barista/fitting/Bu/yields_binned.pkl",
-				"unbinned": "/home/dryu/BFrag/boffea/barista/fitting/Bu/yields.pkl",
+				"binned": "/home/dryu/BFrag/boffitting/barista/fitting/Bu/yields_hyp_binned.pkl",
+				"unbinned": "/home/dryu/BFrag/boffitting/barista/fitting/Bu/yields_hyp.pkl",
 			},
 			"Bd": {
-				"binned": "/home/dryu/BFrag/boffea/barista/fitting/Bd/yields_binned.pkl",
-				"unbinned": "/home/dryu/BFrag/boffea/barista/fitting/Bd/yields.pkl",
+				"binned": "/home/dryu/BFrag/boffitting/barista/fitting/Bd/yields_hyp_binned.pkl",
+				"unbinned": "/home/dryu/BFrag/boffitting/barista/fitting/Bd/yields_hyp.pkl",
 			},
 		}
 		yields_tmp = {}
@@ -86,7 +87,10 @@ class FFRData:
 			else:
 				yield_file = yield_files[btype]["unbinned"]
 			with open(yield_file, "rb") as f:
-				yields_tmp[btype] = pickle.load(f)[self._side][self._trigger_strategy]
+				print(yield_file)
+				stuff = pickle.load(f)
+				print(stuff[self._side].keys())
+				yields_tmp[btype] = stuff[self._side][self._trigger_strategy]
 			cuts_tmp.extend(yields_tmp[btype].keys())
 		cuts_tmp = list(set(cuts_tmp))
 		if self._axis == "pt":
@@ -112,7 +116,7 @@ class FFRData:
 		#pprint(self._yields)
 
 	def load_efficiencies(self):
-		with open("/home/dryu/BFrag/data/efficiency/efficiency2.pkl", "rb") as f:
+		with open("/home/dryu/BFrag/data/efficiency/efficiency3.pkl", "rb") as f:
 			eff_tmp = pickle.load(f) # eff_deff[btype][side][trigger_strategy]
 		self._efficiencies = {}
 		self._defficiencies = {}
@@ -175,6 +179,34 @@ class FFRData:
 		self._fdfu = self._n["Bd"] / self._n["Bu"] / (BR_BdKstarJpsi * BR_KstarKpi) * BR_BuKJpsi
 		self._dfdfu = self._fdfu * np.sqrt((self._dn["Bd"] / self._n["Bd"])**2 + (self._dn["Bu"] / self._n["Bu"])**2)
 
+		# Compute averages
+		self._sum_n = {}
+		self._dsum_n = {}
+		for btype in ["Bu", "Bd", "Bs"]:
+			self._sum_n[btype] = self._n[btype].sum()
+			self._dsum_n[btype] = math.sqrt((self._dn[btype] * self._dn[btype]).sum())
+
+		self._avg_Rsu = self._sum_n["Bs"] / self._sum_n["Bu"] / BR_phiKK
+		self._avg_dRsu = self._avg_Rsu * np.sqrt((self._dsum_n["Bs"] / self._sum_n["Bs"])**2 + (self._dsum_n["Bu"] / self._sum_n["Bu"])**2)
+
+		self._avg_Rsd = self._sum_n["Bs"] / self._sum_n["Bd"] / BR_phiKK * BR_KstarKpi
+		self._avg_dRsd = self._avg_Rsd * np.sqrt((self._dsum_n["Bs"] / self._sum_n["Bs"])**2 + (self._dsum_n["Bd"] / self._sum_n["Bd"])**2)
+
+		self._avg_Rdu = self._sum_n["Bd"] / self._sum_n["Bu"] / BR_KstarKpi
+		self._avg_dRdu = self._avg_Rdu * np.sqrt((self._dsum_n["Bd"] / self._sum_n["Bd"])**2 + (self._dsum_n["Bu"] / self._sum_n["Bu"])**2)
+
+		self._avg_fsfu = self._sum_n["Bs"] / self._sum_n["Bu"] / (BR_BsPhiJpsi * BR_phiKK) * BR_BuKJpsi
+		self._avg_dfsfu = self._avg_fsfu * np.sqrt((self._dsum_n["Bs"] / self._sum_n["Bs"])**2 + (self._dsum_n["Bu"] / self._sum_n["Bu"])**2)
+
+		self._avg_fsfd = self._sum_n["Bs"] / self._sum_n["Bd"] / (BR_BsPhiJpsi * BR_phiKK) * (BR_BdKstarJpsi * BR_KstarKpi)
+		self._avg_dfsfd = self._avg_fsfd * np.sqrt((self._dsum_n["Bs"] / self._sum_n["Bs"])**2 + (self._dsum_n["Bd"] / self._sum_n["Bd"])**2)
+
+		self._avg_fdfu = self._sum_n["Bd"] / self._sum_n["Bu"] / (BR_BdKstarJpsi * BR_KstarKpi) * BR_BuKJpsi
+		self._avg_dfdfu = self._avg_fdfu * np.sqrt((self._dsum_n["Bd"] / self._sum_n["Bd"])**2 + (self._dsum_n["Bu"] / self._sum_n["Bu"])**2)
+
+	def axis(self):
+		return self._axis
+
 	def xbins(self):
 		return self._xbins
 
@@ -225,6 +257,50 @@ class FFRData:
 
 	def dTotalN(self, btype):
 		return self._dtotal_n[btype]
+
+	# Averages
+	def Rsu_avg(self):
+		return self._avg_Rsu
+
+	def Rsd_avg(self):
+		return self._avg_Rsd
+
+	def Rdu_avg(self):
+		return self._avg_Rdu
+
+	def dRsu_avg(self):
+		return self._avg_dRsu
+
+	def dRsd_avg(self):
+		return self._avg_dRsd
+
+	def dRdu_avg(self):
+		return self._avg_dRdu
+
+	def fsfu_avg(self):
+		return self._avg_fsfu
+
+	def fsfd_avg(self):
+		return self._avg_fsfd
+
+	def fdfu_avg(self):
+		return self._avg_fdfu
+
+	def dfsfu_avg(self):
+		return self._avg_dfsfu
+
+	def dfsfd_avg(self):
+		return self._avg_dfsfd
+
+	def dfdfu_avg(self):
+		return self._avg_dfdfu
+
+	def N_avg(self, btype):
+		return self._sum_n[btype]
+
+	def dN_avg(self, btype):
+		return self._dsum_n[btype]
+
 
 class FFRPlot:
 	def __init__(self, ffrs, legend_entries, 
@@ -452,25 +528,41 @@ class FFRPlot:
 		ax_yield.set_xlabel(self._xlabel)
 		ax_yield.set_xlim(self._xlim)
 		ax_yield.set_yscale("log")
+		#print("asdf")
 		#print(maxy)
-		ax_yield.set_ylim([1.e3, 1.e8])
-		ax_yield.set_ylabel(r"Corrected yield / GeV")
+		print("asdf")
+		print(ffr.axis())
+		if ffr.axis() == "pt":
+			ax_yield.set_ylabel(r"Corrected yield / GeV")
+			ax_yield.set_ylim([1.e3, 1.e8])
+		else:
+			ax_yield.set_ylabel(r"Corrected yield")
+			ax_yield.set_ylim([3.e4, 1.e8])
 		ax_yield.xaxis.set_ticks_position("both")
 		ax_yield.yaxis.set_ticks_position("both")
 		ax_yield.tick_params(direction="in")
 		ax_yield.legend()
 		fig_yield.savefig(f"/home/dryu/BFrag/data/yields/corr_yields_{self._save_tag}.png")
 
+def format_N(N, dN):
+	if np.isfinite(N):
+		power10 = math.floor(math.log(N) / math.log(10.))
+		return "$({:.2f} \\pm {:.2f}) \\times 10^{{{:d}}}$".format(N / 10**power10, dN / 10**power10, power10)
+	else:
+		return "{}".format(N)
+
+def format_R(R, dR):
+	return "${:.3f} \\pm {:.3f}$".format(R, dR)
 
 if __name__ == "__main__":
 	ffrs = {}
 	for axis in ["pt", "y"]:
 		ffrs[axis] = {}
-		for side in ["tag", "probe"]:
+		for side in ["tag", "probe"]: # , "tagMaxPt", "probeMaxPt"
 			ffrs[axis][side] = {}
-			for binned in [True, False]:
+			for binned in [True]:
 				ffrs[axis][side][binned] = {}
-				for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7"]:
+				for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]:
 					print(f"Computing FFRs for {axis} {side} binned={binned} {trigger_strategy}")
 					ffrs[axis][side][binned][trigger_strategy] = FFRData(axis=axis, side=side, binned=binned, trigger_strategy=trigger_strategy)
 					ffrs[axis][side][binned][trigger_strategy].load_yields()
@@ -478,33 +570,135 @@ if __name__ == "__main__":
 					ffrs[axis][side][binned][trigger_strategy].finalize()
 
 	# FFR plot comparing tag and probe
-	xlims = {"pt": [0, 45], "y": [0, 2.5]}
-	xlabels = {"pt": r"$p_{T}$ [GeV]", "y": r"$|y|$"}
-	for axis in ["pt"]:#, "y"]:
-		for binned in [True, False]:
-			if binned:
-				binned_str = "binned"
-			else:
-				binned_str = "unbinned"
-			for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7"]:
-				print(f"Plotting FFRs for {axis} binned={binned} {trigger_strategy}")
-				ffrplot = FFRPlot([ffrs[axis]["tag"][binned][trigger_strategy], ffrs[axis]["probe"][binned][trigger_strategy]], 
+	if True:
+		xlims = {"pt": [0, 45], "y": [0, 2.5]}
+		xlabels = {"pt": r"$p_{T}$ [GeV]", "y": r"$|y|$"}
+		for axis in ["pt", "y"]:#, "y"]:
+			for binned in [True]:
+				if binned:
+					binned_str = "binned"
+				else:
+					binned_str = "unbinned"
+				for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]:
+					print(f"Plotting FFRs for {axis} binned={binned} {trigger_strategy}")
+					ffrplot = FFRPlot([ffrs[axis]["tag"][binned][trigger_strategy], ffrs[axis]["probe"][binned][trigger_strategy]], 
+								legend_entries=["Tag", "Probe"],
+								xlabel=xlabels[axis],
+								xlim=xlims[axis],
+								ylim=[0., 0.4],
+								save_tag=f"{axis}_{binned_str}_{trigger_strategy}"
+						)
+					ffrplot.corrected_yield_plot()
+					for side in ["tag", "probe"]:
+						print(f"Relative {side} uncertainties:")
+						print("Rsu = ")
+						print(ffrs[axis][side][binned][trigger_strategy].Rsu())
+						print("dRsu = ")
+						print(ffrs[axis][side][binned][trigger_strategy].dRsu())
+						print("dRsu / Rsu = ")
+						print(ffrs[axis][side][binned][trigger_strategy].dRsu() / ffrs[axis][side][binned][trigger_strategy].Rsu())
+
+				# Final plot: HLT_Mu7 for tag, HLT_all for probe
+				print(f"Plotting FFRs for {axis} binned={binned}, final trigger strategy")
+				ffrplot = FFRPlot([ffrs[axis]["tag"][binned]["HLT_Mu7"], ffrs[axis]["probe"][binned]["HLT_all"]], 
 							legend_entries=["Tag", "Probe"],
 							xlabel=xlabels[axis],
 							xlim=xlims[axis],
 							ylim=[0., 0.4],
-							save_tag=f"{axis}_{binned_str}_{trigger_strategy}"
+							save_tag=f"{axis}_{binned_str}_final"
 					)
 				ffrplot.corrected_yield_plot()
-				for side in ["tag", "probe"]:
-					print(f"Relative {side} uncertainties:")
-					print("Rsu = ")
-					print(ffrs[axis][side][binned][trigger_strategy].Rsu())
-					print("dRsu = ")
-					print(ffrs[axis][side][binned][trigger_strategy].dRsu())
-					print("dRsu / Rsu = ")
-					print(ffrs[axis][side][binned][trigger_strategy].dRsu() / ffrs[axis][side][binned][trigger_strategy].Rsu())
 
 	for btype in ["Bu", "Bd", "Bs"]:
 		for side in ["tag", "probe"]:
 			print(f"Corrected yields {side} {btype} = {ffrs['pt'][side][True]['HLT_all'].N(btype)} +/- {ffrs['pt'][side][True]['HLT_all'].dN(btype)}")
+
+
+	# Make latex table of results
+	with open('/home/dryu/BFrag/data/ffrs/Rtable.tex', 'w') as ftable:
+		for side in ["tag", "probe"]:
+			for axis in ["pt", "y"]:
+				ftable.write("""
+\n
+\\begin{table}[htbp]
+\t\\centering
+\t\\resizebox{\\textwidth}{!}{
+\t\\begin{tabular}{|l|c|c|c|c|c|c|}
+\t\t\\hline
+\t\tBin & $N^{\\mathrm{corr}}_{\\Bs}$ & $N^{\\mathrm{corr}}_{\\Bd}$ & $N^{\\mathrm{corr}}_{\\Bu}$ & $\\Rsu$ & $\\Rsd$ & $\\Rdu$ \\\\
+\t\t\\hline""")
+				if side == "tag":
+					this_ffr = ffrs[axis]["tag"][True]["HLT_Mu7"]
+				elif side == "probe":
+					this_ffr = ffrs[axis]["probe"][True]["HLT_all"]
+				xbins = this_ffr.xbins()
+				for ibin in range(len(xbins)-1):
+					xleft = xbins[ibin]
+					xright = xbins[ibin+1]
+					if axis == "pt":
+						bin_str = "{:d}-{:d}".format(int(xleft), int(xright))
+					else:
+						bin_str = "{:.2f}-{:.2f}".format(xleft, xright)
+					ftable.write("\t\t{bin_str} & {Ns} & {Nd} & {Nu} & {Rsu} & {Rsd} & {Rdu} \\\\ \n\t\t\\hline\n".format(
+						bin_str=bin_str,
+						Ns=format_N(this_ffr.N("Bs")[ibin], this_ffr.dN("Bs")[ibin]),
+						Nd=format_N(this_ffr.N("Bd")[ibin], this_ffr.dN("Bd")[ibin]),
+						Nu=format_N(this_ffr.N("Bu")[ibin], this_ffr.dN("Bu")[ibin]),
+						Rsu=format_R(this_ffr.Rsu()[ibin], this_ffr.dRsu()[ibin]),
+						Rsd=format_R(this_ffr.Rsd()[ibin], this_ffr.dRsd()[ibin]),
+						Rdu=format_R(this_ffr.Rdu()[ibin], this_ffr.dRdu()[ibin]),
+						))
+					'''
+					ftable.write("\t\t{bin_str} & ${Ns:.1f}\\pm{dNs:.1f}$ & ${Nd:.1f}\\pm{dNd:.1f}$ & ${Nu:.1f}\\pm{dNu:.1f}$ & ${Rsu:.3f}\\pm{dRsu:.3f}$ & ${Rsd:.3f}\\pm{dRsd:.3f}$ & ${Rdu:.3f}\\pm{dRdu:.3f}$ \\\\ \n\t\t\\hline\n".format(
+						bin_str=bin_str,
+						Ns=this_ffr.N("Bs")[ibin],
+						dNs=this_ffr.dN("Bs")[ibin],
+						Nd=this_ffr.N("Bd")[ibin],
+						dNd=this_ffr.dN("Bd")[ibin],
+						Nu=this_ffr.N("Bu")[ibin],
+						dNu=this_ffr.dN("Bu")[ibin],
+						Rsu=this_ffr.Rsu()[ibin], 
+						dRsu=this_ffr.dRsu()[ibin], 
+						Rsd=this_ffr.Rsd()[ibin], 
+						dRsd=this_ffr.dRsd()[ibin], 
+						Rdu=this_ffr.Rdu()[ibin], 
+						dRdu=this_ffr.dRdu()[ibin], 
+						))
+					'''
+				ftable.write("\t\t{bin_str} & {Ns} & {Nd} & {Nu} & {Rsu} & {Rsd} & {Rdu} \\\\ \n\t\t\\hline\n".format(
+					bin_str="Total",
+					Ns=format_N(this_ffr.N_avg("Bs"), this_ffr.dN_avg("Bs")),
+					Nd=format_N(this_ffr.N_avg("Bd"), this_ffr.dN_avg("Bd")),
+					Nu=format_N(this_ffr.N_avg("Bu"), this_ffr.dN_avg("Bu")),
+					Rsu=format_R(this_ffr.Rsu_avg(), this_ffr.dRsu_avg()),
+					Rsd=format_R(this_ffr.Rsd_avg(), this_ffr.dRsd_avg()),
+					Rdu=format_R(this_ffr.Rdu_avg(), this_ffr.dRdu_avg()),
+					))
+				'''
+				ftable.write("\t\t{bin_str} & ${Ns:.1f}\\pm{dNs:.1f}$ & ${Nd:.1f}\\pm{dNd:.1f}$ & ${Nu:.1f}\\pm{dNu:.1f}$ & ${Rsu:.3f}\\pm{dRsu:.3f}$ & ${Rsd:.3f}\\pm{dRsd:.3f}$ & ${Rdu:.3f}\\pm{dRdu:.3f}$ \\\\ \n\t\t\\hline\n".format(
+					bin_str="Avg.",
+					Ns=this_ffr.N_avg("Bs"),
+					dNs=this_ffr.dN_avg("Bs"),
+					Nd=this_ffr.N_avg("Bd"),
+					dNd=this_ffr.dN_avg("Bd"),
+					Nu=this_ffr.N_avg("Bu"),
+					dNu=this_ffr.dN_avg("Bu"),
+					Rsu=this_ffr.Rsu_avg(), 
+					dRsu=this_ffr.dRsu_avg(), 
+					Rsd=this_ffr.Rsd_avg(), 
+					dRsd=this_ffr.dRsd_avg(), 
+					Rdu=this_ffr.Rdu_avg(), 
+					dRdu=this_ffr.dRdu_avg(), 
+					))
+				'''
+				if axis == "pt":
+					axis_pretty = "$\\pt$"
+				elif axis == "y":
+					axis_pretty = "$|y|$"
+				ftable.write("""
+\t\\end{{tabular}}
+\t}}
+\t\\caption{{Corrected yields and yield ratios versus {}.}}
+\t\\label{{table:ffrs-{}-{}}}
+\\end{{table}}
+""".format(axis_pretty, side, axis))
