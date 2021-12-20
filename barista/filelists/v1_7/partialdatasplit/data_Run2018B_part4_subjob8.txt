@@ -1,4 +1,0 @@
-/home/dryu/store/BParkingNANO/v1_7/ParkingBPH4/crab_data_Run2018B_part4/200226_005925/0000/BParkNANO_data_2020Feb26_305.root
-/home/dryu/store/BParkingNANO/v1_7/ParkingBPH4/crab_data_Run2018B_part4/200226_005925/0000/BParkNANO_data_2020Feb26_325.root
-/home/dryu/store/BParkingNANO/v1_7/ParkingBPH4/crab_data_Run2018B_part4/200226_005925/0000/BParkNANO_data_2020Feb26_159.root
-/home/dryu/store/BParkingNANO/v1_7/ParkingBPH4/crab_data_Run2018B_part4/200226_005925/0000/BParkNANO_data_2020Feb26_100.root

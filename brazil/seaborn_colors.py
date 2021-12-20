@@ -10,7 +10,7 @@ from ROOT import TColor
 
 class SeabornColors:
 	def __init__(self):
-		self._default_palette_dir = os.path.expandvars("/home/dryu/BFrag/boffea/brazil/seaborn_palettes")
+		self._default_palette_dir = os.path.expandvars("/home/dyu7/BFrag/boffea/brazil/seaborn_palettes")
 		self._palettes = {}
 		self._root_palettes = {}
 

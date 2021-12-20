@@ -77,6 +77,7 @@ class Bcand_accumulator(dict, processor.AccumulatorABC):
         for col, val in branchdict.items():
             if not col in self._cols:
                 raise ValueError(f"Nonexistent column {col}")
+            #print("DEBUG : col = {}".format(col))
             self[col].add(processor.column_accumulator(val))
 
     def add_column(self, colname, arr):

@@ -42,22 +42,43 @@ class DataProcessor(processor.ProcessorABC):
     self._triggers = ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]
     self._trigger_strategies = self._triggers + ["HLT_Mu9_IP5_only", "HLT_Mu9_IP6_only", "HLT_Mu12_IP6_only"] #  - probably useless
 
-    for side in ["tag", "probe"]: #, "tagMaxPt", "probeMaxPt"]:
+    for side in ["tag", "probe", "tagx"]: #, "tagMaxPt", "probeMaxPt"]:
       for trigger_strategy in self._trigger_strategies:
-        selection_name = f"{side}_{trigger_strategy}"
+        #selection_name = f"{side}_{trigger_strategy}"
         for bflavor in ["Bu", "Bd", "Bs"]:
-          self._accumulator[f"Bcands_{bflavor}_{selection_name}"] = processor.defaultdict_accumulator(
+          self._accumulator[f"Bcands_{bflavor}_{side}_{trigger_strategy}"] = processor.defaultdict_accumulator(
             partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass"])) #, outputfile=f"tree_{selection_name}.root"))
 
-    self._accumulator["Bcands_Bs_opt"] = processor.defaultdict_accumulator(
-          partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass", 
-            "sv_prob", "l_xy_sig", "l_xy", "cos2D", 
-            "dm_phi", "dm_jpsi", 
-            "l1_pt", "l2_pt", "k1_pt", "k2_pt", 
-            "l1_eta", "l2_eta", "k1_eta", "k2_eta", 
-            "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", 
-            "HLT_Mu9_IP5_only", "HLT_Mu9_IP6_only", "HLT_Mu12_IP6_only"
-    ])) 
+          #self._accumulator[f"Bcands_{bflavor}_{side}HiTrkPt_{trigger_strategy}"] = processor.defaultdict_accumulator(
+          #  partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass"])) #, outputfile=f"tree_{selection_name}.root"))
+
+          self._accumulator[f"Bcands_{bflavor}_{side}HiMuonPt_{trigger_strategy}"] = processor.defaultdict_accumulator(
+            partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass"])) #, outputfile=f"tree_{selection_name}.root"))
+
+          self._accumulator[f"Bcands_{bflavor}_{side}MediumMuonPt_{trigger_strategy}"] = processor.defaultdict_accumulator(
+            partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass"])) #, outputfile=f"tree_{selection_name}.root"))
+
+          self._accumulator[f"Bcands_{bflavor}_{side}HugeMuonPt_{trigger_strategy}"] = processor.defaultdict_accumulator(
+            partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass"])) #, outputfile=f"tree_{selection_name}.root"))
+
+          self._accumulator[f"Bcands_{bflavor}_{side}VarMuonPt_{trigger_strategy}"] = processor.defaultdict_accumulator(
+            partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass"])) #, outputfile=f"tree_{selection_name}.root"))
+
+          self._accumulator[f"Bcands_{bflavor}_{side}MediumMuon_{trigger_strategy}"] = processor.defaultdict_accumulator(
+            partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass"])) #, outputfile=f"tree_{selection_name}.root"))
+
+    self._do_optz = False
+    if self._do_optz:
+      self._accumulator["Bcands_Bs_opt"] = processor.defaultdict_accumulator(
+            partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass", 
+              "sv_prob", "l_xy_sig", "l_xy", "cos2D", 
+              "dm_phi", "dm_jpsi", 
+              "l1_pt", "l2_pt", "k1_pt", "k2_pt", 
+              "l1_eta", "l2_eta", "k1_eta", "k2_eta", 
+              "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", 
+              "HLT_Mu9_IP5_only", "HLT_Mu9_IP6_only", "HLT_Mu12_IP6_only"
+      ])) 
+    
 
     for trigger_strategy in self._trigger_strategies:
       for bflavor in ["Bu", "Bd", "Bs"]:
@@ -125,26 +146,28 @@ class DataProcessor(processor.ProcessorABC):
                                                           hist.Bin("fit_absy", r"$|y^{(fit)}|$", 50, 0.0, 2.5),
                                                           hist.Bin("fit_mass", r"$m^{(fit)}$ [GeV]", 100, BD_MASS*0.9, BD_MASS*1.1)
                                                         )
-    self._accumulator["BdToKPiMuMu_fit_pt"]           = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_pt", r"$p_{T}^{(fit)}$ [GeV]", 500, 0.0, 100.0))
-    self._accumulator["BdToKPiMuMu_fit_eta"]          = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_eta", r"$\eta^{(fit)}$", 50, -5.0, 5.0))
-    self._accumulator["BdToKPiMuMu_fit_phi"]          = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_phi", r"$\phi^{(fit)}$", 50, -2.0*math.pi, 2.0*math.pi))
-    self._accumulator["BdToKPiMuMu_fit_mass"]         = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_mass", r"$m^{(fit)}$ (nom.) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
-    self._accumulator["BdToKPiMuMu_fit_barmass"]      = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_barmass", r"$m^{(fit)}$ (alt.) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
-    self._accumulator["BdToKPiMuMu_fit_best_mass"]    = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_mass", r"$m^{(fit)}$ (best) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
-    self._accumulator["BdToKPiMuMu_fit_best_barmass"] = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_barmass", r"$m^{(fit)}$ (swap) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
-    self._accumulator["BdToKPiMuMu_chi2"]             = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("chi2", r"Fit $\chi^{2}$", 100, 0.0, 100.0))
-    self._accumulator["BdToKPiMuMu_fit_cos2D"]        = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_cos2D", r"Fit cos2D", 100, -1., 1.))
-    self._accumulator["BdToKPiMuMu_fit_theta2D"]      = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_theta2D", r"Fit $\theta_{2D}$", 100, -1.*math.pi, 1.*math.pi))
-    self._accumulator["BdToKPiMuMu_l_xy"]             = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("l_xy", r"$L_{xy}$",50, -1.0, 4.0))
-    self._accumulator["BdToKPiMuMu_l_xy_sig"]         = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("l_xy_sig", r"$L_{xy}/\sigma(L_{xy})$",50, -1.0, 9.0))
-    self._accumulator["BdToKPiMuMu_sv_prob"]    = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("sv_prob", r"SV prob", 50, 0.0, 1.0))
-    self._accumulator["BdToKPiMuMu_kstar_m"]          = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{K^{*}}$ (nom.) [GeV]", 100, KSTAR_892_MASS * 0.8, KSTAR_892_MASS * 1.2))
-    self._accumulator["BdToKPiMuMu_kstar_m_bar"]      = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{K^{*}}$ (alt.) [GeV]", 100, KSTAR_892_MASS * 0.8, KSTAR_892_MASS * 1.2))
-    self._accumulator["BdToKPiMuMu_kstar_m_best"]     = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{K^{*}}$ (best) [GeV]", 100, KSTAR_892_MASS * 0.8, KSTAR_892_MASS * 1.2))
-    self._accumulator["BdToKPiMuMu_jpsi_m"]           = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{J/\psi}$ [GeV]", 100, JPSI_1S_MASS * 0.8, JPSI_1S_MASS * 1.2))
+    self._accumulator["BdToKPiMuMu_fit_pt"]                = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_pt", r"$p_{T}^{(fit)}$ [GeV]", 500, 0.0, 100.0))
+    self._accumulator["BdToKPiMuMu_fit_eta"]               = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_eta", r"$\eta^{(fit)}$", 50, -5.0, 5.0))
+    self._accumulator["BdToKPiMuMu_fit_phi"]               = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_phi", r"$\phi^{(fit)}$", 50, -2.0*math.pi, 2.0*math.pi))
+    self._accumulator["BdToKPiMuMu_fit_mass"]              = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_mass", r"$m^{(fit)}$ (nom.) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
+    self._accumulator["BdToKPiMuMu_fit_barmass"]           = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_barmass", r"$m^{(fit)}$ (alt.) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
+    self._accumulator["BdToKPiMuMu_fit_best_mass"]         = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_mass", r"$m^{(fit)}$ (best) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
+    self._accumulator["BdToKPiMuMu_fit_best_barmass"]      = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_barmass", r"$m^{(fit)}$ (swap) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2))
+    self._accumulator["BdToKPiMuMu_chi2"]                  = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("chi2", r"Fit $\chi^{2}$", 100, 0.0, 100.0))
+    self._accumulator["BdToKPiMuMu_fit_cos2D"]             = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_cos2D", r"Fit cos2D", 100, -1., 1.))
+    self._accumulator["BdToKPiMuMu_fit_theta2D"]           = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_theta2D", r"Fit $\theta_{2D}$", 100, -1.*math.pi, 1.*math.pi))
+    self._accumulator["BdToKPiMuMu_l_xy"]                  = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("l_xy", r"$L_{xy}$",50, -1.0, 4.0))
+    self._accumulator["BdToKPiMuMu_l_xy_sig"]              = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("l_xy_sig", r"$L_{xy}/\sigma(L_{xy})$",50, -1.0, 9.0))
+    self._accumulator["BdToKPiMuMu_sv_prob"]               = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("sv_prob", r"SV prob", 50, 0.0, 1.0))
+    self._accumulator["BdToKPiMuMu_kstar_m"]               = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{K^{*}}$ (nom.) [GeV]", 100, KSTAR_892_MASS * 0.8, KSTAR_892_MASS * 1.2))
+    self._accumulator["BdToKPiMuMu_kstar_m_bar"]           = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{K^{*}}$ (alt.) [GeV]", 100, KSTAR_892_MASS * 0.8, KSTAR_892_MASS * 1.2))
+    self._accumulator["BdToKPiMuMu_kstar_m_best"]          = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{K^{*}}$ (best) [GeV]", 100, KSTAR_892_MASS * 0.8, KSTAR_892_MASS * 1.2))
+    self._accumulator["BdToKPiMuMu_jpsi_m"]                = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("mass", r"$m_{J/\psi}$ [GeV]", 100, JPSI_1S_MASS * 0.8, JPSI_1S_MASS * 1.2))
     self._accumulator["BdToKPiMuMu_fit_eta_vs_pt_vs_mass"] = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("fit_mass", r"$m^{(fit)}$ (nom.) [GeV]", 100, BD_MASS*0.8, BD_MASS*1.2), hist.Bin("fit_pt", r"$p_{T}^{(fit)}$ [GeV]", 100, 0.0, 100.0), hist.Bin("fit_eta", r"$\eta^{(fit)}$", 50, -5.0, 5.0))
-    self._accumulator["BdToKPiMuMu_k_pt"]             = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("pt", r"$p_{T}(K^{\pm})$ [GeV]", 200, 0.0, 100.0))
-    self._accumulator["BdToKPiMuMu_pi_pt"]            = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("pt", r"$p_{T}(\pi^{\pm})$ [GeV]", 200, 0.0, 100.0))
+    self._accumulator["BdToKPiMuMu_k_pt"]                  = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("pt", r"$p_{T}(K^{\pm})$ [GeV]", 200, 0.0, 100.0))
+    self._accumulator["BdToKPiMuMu_pi_pt"]                 = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("pt", r"$p_{T}(\pi^{\pm})$ [GeV]", 200, 0.0, 100.0))
+    self._accumulator["BdToKPiMuMu_trk1_pt"]               = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("pt", r"$p_{T}(trk 1)$ [GeV]", 200, 0.0, 20.0))
+    self._accumulator["BdToKPiMuMu_trk2_pt"]               = hist.Hist("Events", dataset_axis, selection_axis, hist.Bin("pt", r"$p_{T}(trk 2)$ [GeV]", 200, 0.0, 20.0))
 
 
     # One entry per truth B
@@ -178,8 +201,10 @@ class DataProcessor(processor.ProcessorABC):
     # Add muon quality to B objects
     reco_bskkmumu.add_attributes(
       l1_softId    = reco_muons.softId[reco_bskkmumu.l1_idx],
+      l1_mediumId    = reco_muons.mediumId[reco_bskkmumu.l1_idx],      
       l1_softMvaId = reco_muons.softMvaId[reco_bskkmumu.l1_idx],
       l2_softId    = reco_muons.softId[reco_bskkmumu.l2_idx],
+      l2_mediumId    = reco_muons.mediumId[reco_bskkmumu.l2_idx],      
       l2_softMvaId = reco_muons.softMvaId[reco_bskkmumu.l2_idx],
       trk1_charge  = probe_tracks.charge[reco_bskkmumu.trk1_idx],
       trk2_charge  = probe_tracks.charge[reco_bskkmumu.trk2_idx],
@@ -192,14 +217,18 @@ class DataProcessor(processor.ProcessorABC):
     )
     reco_bukmumu.add_attributes(
       l1_softId    = reco_muons.softId[reco_bukmumu.l1_idx],
+      l1_mediumId    = reco_muons.mediumId[reco_bukmumu.l1_idx],      
       l1_softMvaId = reco_muons.softMvaId[reco_bukmumu.l1_idx],
       l2_softId    = reco_muons.softId[reco_bukmumu.l2_idx],
+      l2_mediumId    = reco_muons.mediumId[reco_bukmumu.l2_idx],      
       l2_softMvaId = reco_muons.softMvaId[reco_bukmumu.l2_idx],
     )
     reco_bdkpimumu.add_attributes(
       l1_softId    = reco_muons.softId[reco_bdkpimumu.l1_idx],
+      l1_mediumId    = reco_muons.mediumId[reco_bdkpimumu.l1_idx],      
       l1_softMvaId = reco_muons.softMvaId[reco_bdkpimumu.l1_idx],
       l2_softId    = reco_muons.softId[reco_bdkpimumu.l2_idx],
+      l2_mediumId    = reco_muons.mediumId[reco_bdkpimumu.l2_idx],      
       l2_softMvaId = reco_muons.softMvaId[reco_bdkpimumu.l2_idx],
       trk1_charge  = probe_tracks.charge[reco_bdkpimumu.trk1_idx],
       trk2_charge  = probe_tracks.charge[reco_bdkpimumu.trk2_idx],
@@ -224,15 +253,23 @@ class DataProcessor(processor.ProcessorABC):
      "HLT_Mu9_IP6": 5 * 1.05, 
      "HLT_Mu12_IP6": 6 * 1.05, 
     }        
+    tagmuon_etacuts = {
+     "HLT_Mu7_IP4": 1.5,
+     "HLT_Mu9_IP5": 1.5,
+     "HLT_Mu9_IP6": 1.5,
+     "HLT_Mu12_IP6": 1.5,
+    }    
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
       reco_bskkmumu.add_attributes(**{
         f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx],
         f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx],
         f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx] \
                                         & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l1_idx]) < tagmuon_etacuts[trigger]) \
                                         & (abs(reco_muons.dxySig[reco_bskkmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
         f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx] \
                                         & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l2_idx]) < tagmuon_etacuts[trigger]) \
                                         & (abs(reco_muons.dxySig[reco_bskkmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
       })
       #reco_bskkmumu.add_attributes(**{
@@ -262,9 +299,11 @@ class DataProcessor(processor.ProcessorABC):
         f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l2_idx],
         f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l1_idx] \
                                         & (reco_muons.pt[reco_bukmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bukmumu.l1_idx]) < tagmuon_etacuts[trigger]) \
                                         & (abs(reco_muons.dxySig[reco_bukmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
         f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bukmumu.l2_idx] \
                                         & (reco_muons.pt[reco_bukmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bukmumu.l2_idx]) < tagmuon_etacuts[trigger]) \
                                         & (abs(reco_muons.dxySig[reco_bukmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
       })
       #reco_bukmumu.add_attributes(**{
@@ -294,10 +333,12 @@ class DataProcessor(processor.ProcessorABC):
         f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bdkpimumu.l2_idx],
         f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bdkpimumu.l1_idx] \
                                                 & (reco_muons.pt[reco_bdkpimumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                                & (abs(reco_muons.eta[reco_bdkpimumu.l1_idx]) < tagmuon_etacuts[trigger]) \
                                                 & (abs(reco_muons.dxySig[reco_bdkpimumu.l1_idx]) > tagmuon_ipcuts[trigger]),
         f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bdkpimumu.l2_idx] \
                                                 & (reco_muons.pt[reco_bdkpimumu.l2_idx] > tagmuon_ptcuts[trigger]) \
-                                                & (abs(reco_muons.dxySig[reco_bdkpimumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+                                                & (abs(reco_muons.eta[reco_bdkpimumu.l2_idx]) < tagmuon_etacuts[trigger]) \
+                                                & (abs(reco_muons.dxySig[reco_bdkpimumu.l2_idx]) > tagmuon_ipcuts[trigger]),
       })
       #reco_bdkpimumu.add_attributes(**{
       #  f"Muon1IsTrigMaxPt_{trigger}": getattr(reco_bdkpimumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bdkpimumu.l1_idx] == reco_muons.pt.max()),
@@ -355,7 +396,7 @@ class DataProcessor(processor.ProcessorABC):
     trigger_masks = {}
     trigger_masks["inclusive"] = np.full_like(df["HLT_Mu7_IP4"], True)
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
-      trigger_masks[trigger] = (df[trigger] == 1) & (df[l1_seeds[trigger]] == 1)
+      trigger_masks[trigger] = (df[trigger] == 1) # & (df[l1_seeds[trigger]] == 1) # Don't apply L1 to data, since the actual seeding was complex...
 
     trigger_masks["HLT_Mu9_IP5_only"]  = trigger_masks["HLT_Mu9_IP5"] & ~trigger_masks["HLT_Mu7_IP4"]
     trigger_masks["HLT_Mu9_IP6_only"]  = trigger_masks["HLT_Mu9_IP6"] & (~trigger_masks["HLT_Mu9_IP5"]) & (~trigger_masks["HLT_Mu7_IP4"])
@@ -366,18 +407,35 @@ class DataProcessor(processor.ProcessorABC):
     nm1_selections = {"Bu":{}, "Bs":{}, "Bd":{}}
 
     reco_bskkmumu_mask_template = reco_bskkmumu.pt.ones_like().astype(bool)
-    selections["Bs"]["sv_pt"]    = (reco_bskkmumu.pt > final_cuts["Bs"]["sv_pt"])
+    selections["Bs"]["sv_pt"]    = (reco_bskkmumu.fit_pt > final_cuts["Bs"]["sv_pt"])
+    selections["Bs"]["absy"]     = (abs(reco_bskkmumu.fit_y) < 2.25)
     selections["Bs"]["l_xy_sig"] = (abs(reco_bskkmumu.l_xy_sig) > final_cuts["Bs"]["l_xy_sig"])
     selections["Bs"]["sv_prob"]  = (reco_bskkmumu.sv_prob > final_cuts["Bs"]["sv_prob"])
     selections["Bs"]["cos2D"]    = (reco_bskkmumu.fit_cos2D > final_cuts["Bs"]["cos2D"])
     selections["Bs"]["l1"]       =  (reco_bskkmumu.l1_pt > final_cuts["Bs"]["l1_pt"]) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
     selections["Bs"]["l2"]       =  (reco_bskkmumu.l2_pt > final_cuts["Bs"]["l2_pt"]) & (abs(reco_bskkmumu.l2_eta) < 2.4) & reco_bskkmumu.l2_softId
+    selections["Bs"]["l1Medium"]       =  (reco_bskkmumu.l1_pt > final_cuts["Bs"]["l1_pt"]) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_mediumId)
+    selections["Bs"]["l2Medium"]       =  (reco_bskkmumu.l2_pt > final_cuts["Bs"]["l2_pt"]) & (abs(reco_bskkmumu.l2_eta) < 2.4) & reco_bskkmumu.l2_mediumId
+    selections["Bs"]["l1HiPt"]       =  (reco_bskkmumu.l1_pt > 3.0) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
+    selections["Bs"]["l2HiPt"]       =  (reco_bskkmumu.l2_pt > 3.0) & (abs(reco_bskkmumu.l2_eta) < 2.4) & reco_bskkmumu.l2_softId
+    selections["Bs"]["l1MediumPt"]       =  (reco_bskkmumu.l1_pt > 2.5) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
+    selections["Bs"]["l2MediumPt"]       =  (reco_bskkmumu.l2_pt > 2.5) & (abs(reco_bskkmumu.l2_eta) < 2.4) & reco_bskkmumu.l2_softId
+    selections["Bs"]["l1HugePt"]       =  (reco_bskkmumu.l1_pt > 3.25) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
+    selections["Bs"]["l2HugePt"]       =  (reco_bskkmumu.l2_pt > 3.25) & (abs(reco_bskkmumu.l2_eta) < 2.4) & reco_bskkmumu.l2_softId
+    selections["Bs"]["l1VarPt"]       = (abs(reco_bskkmumu.l1_eta) < 2.4) \
+                                    & (reco_bskkmumu.l1_softId) \
+                                    & varmuonpt(reco_bskkmumu.l1_pt, abs(reco_bskkmumu.l1_eta))
+    selections["Bs"]["l2VarPt"]       = (abs(reco_bskkmumu.l2_eta) < 2.4) \
+                                    & (reco_bskkmumu.l2_softId) \
+                                    & varmuonpt(reco_bskkmumu.l2_pt, abs(reco_bskkmumu.l2_eta))
     #selections["Bs"]["l2"]       = (abs(reco_bskkmumu.l2_eta) < 2.4) & (reco_bskkmumu.l2_softId)
     #selections["Bs"]["l2"]       = (selections["Bs"]["l2"] & where(abs(reco_bskkmumu.l2_eta) < 1.4, 
     #                                                  (reco_bskkmumu.l2_pt > 1.5), 
     #                                                  (reco_bskkmumu.l2_pt > 1.0))).astype(bool)
     selections["Bs"]["k1"]       = (reco_bskkmumu.trk1_pt > final_cuts["Bs"]["k1_pt"]) & (abs(reco_bskkmumu.trk1_eta) < 2.5)
     selections["Bs"]["k2"]       = (reco_bskkmumu.trk2_pt > final_cuts["Bs"]["k2_pt"]) & (abs(reco_bskkmumu.trk2_eta) < 2.5)
+    selections["Bs"]["k1HiPt"]       = (reco_bskkmumu.trk1_pt > 1.2) & (abs(reco_bskkmumu.trk1_eta) < 2.5)
+    selections["Bs"]["k2HiPt"]       = (reco_bskkmumu.trk2_pt > 1.2) & (abs(reco_bskkmumu.trk2_eta) < 2.5)
     #selections["Bs"]["dR"]       = (delta_r(reco_bskkmumu.trk1_eta, reco_bskkmumu.trk2_eta, reco_bskkmumu.trk1_phi, reco_bskkmumu.trk2_phi) > 0.03) \
     #                                & (delta_r(reco_bskkmumu.trk1_eta, reco_bskkmumu.l1_eta, reco_bskkmumu.trk1_phi, reco_bskkmumu.l1_phi) > 0.03) \
     #                                & (delta_r(reco_bskkmumu.trk1_eta, reco_bskkmumu.l2_eta, reco_bskkmumu.trk1_phi, reco_bskkmumu.l2_phi) > 0.03) \
@@ -393,6 +451,7 @@ class DataProcessor(processor.ProcessorABC):
     # Final selections
     selections["Bs"]["inclusive"] = reco_bskkmumu.fit_pt.ones_like().astype(bool)
     selections["Bs"]["reco"] = selections["Bs"]["sv_pt"] \
+                              & selections["Bs"]["absy"] \
                               & selections["Bs"]["l_xy_sig"] \
                               & selections["Bs"]["sv_prob"] \
                               & selections["Bs"]["cos2D"] \
@@ -412,6 +471,25 @@ class DataProcessor(processor.ProcessorABC):
       selections["Bs"][f"recotrig_{trigger_strategy}"]   = selections["Bs"]["reco"] & (trigger_mask * reco_bskkmumu_mask_template).astype(bool)
       selections["Bs"][f"tag_{trigger_strategy}"]   = selections["Bs"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}"))
       selections["Bs"][f"probe_{trigger_strategy}"] = selections["Bs"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bskkmumu, f"TagCount_{trigger}") >= 1)
+      selections["Bs"][f"tagx_{trigger_strategy}"] = selections["Bs"][f"tag_{trigger_strategy}"] & ~selections["Bs"][f"probe_{trigger_strategy}"]
+
+      #selections["Bs"][f"tagHiTrkPt_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & selections["Bs"]["k1HiPt"] & selections["Bs"]["k2HiPt"]
+      #selections["Bs"][f"probeHiTrkPt_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & selections["Bs"]["k1HiPt"] & selections["Bs"]["k2HiPt"]
+
+      selections["Bs"][f"tagHiMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & selections["Bs"]["l1HiPt"] & selections["Bs"]["l2HiPt"]
+      selections["Bs"][f"probeHiMuonPt_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & selections["Bs"]["l1HiPt"] & selections["Bs"]["l2HiPt"]
+
+      selections["Bs"][f"tagMediumMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & selections["Bs"]["l1MediumPt"] & selections["Bs"]["l2MediumPt"]
+      selections["Bs"][f"probeMediumMuonPt_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & selections["Bs"]["l1MediumPt"] & selections["Bs"]["l2MediumPt"]
+
+      selections["Bs"][f"tagHugeMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & selections["Bs"]["l1HugePt"] & selections["Bs"]["l2HugePt"]
+      selections["Bs"][f"probeHugeMuonPt_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & selections["Bs"]["l1HugePt"] & selections["Bs"]["l2HugePt"]
+
+      selections["Bs"][f"tagVarMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & selections["Bs"]["l1VarPt"] & selections["Bs"]["l2VarPt"]
+      selections["Bs"][f"probeVarMuonPt_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & selections["Bs"]["l1VarPt"] & selections["Bs"]["l2VarPt"]
+
+      selections["Bs"][f"tagMediumMuon_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & selections["Bs"]["l1Medium"] & selections["Bs"]["l2Medium"]
+      selections["Bs"][f"probeMediumMuon_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & selections["Bs"]["l1Medium"] & selections["Bs"]["l2Medium"]
 
       #selections["Bs"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bs"][f"recotrig_{trigger_strategy}"] & \
       #                                                  (
@@ -423,6 +501,19 @@ class DataProcessor(processor.ProcessorABC):
       # If more than one, choose lowest chi^2
       selections["Bs"][f"tag_{trigger_strategy}"]   = selections["Bs"][f"tag_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tag_{trigger_strategy}"]].min())
       selections["Bs"][f"probe_{trigger_strategy}"] = selections["Bs"][f"probe_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probe_{trigger_strategy}"]].min())
+      selections["Bs"][f"tagx_{trigger_strategy}"]   = selections["Bs"][f"tagx_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagx_{trigger_strategy}"]].min())
+      #selections["Bs"][f"tagHiTrkPt_{trigger_strategy}"]   = selections["Bs"][f"tagHiTrkPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagHiTrkPt_{trigger_strategy}"]].min())
+      #selections["Bs"][f"probeHiTrkPt_{trigger_strategy}"] = selections["Bs"][f"probeHiTrkPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeHiTrkPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"tagHiMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tagHiMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagHiMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"probeHiMuonPt_{trigger_strategy}"] = selections["Bs"][f"probeHiMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeHiMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"tagMediumMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tagMediumMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagMediumMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"probeMediumMuonPt_{trigger_strategy}"] = selections["Bs"][f"probeMediumMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeMediumMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"tagHugeMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tagHugeMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagHugeMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"probeHugeMuonPt_{trigger_strategy}"] = selections["Bs"][f"probeHugeMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeHugeMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"tagVarMuonPt_{trigger_strategy}"]   = selections["Bs"][f"tagVarMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagVarMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"probeVarMuonPt_{trigger_strategy}"] = selections["Bs"][f"probeVarMuonPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeVarMuonPt_{trigger_strategy}"]].min())
+      selections["Bs"][f"tagMediumMuon_{trigger_strategy}"]   = selections["Bs"][f"tagMediumMuon_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagMediumMuon_{trigger_strategy}"]].min())
+      selections["Bs"][f"probeMediumMuon_{trigger_strategy}"] = selections["Bs"][f"probeMediumMuon_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeMediumMuon_{trigger_strategy}"]].min())
       #selections["Bs"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bs"][f"tagMaxPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"tagMaxPt_{trigger_strategy}"]].min())
       #selections["Bs"][f"probeMaxPt_{trigger_strategy}"] = selections["Bs"][f"probeMaxPt_{trigger_strategy}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["Bs"][f"probeMaxPt_{trigger_strategy}"]].min())
       #selections["Bs"][f"recotrig_{trigger_strategy}_sideband"] = selections["Bs"][f"recotrig_{trigger_strategy}"] & (abs(reco_bskkmumu.fit_mass - BS_MASS) > 0.1)
@@ -439,6 +530,7 @@ class DataProcessor(processor.ProcessorABC):
         output[cutflow_name][dataset_name][cut_name] += cumulative_selection.sum().sum()
       output[cutflow_name][dataset_name]["tag"] += selections["Bs"][f"tag_{trigger_strategy}"].sum().sum()
       output[cutflow_name][dataset_name]["probe"] += selections["Bs"][f"probe_{trigger_strategy}"].sum().sum()
+      output[cutflow_name][dataset_name]["tagx"] += selections["Bs"][f"tagx_{trigger_strategy}"].sum().sum()
 
       ''' # Sideband cutflow for fast/crude optimization
       cutflow_name = f"reco_cutflow_lowpt_sideband_Bs_{trigger_strategy}"
@@ -461,16 +553,32 @@ class DataProcessor(processor.ProcessorABC):
     # Bu to Jpsi K to mu mu K
     reco_bukmumu_mask_template = reco_bukmumu.pt.ones_like().astype(bool)
     selections["Bu"]["sv_pt"]    = (reco_bukmumu.pt > final_cuts["Bu"]["sv_pt"])
+    selections["Bu"]["absy"]     = (abs(reco_bukmumu.fit_y) < 2.25)
     selections["Bu"]["l_xy_sig"] = (abs(reco_bukmumu.l_xy_sig) > final_cuts["Bu"]["l_xy_sig"])
     selections["Bu"]["sv_prob"]  = (reco_bukmumu.sv_prob > final_cuts["Bu"]["sv_prob"])
     selections["Bu"]["cos2D"]    = (reco_bukmumu.fit_cos2D > final_cuts["Bu"]["cos2D"])
     selections["Bu"]["l1"]       =  (reco_bukmumu.fit_l1_pt > final_cuts["Bu"]["l1_pt"]) & (abs(reco_bukmumu.fit_l1_eta) < 2.4) & reco_bukmumu.l1_softId
     selections["Bu"]["l2"]       =  (reco_bukmumu.fit_l2_pt > final_cuts["Bu"]["l2_pt"]) & (abs(reco_bukmumu.fit_l2_eta) < 2.4) & reco_bukmumu.l2_softId
+    selections["Bu"]["l1Medium"]       =  (reco_bukmumu.fit_l1_pt > final_cuts["Bu"]["l1_pt"]) & (abs(reco_bukmumu.fit_l1_eta) < 2.4) & reco_bukmumu.l1_mediumId
+    selections["Bu"]["l2Medium"]       =  (reco_bukmumu.fit_l2_pt > final_cuts["Bu"]["l2_pt"]) & (abs(reco_bukmumu.fit_l2_eta) < 2.4) & reco_bukmumu.l2_mediumId
+    selections["Bu"]["l1HiPt"]     =  (reco_bukmumu.fit_l1_pt > 3.0) & (abs(reco_bukmumu.fit_l1_eta) < 2.4) & reco_bukmumu.l1_softId
+    selections["Bu"]["l2HiPt"]     =  (reco_bukmumu.fit_l2_pt > 3.0) & (abs(reco_bukmumu.fit_l2_eta) < 2.4) & reco_bukmumu.l2_softId
+    selections["Bu"]["l1MediumPt"] =  (reco_bukmumu.fit_l1_pt > 2.5) & (abs(reco_bukmumu.fit_l1_eta) < 2.4) & reco_bukmumu.l1_softId
+    selections["Bu"]["l2MediumPt"] =  (reco_bukmumu.fit_l2_pt > 2.5) & (abs(reco_bukmumu.fit_l2_eta) < 2.4) & reco_bukmumu.l2_softId
+    selections["Bu"]["l1HugePt"]   =  (reco_bukmumu.fit_l1_pt > 3.25) & (abs(reco_bukmumu.fit_l1_eta) < 2.4) & reco_bukmumu.l1_softId
+    selections["Bu"]["l2HugePt"]   =  (reco_bukmumu.fit_l2_pt > 3.25) & (abs(reco_bukmumu.fit_l2_eta) < 2.4) & reco_bukmumu.l2_softId
+    selections["Bu"]["l1VarPt"]       = (abs(reco_bukmumu.fit_l1_eta) < 2.4) \
+                                    & (reco_bukmumu.l1_softId) \
+                                    & varmuonpt(reco_bukmumu.fit_l1_pt, abs(reco_bukmumu.fit_l1_eta))
+    selections["Bu"]["l2VarPt"]       = (abs(reco_bukmumu.fit_l2_eta) < 2.4) \
+                                    & (reco_bukmumu.l2_softId) \
+                                    & varmuonpt(reco_bukmumu.fit_l2_pt, abs(reco_bukmumu.fit_l2_eta))
     #selections["Bu"]["l2"]       = (abs(reco_bukmumu.fit_l2_eta) < 2.4) & reco_bukmumu.l2_softId
     #selections["Bu"]["l2"]       = (selections["Bu"]["l2"] & where(abs(reco_bukmumu.fit_l2_eta) < 1.4, 
     #                                                  (reco_bukmumu.fit_l2_pt > 1.5), 
     #                                                  (reco_bukmumu.fit_l2_pt > 1.0))).astype(bool)
     selections["Bu"]["k"]        = (reco_bukmumu.fit_k_pt > final_cuts["Bu"]["k_pt"]) & (abs(reco_bukmumu.fit_k_eta) < 2.5)
+    selections["Bu"]["kHiPt"]        = (reco_bukmumu.fit_k_pt > 1.2) & (abs(reco_bukmumu.fit_k_eta) < 2.5)
     #selections["Bu"]["dR"]       = (delta_r(reco_bukmumu.fit_k_eta, reco_bukmumu.fit_l1_eta, reco_bukmumu.fit_k_phi, reco_bukmumu.fit_l1_phi) > 0.03) \
     #                             & (delta_r(reco_bukmumu.fit_k_eta, reco_bukmumu.fit_l2_eta, reco_bukmumu.fit_k_phi, reco_bukmumu.fit_l2_phi) > 0.03) \
     #                             & (delta_r(reco_bukmumu.fit_l1_eta, reco_bukmumu.fit_l2_eta, reco_bukmumu.fit_l1_phi, reco_bukmumu.fit_l2_phi) > 0.03)
@@ -479,6 +587,7 @@ class DataProcessor(processor.ProcessorABC):
     # Final selections["Bu"]
     selections["Bu"]["inclusive"]  = reco_bukmumu.fit_pt.ones_like().astype(bool)
     selections["Bu"]["reco"]       = selections["Bu"]["sv_pt"] \
+                                      & selections["Bu"]["absy"] \
                                       & selections["Bu"]["l_xy_sig"] \
                                       & selections["Bu"]["sv_prob"] \
                                       & selections["Bu"]["cos2D"] \
@@ -494,6 +603,19 @@ class DataProcessor(processor.ProcessorABC):
       selections["Bu"][f"recotrig_{trigger_strategy}"]   = selections["Bu"]["reco"] & (trigger_mask * reco_bukmumu_mask_template).astype(bool)
       selections["Bu"][f"tag_{trigger_strategy}"]   = selections["Bu"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bukmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bukmumu, f"Muon2IsTrigTight_{trigger}"))
       selections["Bu"][f"probe_{trigger_strategy}"] = selections["Bu"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bukmumu, f"TagCount_{trigger}") >= 1)
+      selections["Bu"][f"tagx_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & ~selections["Bu"][f"probe_{trigger_strategy}"]
+      #selections["Bu"][f"tagHiTrkPt_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & selections["Bu"]["kHiPt"]
+      #selections["Bu"][f"probeHiTrkPt_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & selections["Bu"]["kHiPt"]
+      selections["Bu"][f"tagHiMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & selections["Bu"]["l1HiPt"] & selections["Bu"]["l2HiPt"]
+      selections["Bu"][f"probeHiMuonPt_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & selections["Bu"]["l1HiPt"] & selections["Bu"]["l2HiPt"]
+      selections["Bu"][f"tagMediumMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & selections["Bu"]["l1MediumPt"] & selections["Bu"]["l2MediumPt"]
+      selections["Bu"][f"probeMediumMuonPt_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & selections["Bu"]["l1MediumPt"] & selections["Bu"]["l2MediumPt"]
+      selections["Bu"][f"tagHugeMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & selections["Bu"]["l1HugePt"] & selections["Bu"]["l2HugePt"]
+      selections["Bu"][f"probeHugeMuonPt_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & selections["Bu"]["l1HugePt"] & selections["Bu"]["l2HugePt"]
+      selections["Bu"][f"tagVarMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & selections["Bu"]["l1VarPt"] & selections["Bu"]["l2VarPt"]
+      selections["Bu"][f"probeVarMuonPt_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & selections["Bu"]["l1VarPt"] & selections["Bu"]["l2VarPt"]
+      selections["Bu"][f"tagMediumMuon_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & selections["Bu"]["l1Medium"] & selections["Bu"]["l2Medium"]
+      selections["Bu"][f"probeMediumMuon_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & selections["Bu"]["l1Medium"] & selections["Bu"]["l2Medium"]
 
       #selections["Bu"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bu"][f"recotrig_{trigger_strategy}"] & \
       #                                                  (
@@ -504,6 +626,19 @@ class DataProcessor(processor.ProcessorABC):
 
       selections["Bu"][f"tag_{trigger_strategy}"]   = selections["Bu"][f"tag_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tag_{trigger_strategy}"]].min())
       selections["Bu"][f"probe_{trigger_strategy}"] = selections["Bu"][f"probe_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probe_{trigger_strategy}"]].min())
+      selections["Bu"][f"tagx_{trigger_strategy}"]   = selections["Bu"][f"tagx_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagx_{trigger_strategy}"]].min())
+      #selections["Bu"][f"tagHiTrkPt_{trigger_strategy}"]   = selections["Bu"][f"tagHiTrkPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagHiTrkPt_{trigger_strategy}"]].min())
+      #selections["Bu"][f"probeHiTrkPt_{trigger_strategy}"] = selections["Bu"][f"probeHiTrkPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeHiTrkPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"tagHiMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tagHiMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagHiMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"probeHiMuonPt_{trigger_strategy}"] = selections["Bu"][f"probeHiMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeHiMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"tagMediumMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tagMediumMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagMediumMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"probeMediumMuonPt_{trigger_strategy}"] = selections["Bu"][f"probeMediumMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeMediumMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"tagHugeMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tagHugeMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagHugeMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"probeHugeMuonPt_{trigger_strategy}"] = selections["Bu"][f"probeHugeMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeHugeMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"tagVarMuonPt_{trigger_strategy}"]   = selections["Bu"][f"tagVarMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagVarMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"probeVarMuonPt_{trigger_strategy}"] = selections["Bu"][f"probeVarMuonPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeVarMuonPt_{trigger_strategy}"]].min())
+      selections["Bu"][f"tagMediumMuon_{trigger_strategy}"]   = selections["Bu"][f"tagMediumMuon_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagMediumMuon_{trigger_strategy}"]].min())
+      selections["Bu"][f"probeMediumMuon_{trigger_strategy}"] = selections["Bu"][f"probeMediumMuon_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeMediumMuon_{trigger_strategy}"]].min())
       #selections["Bu"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bu"][f"tagMaxPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"tagMaxPt_{trigger_strategy}"]].min())
       #selections["Bu"][f"probeMaxPt_{trigger_strategy}"] = selections["Bu"][f"probeMaxPt_{trigger_strategy}"] & (reco_bukmumu.chi2 == reco_bukmumu.chi2[selections["Bu"][f"probeMaxPt_{trigger_strategy}"]].min())
 
@@ -521,23 +656,42 @@ class DataProcessor(processor.ProcessorABC):
         output[cutflow_name][dataset_name][cut_name] += cumulative_selection.sum().sum()
       output[cutflow_name][dataset_name]["tag"] += selections["Bu"][f"tag_{trigger_strategy}"].sum().sum()
       output[cutflow_name][dataset_name]["probe"] += selections["Bu"][f"probe_{trigger_strategy}"].sum().sum()
+      output[cutflow_name][dataset_name]["tagx"] += selections["Bu"][f"tagx_{trigger_strategy}"].sum().sum()
 
 
     # - Bd to Jpsi K* to mu mu K pi
     reco_bdkpimumu_mask_template = reco_bdkpimumu.pt.ones_like().astype(bool)
     selections["Bd"]["sv_pt"]    = (reco_bdkpimumu.pt > final_cuts["Bd"]["sv_pt"])
+    selections["Bd"]["absy"]     = (abs(reco_bdkpimumu.fit_best_y) < 2.25)
     selections["Bd"]["l_xy_sig"] = (abs(reco_bdkpimumu.l_xy_sig) > final_cuts["Bd"]["l_xy_sig"])
     selections["Bd"]["sv_prob"]  = (reco_bdkpimumu.sv_prob > final_cuts["Bd"]["sv_prob"])
     selections["Bd"]["cos2D"]    = (reco_bdkpimumu.fit_cos2D > final_cuts["Bd"]["cos2D"])
     selections["Bd"]["l1"]       =  (reco_bdkpimumu.lep1pt_fullfit > final_cuts["Bd"]["l1_pt"]) & (abs(reco_bdkpimumu.lep1eta_fullfit) < 2.4) & (reco_bdkpimumu.l1_softId)
     selections["Bd"]["l2"]       =  (reco_bdkpimumu.lep2pt_fullfit > final_cuts["Bd"]["l2_pt"]) & (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) & (reco_bdkpimumu.l2_softId)
-    #selections["Bd"]["l2"]       = (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) & (reco_bdkpimumu.l2_softId)
-    #selections["Bd"]["l2"]       = (selections["Bd"]["l2"] & where(abs(reco_bdkpimumu.lep2eta_fullfit) < 1.4, 
+    selections["Bd"]["l1Medium"]       =  (reco_bdkpimumu.lep1pt_fullfit > final_cuts["Bd"]["l1_pt"]) & (abs(reco_bdkpimumu.lep1eta_fullfit) < 2.4) & (reco_bdkpimumu.l1_mediumId)
+    selections["Bd"]["l2Medium"]       =  (reco_bdkpimumu.lep2pt_fullfit > final_cuts["Bd"]["l2_pt"]) & (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) & (reco_bdkpimumu.l2_mediumId)
+    selections["Bd"]["l1HiPt"]   =  (reco_bdkpimumu.lep1pt_fullfit > 3.0) & (abs(reco_bdkpimumu.lep1eta_fullfit) < 2.4) & (reco_bdkpimumu.l1_softId)
+    selections["Bd"]["l2HiPt"]   =  (reco_bdkpimumu.lep2pt_fullfit > 3.0) & (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) & (reco_bdkpimumu.l2_softId)
+    selections["Bd"]["l1MediumPt"]   =  (reco_bdkpimumu.lep1pt_fullfit > 2.5) & (abs(reco_bdkpimumu.lep1eta_fullfit) < 2.4) & (reco_bdkpimumu.l1_softId)
+    selections["Bd"]["l2MediumPt"]   =  (reco_bdkpimumu.lep2pt_fullfit > 2.5) & (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) & (reco_bdkpimumu.l2_softId)
+    selections["Bd"]["l1HugePt"]   =  (reco_bdkpimumu.lep1pt_fullfit > 3.25) & (abs(reco_bdkpimumu.lep1eta_fullfit) < 2.4) & (reco_bdkpimumu.l1_softId)
+    selections["Bd"]["l2HugePt"]   =  (reco_bdkpimumu.lep2pt_fullfit > 3.25) & (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) & (reco_bdkpimumu.l2_softId)
+    selections["Bd"]["l1VarPt"]   = (abs(reco_bdkpimumu.lep1eta_fullfit) < 2.4) \
+                                    & (reco_bdkpimumu.l1_softId) \
+                                    & varmuonpt(reco_bdkpimumu.lep1pt_fullfit, abs(reco_bdkpimumu.lep1eta_fullfit))
+    selections["Bd"]["l2VarPt"]   = (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) \
+                                    & (reco_bdkpimumu.l2_softId) \
+                                    & varmuonpt(reco_bdkpimumu.lep2pt_fullfit, abs(reco_bdkpimumu.lep2eta_fullfit))
+
+    #selections["Bd"]["l2"]      = (abs(reco_bdkpimumu.lep2eta_fullfit) < 2.4) & (reco_bdkpimumu.l2_softId)
+    #selections["Bd"]["l2"]      = (selections["Bd"]["l2"] & where(abs(reco_bdkpimumu.lep2eta_fullfit) < 1.4, 
     #                                                  (reco_bdkpimumu.lep2pt_fullfit > 1.5), 
     #                                                  (reco_bdkpimumu.lep2pt_fullfit > 1.0))).astype(bool)
     selections["Bd"]["trk1"]     = (reco_bdkpimumu.trk1pt_fullfit > final_cuts["Bd"]["k1_pt"]) & (abs(reco_bdkpimumu.trk1eta_fullfit) < 2.5)
     selections["Bd"]["trk2"]     = (reco_bdkpimumu.trk2pt_fullfit > final_cuts["Bd"]["k2_pt"]) & (abs(reco_bdkpimumu.trk2eta_fullfit) < 2.5)
-    #selections["Bd"]["dR"]       = (delta_r(reco_bdkpimumu.trk1eta_fullfit, reco_bdkpimumu.trk2eta_fullfit, reco_bdkpimumu.trk1phi_fullfit, reco_bdkpimumu.trk2phi_fullfit) > 0.03) \
+    selections["Bd"]["trk1HiPt"] = (reco_bdkpimumu.trk1pt_fullfit > 1.2) & (abs(reco_bdkpimumu.trk1eta_fullfit) < 2.5)
+    selections["Bd"]["trk2HiPt"] = (reco_bdkpimumu.trk2pt_fullfit > 1.2) & (abs(reco_bdkpimumu.trk2eta_fullfit) < 2.5)
+    #selections["Bd"]["dR"]      = (delta_r(reco_bdkpimumu.trk1eta_fullfit, reco_bdkpimumu.trk2eta_fullfit, reco_bdkpimumu.trk1phi_fullfit, reco_bdkpimumu.trk2phi_fullfit) > 0.03) \
     #                                & (delta_r(reco_bdkpimumu.trk1eta_fullfit, reco_bdkpimumu.lep1eta_fullfit, reco_bdkpimumu.trk1phi_fullfit, reco_bdkpimumu.lep1phi_fullfit) > 0.03) \
     #                                & (delta_r(reco_bdkpimumu.trk1eta_fullfit, reco_bdkpimumu.lep2eta_fullfit, reco_bdkpimumu.trk1phi_fullfit, reco_bdkpimumu.lep2phi_fullfit) > 0.03) \
     #                                & (delta_r(reco_bdkpimumu.trk2eta_fullfit, reco_bdkpimumu.lep1eta_fullfit, reco_bdkpimumu.trk2phi_fullfit, reco_bdkpimumu.lep1phi_fullfit) > 0.03) \
@@ -550,6 +704,7 @@ class DataProcessor(processor.ProcessorABC):
     # Final selections
     selections["Bd"]["inclusive"] = reco_bdkpimumu.fit_pt.ones_like().astype(bool)
     selections["Bd"]["reco"]       = selections["Bd"]["sv_pt"] \
+                                    & selections["Bd"]["absy"] \
                                     & selections["Bd"]["l_xy_sig"] \
                                     & selections["Bd"]["sv_prob"] \
                                     & selections["Bd"]["cos2D"] \
@@ -559,7 +714,7 @@ class DataProcessor(processor.ProcessorABC):
                                     & selections["Bd"]["trk2"] \
                                     & selections["Bd"]["jpsi"] \
                                     & selections["Bd"]["kstar"] \
-                                    & selections["Bd"]["phi_veto"] \
+                                    & selections["Bd"]["phi_veto"]
                                     #& selections["Bd"]["dR"] \
     for trigger_strategy in self._trigger_strategies:
       trigger = trigger_strategy.replace("_only", "")
@@ -568,6 +723,19 @@ class DataProcessor(processor.ProcessorABC):
       selections["Bd"][f"recotrig_{trigger_strategy}"]   = selections["Bd"]["reco"] & (trigger_mask * reco_bdkpimumu_mask_template).astype(bool)
       selections["Bd"][f"tag_{trigger_strategy}"]   = selections["Bd"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bdkpimumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bdkpimumu, f"Muon2IsTrigTight_{trigger}"))
       selections["Bd"][f"probe_{trigger_strategy}"] = selections["Bd"][f"recotrig_{trigger_strategy}"] & (getattr(reco_bdkpimumu, f"TagCount_{trigger}") >= 1)
+      selections["Bd"][f"tagx_{trigger_strategy}"] = selections["Bd"][f"tag_{trigger_strategy}"] & ~selections["Bd"][f"probe_{trigger_strategy}"]
+      #selections["Bd"][f"tagHiTrkPt_{trigger_strategy}"]   = selections["Bd"][f"tag_{trigger_strategy}"]   & selections["Bd"]["trk1HiPt"] & selections["Bd"]["trk2HiPt"]
+      #selections["Bd"][f"probeHiTrkPt_{trigger_strategy}"] = selections["Bd"][f"probe_{trigger_strategy}"] & selections["Bd"]["trk1HiPt"] & selections["Bd"]["trk2HiPt"]
+      selections["Bd"][f"tagHiMuonPt_{trigger_strategy}"]       = selections["Bd"][f"tag_{trigger_strategy}"]   & selections["Bd"]["l1HiPt"] & selections["Bd"]["l2HiPt"]
+      selections["Bd"][f"probeHiMuonPt_{trigger_strategy}"]     = selections["Bd"][f"probe_{trigger_strategy}"] & selections["Bd"]["l1HiPt"] & selections["Bd"]["l2HiPt"]
+      selections["Bd"][f"tagMediumMuonPt_{trigger_strategy}"]   = selections["Bd"][f"tag_{trigger_strategy}"]   & selections["Bd"]["l1MediumPt"] & selections["Bd"]["l2MediumPt"]
+      selections["Bd"][f"probeMediumMuonPt_{trigger_strategy}"] = selections["Bd"][f"probe_{trigger_strategy}"] & selections["Bd"]["l1MediumPt"] & selections["Bd"]["l2MediumPt"]
+      selections["Bd"][f"tagHugeMuonPt_{trigger_strategy}"]     = selections["Bd"][f"tag_{trigger_strategy}"]   & selections["Bd"]["l1HugePt"] & selections["Bd"]["l2HugePt"]
+      selections["Bd"][f"probeHugeMuonPt_{trigger_strategy}"]   = selections["Bd"][f"probe_{trigger_strategy}"] & selections["Bd"]["l1HugePt"] & selections["Bd"]["l2HugePt"]
+      selections["Bd"][f"tagVarMuonPt_{trigger_strategy}"]     = selections["Bd"][f"tag_{trigger_strategy}"]   & selections["Bd"]["l1VarPt"] & selections["Bd"]["l2VarPt"]
+      selections["Bd"][f"probeVarMuonPt_{trigger_strategy}"]   = selections["Bd"][f"probe_{trigger_strategy}"] & selections["Bd"]["l1VarPt"] & selections["Bd"]["l2VarPt"]
+      selections["Bd"][f"tagMediumMuon_{trigger_strategy}"]   = selections["Bd"][f"tag_{trigger_strategy}"]   & selections["Bd"]["l1Medium"] & selections["Bd"]["l2Medium"]
+      selections["Bd"][f"probeMediumMuon_{trigger_strategy}"] = selections["Bd"][f"probe_{trigger_strategy}"] & selections["Bd"]["l1Medium"] & selections["Bd"]["l2Medium"]
       #selections["Bd"][f"recotrig_{trigger_strategy}_sideband"] = selections["Bd"][f"recotrig_{trigger_strategy}"] & (abs(reco_bdkpimumu.fit_mass - BD_MASS) > 0.1)
 
       #selections["Bd"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bd"][f"recotrig_{trigger_strategy}"] & \
@@ -579,6 +747,26 @@ class DataProcessor(processor.ProcessorABC):
 
       selections["Bd"][f"tag_{trigger_strategy}"]   = selections["Bd"][f"tag_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tag_{trigger_strategy}"]].min())
       selections["Bd"][f"probe_{trigger_strategy}"] = selections["Bd"][f"probe_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probe_{trigger_strategy}"]].min())
+      selections["Bd"][f"tagx_{trigger_strategy}"]   = selections["Bd"][f"tagx_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagx_{trigger_strategy}"]].min())
+
+      #selections["Bd"][f"tagHiTrkPt_{trigger_strategy}"]   = selections["Bd"][f"tagHiTrkPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagHiTrkPt_{trigger_strategy}"]].min())
+      #selections["Bd"][f"probeHiTrkPt_{trigger_strategy}"] = selections["Bd"][f"probeHiTrkPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeHiTrkPt_{trigger_strategy}"]].min())
+
+      selections["Bd"][f"tagHiMuonPt_{trigger_strategy}"]   = selections["Bd"][f"tagHiMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagHiMuonPt_{trigger_strategy}"]].min())
+      selections["Bd"][f"probeHiMuonPt_{trigger_strategy}"] = selections["Bd"][f"probeHiMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeHiMuonPt_{trigger_strategy}"]].min())
+
+      selections["Bd"][f"tagMediumMuonPt_{trigger_strategy}"]   = selections["Bd"][f"tagMediumMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagMediumMuonPt_{trigger_strategy}"]].min())
+      selections["Bd"][f"probeMediumMuonPt_{trigger_strategy}"] = selections["Bd"][f"probeMediumMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeMediumMuonPt_{trigger_strategy}"]].min())
+
+      selections["Bd"][f"tagHugeMuonPt_{trigger_strategy}"]   = selections["Bd"][f"tagHugeMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagHugeMuonPt_{trigger_strategy}"]].min())
+      selections["Bd"][f"probeHugeMuonPt_{trigger_strategy}"] = selections["Bd"][f"probeHugeMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeHugeMuonPt_{trigger_strategy}"]].min())
+
+      selections["Bd"][f"tagVarMuonPt_{trigger_strategy}"]   = selections["Bd"][f"tagVarMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagVarMuonPt_{trigger_strategy}"]].min())
+      selections["Bd"][f"probeVarMuonPt_{trigger_strategy}"] = selections["Bd"][f"probeVarMuonPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeVarMuonPt_{trigger_strategy}"]].min())
+
+      selections["Bd"][f"tagMediumMuon_{trigger_strategy}"]   = selections["Bd"][f"tagMediumMuon_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagMediumMuon_{trigger_strategy}"]].min())
+      selections["Bd"][f"probeMediumMuon_{trigger_strategy}"] = selections["Bd"][f"probeMediumMuon_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeMediumMuon_{trigger_strategy}"]].min())
+
       #selections["Bd"][f"tagMaxPt_{trigger_strategy}"]   = selections["Bd"][f"tagMaxPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"tagMaxPt_{trigger_strategy}"]].min())
       #selections["Bd"][f"probeMaxPt_{trigger_strategy}"] = selections["Bd"][f"probeMaxPt_{trigger_strategy}"] & (reco_bdkpimumu.chi2 == reco_bdkpimumu.chi2[selections["Bd"][f"probeMaxPt_{trigger_strategy}"]].min())
 
@@ -595,6 +783,7 @@ class DataProcessor(processor.ProcessorABC):
         output[cutflow_name][dataset_name][cut_name] += cumulative_selection.sum().sum()
       output[cutflow_name][dataset_name]["tag"] += selections["Bd"][f"tag_{trigger_strategy}"].sum().sum()
       output[cutflow_name][dataset_name]["probe"] += selections["Bd"][f"probe_{trigger_strategy}"].sum().sum()
+      output[cutflow_name][dataset_name]["tagx"] += selections["Bd"][f"tagx_{trigger_strategy}"].sum().sum()
 
 
     # Fill reco histograms
@@ -628,7 +817,16 @@ class DataProcessor(processor.ProcessorABC):
         pt=reco_bskkmumu.fit_pt[svprob_opt_selection].flatten(), 
         mass=reco_bskkmumu.fit_mass[svprob_opt_selection].flatten())
 
-    for selection_name in ["inclusive"] + [f"recotrig_{x}" for x in self._trigger_strategies] + [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies]: # + [f"tagMaxPt_{x}" for x in self._trigger_strategies] + [f"probeMaxPt_{x}" for x in self._trigger_strategies]: # + [f"recotrig_{x}_sideband" for x in self._trigger_strategies]:
+    for selection_name in ["inclusive"] + [f"recotrig_{x}" for x in self._trigger_strategies] \
+                          + [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies]\
+                          + [f"tagx_{x}" for x in self._trigger_strategies]\
+                          + [f"tagHiMuonPt_{x}" for x in self._trigger_strategies] + [f"probeHiMuonPt_{x}" for x in self._trigger_strategies]\
+                          + [f"tagMediumMuonPt_{x}" for x in self._trigger_strategies] + [f"probeMediumMuonPt_{x}" for x in self._trigger_strategies]\
+                          + [f"tagHugeMuonPt_{x}" for x in self._trigger_strategies] + [f"probeHugeMuonPt_{x}" for x in self._trigger_strategies]\
+                          + [f"tagVarMuonPt_{x}" for x in self._trigger_strategies] + [f"probeVarMuonPt_{x}" for x in self._trigger_strategies]\
+                          + [f"tagMediumMuon_{x}" for x in self._trigger_strategies] + [f"probeMediumMuon_{x}" for x in self._trigger_strategies]\
+                          : # + [f"tagMaxPt_{x}" for x in self._trigger_strategies] + [f"probeMaxPt_{x}" for x in self._trigger_strategies]: # + [f"recotrig_{x}_sideband" for x in self._trigger_strategies]:
+                          #+ [f"tagHiTrkPt_{x}" for x in self._trigger_strategies] + [f"probeHiTrkPt_{x}" for x in self._trigger_strategies]\
       output["BuToKMuMu_fit_pt_absy_mass"].fill(dataset=dataset_name, selection=selection_name, 
                                               fit_pt=reco_bukmumu.fit_pt[selections["Bu"][selection_name]].flatten(),
                                               fit_absy=np.abs(reco_bukmumu.fit_y[selections["Bu"][selection_name]].flatten()),
@@ -668,7 +866,7 @@ class DataProcessor(processor.ProcessorABC):
 
       output["BdToKPiMuMu_fit_pt_absy_mass"].fill(dataset=dataset_name, selection=selection_name, 
                                               fit_pt=reco_bdkpimumu.fit_pt[selections["Bd"][selection_name]].flatten(),
-                                              fit_absy=np.abs(reco_bdkpimumu.fit_y[selections["Bd"][selection_name]].flatten()),
+                                              fit_absy=np.abs(reco_bdkpimumu.fit_best_y[selections["Bd"][selection_name]].flatten()),
                                               fit_mass=reco_bdkpimumu.fit_mass[selections["Bd"][selection_name]].flatten())
       output["BdToKPiMuMu_fit_pt"].fill(dataset=dataset_name, selection=selection_name, fit_pt=reco_bdkpimumu.fit_pt[selections["Bd"][selection_name]].flatten())
       output["BdToKPiMuMu_fit_eta"].fill(dataset=dataset_name, selection=selection_name, fit_eta=reco_bdkpimumu.fit_eta[selections["Bd"][selection_name]].flatten())
@@ -690,6 +888,8 @@ class DataProcessor(processor.ProcessorABC):
       output["BdToKPiMuMu_fit_eta_vs_pt_vs_mass"].fill(dataset=dataset_name, selection=selection_name, fit_mass=reco_bdkpimumu.fit_mass[selections["Bd"][selection_name]].flatten(), fit_pt=reco_bdkpimumu.fit_pt[selections["Bd"][selection_name]].flatten(), fit_eta=reco_bdkpimumu.fit_eta[selections["Bd"][selection_name]].flatten())
       output["BdToKPiMuMu_k_pt"].fill(dataset=dataset_name, selection=selection_name, pt=reco_bdkpimumu.k_pt[selections["Bd"][selection_name]].flatten())
       output["BdToKPiMuMu_pi_pt"].fill(dataset=dataset_name, selection=selection_name, pt=reco_bdkpimumu.pi_pt[selections["Bd"][selection_name]].flatten())
+      output["BdToKPiMuMu_trk1_pt"].fill(dataset=dataset_name, selection=selection_name, pt=reco_bdkpimumu.trk1pt_fullfit[selections["Bd"][selection_name]].flatten())
+      output["BdToKPiMuMu_trk2_pt"].fill(dataset=dataset_name, selection=selection_name, pt=reco_bdkpimumu.trk2pt_fullfit[selections["Bd"][selection_name]].flatten())
 
     # N-1 histograms
     # Bs
@@ -714,7 +914,15 @@ class DataProcessor(processor.ProcessorABC):
       output["NM1_BsToKKMuMu_cos2D"].fill(dataset=dataset_name, selection="f{selection}", cos2D=reco_bskkmumu.fit_cos2D[nm1_selections["Bs"][f"cos2D_{selection}"]].flatten())
 
     # Tree outputs
-    for selection_name in [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies]: # + [f"tagMaxPt_{x}" for x in self._trigger_strategies] + [f"probeMaxPt_{x}" for x in self._trigger_strategies]:
+    for selection_name in [f"tag_{x}" for x in self._trigger_strategies] + [f"probe_{x}" for x in self._trigger_strategies] \
+                            + [f"tagx_{x}" for x in self._trigger_strategies] \
+                            + [f"tagHiMuonPt_{x}" for x in self._trigger_strategies] + [f"probeHiMuonPt_{x}" for x in self._trigger_strategies] \
+                            + [f"tagMediumMuonPt_{x}" for x in self._trigger_strategies] + [f"probeMediumMuonPt_{x}" for x in self._trigger_strategies] \
+                            + [f"tagHugeMuonPt_{x}" for x in self._trigger_strategies] + [f"probeHugeMuonPt_{x}" for x in self._trigger_strategies] \
+                            + [f"tagVarMuonPt_{x}" for x in self._trigger_strategies] + [f"probeVarMuonPt_{x}" for x in self._trigger_strategies] \
+                            + [f"tagMediumMuon_{x}" for x in self._trigger_strategies] + [f"probeMediumMuon_{x}" for x in self._trigger_strategies] \
+                            :
+                            #+ [f"tagHiTrkPt_{x}" for x in self._trigger_strategies] + [f"probeHiTrkPt_{x}" for x in self._trigger_strategies] \
       #for key in output.keys():
       #  #if "Bcands_Bu" in key:
       #  #  print(key)
@@ -732,7 +940,7 @@ class DataProcessor(processor.ProcessorABC):
       output[f"Bcands_Bd_{selection_name}"][dataset_name].extend({
         "pt": reco_bdkpimumu.fit_pt[selections["Bd"][selection_name]].flatten(),
         "eta": reco_bdkpimumu.fit_eta[selections["Bd"][selection_name]].flatten(),
-        "y": reco_bdkpimumu.fit_y[selections["Bd"][selection_name]].flatten(),
+        "y": reco_bdkpimumu.fit_best_y[selections["Bd"][selection_name]].flatten(),
         "phi": reco_bdkpimumu.fit_phi[selections["Bd"][selection_name]].flatten(),
         "mass": reco_bdkpimumu.fit_best_mass[selections["Bd"][selection_name]].flatten(),
         #"l_xy": reco_bdkpimumu.l_xy[selections["Bd"][selection_name]].flatten(),
@@ -755,49 +963,50 @@ class DataProcessor(processor.ProcessorABC):
     # Sidebands, for optimization
     # Loose preselection (don't actually apply mass sideband; full distribution is needed for initial S and B numbers)
     # Do probe side, otherwise lepton pT looks crazy
-    optz_selection = (reco_bskkmumu.fit_pt > 5.0) & (reco_bskkmumu.fit_pt < 25.0) \
-                                & (reco_bskkmumu.sv_prob > 0.01) \
-                                & (reco_bskkmumu.l_xy_sig > 1.5) \
-                                & (reco_bskkmumu.cos2D > 0.95) \
-                                & (np.abs(reco_bskkmumu.phi_m - PHI_1020_MASS) < 0.05) \
-                                & (np.abs(reco_bskkmumu.mll_fullfit - JPSI_1S_MASS) < 0.5) \
-                                & (reco_bskkmumu.l1_pt > 1.0) \
-                                & (reco_bskkmumu.l2_pt > 1.0) \
-                                & (reco_bskkmumu.trk1_pt > 0.5) \
-                                & (reco_bskkmumu.trk2_pt > 0.5)
-    optz_selection = optz_selection & (
-      (getattr(reco_bskkmumu, f"TagCount_HLT_Mu7_IP4") >= 1) 
-      | (getattr(reco_bskkmumu, f"TagCount_HLT_Mu9_IP5") >= 1)
-      | (getattr(reco_bskkmumu, f"TagCount_HLT_Mu9_IP6") >= 1)
-      | (getattr(reco_bskkmumu, f"TagCount_HLT_Mu12_IP6") >= 1))
-    output[f"Bcands_Bs_opt"][dataset_name].extend({
-      "pt": reco_bskkmumu.fit_pt[optz_selection].flatten(),
-      "eta": reco_bskkmumu.fit_eta[optz_selection].flatten(),
-      "y": reco_bskkmumu.fit_y[optz_selection].flatten(),
-      "phi": reco_bskkmumu.fit_phi[optz_selection].flatten(),
-      "mass": reco_bskkmumu.fit_mass[optz_selection].flatten(),
-      "l_xy": reco_bskkmumu.l_xy[optz_selection].flatten(),
-      "l_xy_sig": reco_bskkmumu.l_xy_sig[optz_selection].flatten(),
-      "sv_prob": reco_bskkmumu.sv_prob[optz_selection].flatten(),
-      "cos2D": reco_bskkmumu.fit_cos2D[optz_selection].flatten(),
-      "dm_phi": np.abs(reco_bskkmumu.phi_m[optz_selection].flatten() - PHI_1020_MASS),
-      "dm_jpsi": np.abs(reco_bskkmumu.mll_fullfit[optz_selection].flatten() - JPSI_1S_MASS),
-      "l1_pt": reco_bskkmumu.l1_pt[optz_selection].flatten(),
-      "l2_pt": reco_bskkmumu.l2_pt[optz_selection].flatten(),
-      "k1_pt": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
-      "k2_pt": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
-      "l1_eta": reco_bskkmumu.l1_pt[optz_selection].flatten(),
-      "l2_eta": reco_bskkmumu.l2_pt[optz_selection].flatten(),
-      "k1_eta": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
-      "k2_eta": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
-      "HLT_Mu7_IP4": (trigger_masks["HLT_Mu7_IP4"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-      "HLT_Mu9_IP5": (trigger_masks["HLT_Mu9_IP5"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-      "HLT_Mu9_IP6": (trigger_masks["HLT_Mu9_IP6"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-      "HLT_Mu12_IP6": (trigger_masks["HLT_Mu12_IP6"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-      "HLT_Mu9_IP5_only": (trigger_masks["HLT_Mu9_IP5_only"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-      "HLT_Mu9_IP6_only": (trigger_masks["HLT_Mu9_IP6_only"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-      "HLT_Mu12_IP6_only": (trigger_masks["HLT_Mu12_IP6_only"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-    })
+    if self._do_optz:
+      optz_selection = (reco_bskkmumu.fit_pt > 5.0) & (reco_bskkmumu.fit_pt < 25.0) \
+                                  & (reco_bskkmumu.sv_prob > 0.01) \
+                                  & (reco_bskkmumu.l_xy_sig > 1.5) \
+                                  & (reco_bskkmumu.cos2D > 0.95) \
+                                  & (np.abs(reco_bskkmumu.phi_m - PHI_1020_MASS) < 0.05) \
+                                  & (np.abs(reco_bskkmumu.mll_fullfit - JPSI_1S_MASS) < 0.5) \
+                                  & (reco_bskkmumu.l1_pt > 1.0) \
+                                  & (reco_bskkmumu.l2_pt > 1.0) \
+                                  & (reco_bskkmumu.trk1_pt > 0.5) \
+                                  & (reco_bskkmumu.trk2_pt > 0.5)
+      optz_selection = optz_selection & (
+        (getattr(reco_bskkmumu, f"TagCount_HLT_Mu7_IP4") >= 1) 
+        | (getattr(reco_bskkmumu, f"TagCount_HLT_Mu9_IP5") >= 1)
+        | (getattr(reco_bskkmumu, f"TagCount_HLT_Mu9_IP6") >= 1)
+        | (getattr(reco_bskkmumu, f"TagCount_HLT_Mu12_IP6") >= 1))
+      output[f"Bcands_Bs_opt"][dataset_name].extend({
+        "pt": reco_bskkmumu.fit_pt[optz_selection].flatten(),
+        "eta": reco_bskkmumu.fit_eta[optz_selection].flatten(),
+        "y": reco_bskkmumu.fit_y[optz_selection].flatten(),
+        "phi": reco_bskkmumu.fit_phi[optz_selection].flatten(),
+        "mass": reco_bskkmumu.fit_mass[optz_selection].flatten(),
+        "l_xy": reco_bskkmumu.l_xy[optz_selection].flatten(),
+        "l_xy_sig": reco_bskkmumu.l_xy_sig[optz_selection].flatten(),
+        "sv_prob": reco_bskkmumu.sv_prob[optz_selection].flatten(),
+        "cos2D": reco_bskkmumu.fit_cos2D[optz_selection].flatten(),
+        "dm_phi": np.abs(reco_bskkmumu.phi_m[optz_selection].flatten() - PHI_1020_MASS),
+        "dm_jpsi": np.abs(reco_bskkmumu.mll_fullfit[optz_selection].flatten() - JPSI_1S_MASS),
+        "l1_pt": reco_bskkmumu.l1_pt[optz_selection].flatten(),
+        "l2_pt": reco_bskkmumu.l2_pt[optz_selection].flatten(),
+        "k1_pt": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
+        "k2_pt": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
+        "l1_eta": reco_bskkmumu.l1_pt[optz_selection].flatten(),
+        "l2_eta": reco_bskkmumu.l2_pt[optz_selection].flatten(),
+        "k1_eta": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
+        "k2_eta": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
+        "HLT_Mu7_IP4": (trigger_masks["HLT_Mu7_IP4"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+        "HLT_Mu9_IP5": (trigger_masks["HLT_Mu9_IP5"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+        "HLT_Mu9_IP6": (trigger_masks["HLT_Mu9_IP6"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+        "HLT_Mu12_IP6": (trigger_masks["HLT_Mu12_IP6"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+        "HLT_Mu9_IP5_only": (trigger_masks["HLT_Mu9_IP5_only"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+        "HLT_Mu9_IP6_only": (trigger_masks["HLT_Mu9_IP6_only"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+        "HLT_Mu12_IP6_only": (trigger_masks["HLT_Mu12_IP6_only"] * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+      })
 
     return output
 

@@ -25,6 +25,9 @@ def count_children(content_in, offsets_in):
 
 
 def genparts(df, is_mc=True):
+    if not is_mc:
+        raise ValueError("Call to dataframereader.genparts for is_mc=False. Avoid doing this at the processor level to avoid ambiguity.")
+
     nchildren = count_children(df["GenPart_genPartIdxMother"]._content, df["GenPart_genPartIdxMother"]._offsets)
 
     # Fix masses (NanoAOD filled in 0)
@@ -43,6 +46,7 @@ def genparts(df, is_mc=True):
         511: BD_MASS,
         521: BU_MASS,
         531: BS_MASS,
+        5122: LAMBDAB_MASS
     }
     for pdgId, mass in fix_masses.items():
         pdgId_mask = (pdgids_in == pdgId)
@@ -177,7 +181,11 @@ def reco_bdkpimumu(df, is_mc=False):
         trk2_idx          = df["BToKsMuMu_trk2_idx"].flatten(),
     )
     reco_bdkpimumu_collection.add_attributes(
-        fit_y = np.log((np.sqrt(reco_bdkpimumu_collection.fit_mass**2 + reco_bdkpimumu_collection.fit_pt**2*np.cosh(reco_bdkpimumu_collection.fit_eta)**2) + reco_bdkpimumu_collection.fit_pt*np.sinh(reco_bdkpimumu_collection.fit_eta)) / np.sqrt(reco_bdkpimumu_collection.fit_mass**2 + reco_bdkpimumu_collection.fit_pt**2))
+        fit_y = np.log(
+                    (np.sqrt(reco_bdkpimumu_collection.fit_mass**2 + reco_bdkpimumu_collection.fit_pt**2*np.cosh(reco_bdkpimumu_collection.fit_eta)**2) 
+                        + reco_bdkpimumu_collection.fit_pt*np.sinh(reco_bdkpimumu_collection.fit_eta))
+                    / np.sqrt(reco_bdkpimumu_collection.fit_mass**2 + reco_bdkpimumu_collection.fit_pt**2)
+                )
     )
 
     # Additional variable: choose nominal or alternative Bd according to best K* mass
@@ -202,6 +210,10 @@ def reco_bdkpimumu(df, is_mc=False):
                         reco_bdkpimumu_collection.mkstar_fullfit
                         )
     )
+    reco_bdkpimumu_collection.add_attributes(
+        fit_best_y = np.log((np.sqrt(reco_bdkpimumu_collection.fit_best_mass**2 + reco_bdkpimumu_collection.fit_pt**2*np.cosh(reco_bdkpimumu_collection.fit_eta)**2) + reco_bdkpimumu_collection.fit_pt*np.sinh(reco_bdkpimumu_collection.fit_eta)) / np.sqrt(reco_bdkpimumu_collection.fit_best_mass**2 + reco_bdkpimumu_collection.fit_pt**2))
+    )
+
     # Add di-track K/K mass, for phi > K K veto
     phi_trk1 = JaggedCandidateArray.candidatesfromcounts(
         df["nBToKsMuMu"].flatten(), 
@@ -363,7 +375,11 @@ def reco_bskkmumu(df, is_mc=False):
     )
     """
     reco_bskkmumu_collection.add_attributes(
-        fit_y = np.log((np.sqrt(reco_bskkmumu_collection.fit_mass**2 + reco_bskkmumu_collection.fit_pt**2*np.cosh(reco_bskkmumu_collection.fit_eta)**2) + reco_bskkmumu_collection.fit_pt*np.sinh(reco_bskkmumu_collection.fit_eta)) / np.sqrt(reco_bskkmumu_collection.fit_mass**2 + reco_bskkmumu_collection.fit_pt**2))
+        fit_y = np.log(
+                    (np.sqrt(reco_bskkmumu_collection.fit_mass**2 + reco_bskkmumu_collection.fit_pt**2*np.cosh(reco_bskkmumu_collection.fit_eta)**2) 
+                        + reco_bskkmumu_collection.fit_pt*np.sinh(reco_bskkmumu_collection.fit_eta)) 
+                    / np.sqrt(reco_bskkmumu_collection.fit_mass**2 + reco_bskkmumu_collection.fit_pt**2)
+                )
     )
 
     # Add di-track K/pi mass, for K* > K pi veto
@@ -448,7 +464,11 @@ def reco_bukmumu(df, is_mc=False):
         pdgId        = df["BToKMuMu_pdgId"].flatten(),
     )
     reco_bukmumu_collection.add_attributes(
-        fit_y = np.log((np.sqrt(reco_bukmumu_collection.fit_mass**2 + reco_bukmumu_collection.fit_pt**2*np.cosh(reco_bukmumu_collection.fit_eta)**2) + reco_bukmumu_collection.fit_pt*np.sinh(reco_bukmumu_collection.fit_eta)) / np.sqrt(reco_bukmumu_collection.fit_mass**2 + reco_bukmumu_collection.fit_pt**2))
+        fit_y = np.log(
+                    (np.sqrt(reco_bukmumu_collection.fit_mass**2 + reco_bukmumu_collection.fit_pt**2*np.cosh(reco_bukmumu_collection.fit_eta)**2) 
+                        + reco_bukmumu_collection.fit_pt*np.sinh(reco_bukmumu_collection.fit_eta)) 
+                    / np.sqrt(reco_bukmumu_collection.fit_mass**2 + reco_bukmumu_collection.fit_pt**2)
+                )
     )
     
     #reco_bukmumu_collection.add_attributes(
@@ -532,6 +552,55 @@ def reco_muons(df, is_mc=False):
         isTriggering_HLT_Mu9_IP5  = (df["Muon_isTriggering_HLT_Mu9_IP5"]==1).flatten(),
         isTriggering_HLT_Mu9_IP6  = (df["Muon_isTriggering_HLT_Mu9_IP6"]==1).flatten(),
         isTriggering_HLT_Mu12_IP6 = (df["Muon_isTriggering_HLT_Mu12_IP6"]==1).flatten(),
+    )
+    if is_mc:
+        reco_muons_collection.add_attributes(
+            isTriggering_L1_Mu7er1p5  = (df["Muon_isTriggering_L1_Mu7er1p5"]==1),
+            isTriggering_L1_Mu8er1p5  = (df["Muon_isTriggering_L1_Mu8er1p5"]==1),
+            isTriggering_L1_Mu9er1p5  = (df["Muon_isTriggering_L1_Mu9er1p5"]==1),
+            isTriggering_L1_Mu10er1p5 = (df["Muon_isTriggering_L1_Mu10er1p5"]==1),
+            isTriggering_L1_Mu12er1p5 = (df["Muon_isTriggering_L1_Mu12er1p5"]==1),
+        )
+    else:
+        true_template = reco_muons_collection.pt.ones_like().astype(bool)
+        reco_muons_collection.add_attributes(
+            isTriggering_L1_Mu7er1p5  = true_template,
+            isTriggering_L1_Mu8er1p5  = true_template,
+            isTriggering_L1_Mu9er1p5  = true_template,
+            isTriggering_L1_Mu10er1p5 = true_template,
+            isTriggering_L1_Mu12er1p5 = true_template,
+        )
+
+
+    reco_muons_collection.add_attributes(
+        isTriggeringFull_HLT_Mu7_IP4  = (reco_muons_collection.isTriggering_HLT_Mu7_IP4 \
+                                                & reco_muons_collection.isTriggering_L1_Mu7er1p5),
+        isTriggeringFull_HLT_Mu9_IP5  = (reco_muons_collection.isTriggering_HLT_Mu9_IP5 \
+                                                & reco_muons_collection.isTriggering_L1_Mu9er1p5),
+        isTriggeringFull_HLT_Mu9_IP6  = (reco_muons_collection.isTriggering_HLT_Mu9_IP6 \
+                                                & reco_muons_collection.isTriggering_L1_Mu10er1p5),
+        isTriggeringFull_HLT_Mu12_IP6 = (reco_muons_collection.isTriggering_HLT_Mu12_IP6 \
+                                                & reco_muons_collection.isTriggering_L1_Mu12er1p5)
+    )
+
+    '''
+    reco_muons_collection.add_attributes(
+        isTriggeringMaxPt_HLT_Mu7_IP4  = reco_muons_collection.isTriggeringFull_HLT_Mu7_IP4 \
+                                        & (reco_muons_collection.pt == reco_muons_collection.pt.max()),
+        isTriggeringMaxPt_HLT_Mu9_IP5  = reco_muons_collection.isTriggeringFull_HLT_Mu9_IP5 \
+                                        & (reco_muons_collection.pt == reco_muons_collection.pt.max()),
+        isTriggeringMaxPt_HLT_Mu9_IP6  = reco_muons_collection.isTriggeringFull_HLT_Mu9_IP6 \
+                                        & (reco_muons_collection.pt == reco_muons_collection.pt.max()),
+        isTriggeringMaxPt_HLT_Mu12_IP6 = reco_muons_collection.isTriggeringFull_HLT_Mu12_IP6 \
+                                        & (reco_muons_collection.pt == reco_muons_collection.pt.max()),
+    )
+    '''
+
+    reco_muons_collection.add_attributes(
+        dxySig = where(reco_muons_collection.dxyErr > 0, 
+                        reco_muons_collection.dxy / reco_muons_collection.dxyErr, 
+                        0.
+                 )
     )
     if is_mc:
         reco_muons_collection.add_attributes(

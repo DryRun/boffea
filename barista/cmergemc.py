@@ -2,7 +2,7 @@
 Postprocessing for data condor jobs.
 - Merge the subjob coffea files. Result: 1 coffea file per run-period-part. 
 - Convert coffea to ROOT files, for RooFit.
-@arg dir = folder containing subjobs, e.g. /home/dyu7/BFrag/data/histograms/condor/job20200609_115835
+@arg dir = folder containing subjobs, e.g. /home/dryu/BFrag/data/histograms/condor/job20200609_115835
             (Contains folders Run2018*_part*)
 '''
 import os
@@ -18,7 +18,7 @@ import numpy as np
 import time
 
 import re
-re_subjob = re.compile("(?P<runp>Run2018[A-D])")
+#re_subjob = re.compile("(?P<runp>Run2018[A-D])")
 def cmerge(output_file, input_files, force=False):
     print("cmerge(output_file={}, input_files={}".format(output_file, input_files))
     if os.path.isfile(output_file) and not force:
@@ -31,6 +31,9 @@ def cmerge(output_file, input_files, force=False):
         for key in keys:
             if "Bcands" in key or "cutflow" in key:
                 continue
+
+            # Do any dataset axis remapping here, e.g., removing subjob suffixes
+            '''
             if type(this_content[key]).__name__ == "Hist":
                 if "dataset" in [x.name for x in this_content[key].axes()]:
                     subjobs = this_content[key].axis("dataset").identifiers()
@@ -44,6 +47,7 @@ def cmerge(output_file, input_files, force=False):
                         "dataset", 
                         hist.Cat("dataset", "Primary dataset"), 
                         mapping)
+            '''
 
         if not output:
             output = this_content
@@ -148,15 +152,23 @@ if __name__ == "__main__":
         raise ValueError("Directory {} does not exist".format(args.dir))
 
     print("Merging coffea subjobs...")
-    runpart_dirs = sorted(glob.glob(f"{args.dir}/Run2018*_part*/"))
-    runparts = [x.split("/")[-2] for x in runpart_dirs]
     cmerge_args = []
-    for runpart in runparts:
-        #if not os.path.isdir(f"{args.dir}/{runpart}/add_eff"):
-        #    raise ValueError(f"{args.dir}/{runpart}/add_eff does not exist. Did you run add_efficiency.py first?")
-        output_file = f"{args.dir}/{runpart}.coffea"
-        input_files = glob.glob(f"{args.dir}/{runpart}/DataHistograms_Run*_part*subjob*.coffea")
+
+    for btype in ["Bd", "Bs", "Bu"]:
+        output_file = f"{args.dir}/MCEfficiencyHistograms_{btype}.coffea"
+        input_files = []
+
+        sample_subdirs = sorted(glob.glob(f"{args.dir}/{btype}*"))
+        samples = [x.split("/")[-1] for x in sample_subdirs]
+        for sample in samples:
+            input_files.extend(glob.glob(f"{args.dir}/{sample}/MCEfficiencyHistograms*subjob*.coffea"))
+        print([output_file, input_files, args.force])
+
+        if len(input_files) == 0:
+            continue
         cmerge_args.append([output_file, input_files, args.force])
+
+    pprint(cmerge_args)
 
     #for cmerge_arg in cmerge_args:
     #    cmerge(*cmerge_arg)
@@ -184,6 +196,8 @@ if __name__ == "__main__":
 
     print("...done merging coffea subjobs.")
 
+    '''
+    # Converting coffea accumulators to ROOT TTrees... do this in convert_mc.sh instead
     print("Converting coffea files to ROOT TTrees for RooFit")
     # Determine which objects to convert (any coffea object with "Bcands" in name)
     input_objs = []
@@ -231,3 +245,4 @@ if __name__ == "__main__":
         for job in futures_set:
             _cancel(job)
         raise
+    '''

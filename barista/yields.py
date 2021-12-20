@@ -21,6 +21,12 @@ seaborn_colors.load_palette("hls_light", palette_dir=palette_dir)
 sys.path.append("./fitting")
 from fit_settings import *
 
+import argparse
+parser = argparse.ArgumentParser(description="Compute efficiencies")
+parser.add_argument("--fitfunc", type=str, default="johnson", help="Fit function (johnson or hypatia)")
+parser.add_argument("--selection", type=str, default="nominal", help="Selection name (nominal or HiTrkPt)")
+args = parser.parse_args()
+
 legend_entries = {
 	"Bu": "B^{#pm}#rightarrow K^{#pm} J/#psi(#mu^{+}#mu^{-})",
 	"Bd": "B^{0}#rightarrow K^{*}J/#psi#rightarrow K^{#pm}#pi^{#mp}#mu^{+}#mu^{-}",
@@ -54,7 +60,7 @@ def style_graph(graph, btype):
 
 # Load yields from RooFit result
 def load_yields(btype, binned=False, correct_eff=False):
-	yields_file = f"/home/dryu/BFrag/boffitting/barista/fitting/{btype}/yields_hyp"
+	yields_file = f"/home/dryu/BFrag/boffitting/barista/fitting/{btype}/yields_{args.fitfunc}_{args.selection}"
 	if binned:
 		yields_file += "_binned"
 	if correct_eff:
@@ -198,7 +204,7 @@ if __name__ == "__main__":
 					for btype in ["Bu", "Bd", "Bs"]:
 						print(btype)
 						yields[btype] = load_yields(btype, binned)[side][trigger_strategy]
-					save_tag = f"{side}_{trigger_strategy}"
+					save_tag = f"{side}_{trigger_strategy}_{args.fitfunc}_{args.selection}"
 					if binned:
 						save_tag += "_binned"
 					if correct_eff:

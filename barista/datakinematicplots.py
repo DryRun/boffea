@@ -12,9 +12,8 @@ from brazil.aguapreta import *
 
 figure_directory = "/home/dryu/BFrag/data/figures/"
 
-input_files = [
-    "/home/dryu/BFrag/data/histograms/condor/job20200513_215445/DataHistograms_Run2018.coffea",
-]
+input_files = glob.glob("/home/dryu/BFrag/data/histograms/Run*coffea")
+#["/home/dryu/BFrag/data/histograms/condor/job20200513_215445/DataHistograms_Run2018.coffea"]
 hists = {}
 subjob_cutflows = {}
 for i, input_file in enumerate(input_files):

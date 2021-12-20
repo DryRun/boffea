@@ -53,7 +53,7 @@ def add_efficiency(coffea_file, test=False):
     for trigger in ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]:
         for btype in ["Bu", "Bs", "Bd"]:
             for side in ["tag", "probe"]:
-                extractor.add_weight_sets([f"eff_{btype}_{side}_{trigger} h_trigeff2D_{btype}_{side}_{trigger} /home/dryu/BFrag/data/efficiency/efficiency2D.root"])
+                extractor.add_weight_sets([f"eff_{btype}_{side}_{trigger} h_trigeff2D_{btype}_{side}_{trigger} /home/dyu7/BFrag/data/efficiency/efficiency2D.root"])
     extractor.finalize()
     evaluator = extractor.make_evaluator()
 

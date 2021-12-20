@@ -7,12 +7,13 @@ import math
 from pprint import pprint
 import pickle
 import copy
+from brazil.reweighting import reweight_trkpt, reweight_y, w_rap
 
 import mplhep
 plt.style.use(mplhep.style.LHCb)
 plt.tight_layout()
 
-figure_directory = os.path.expandvars("$BDATA/efficiency/reweighted/figures")
+figure_directory = os.path.expandvars("$BDATA/efficiency/figures")
 
 triggers = ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]
 btypes = ["Bu", "Bs", "Bd"]
@@ -38,6 +39,7 @@ axes = {}
 axes["pt"] = {
 	"probe": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([8., 13., 18., 23., 28., 33.])), 
 	"tag": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0])),
+	#"tag": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([10.0, 13.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0])),
 	"probeMaxPt": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([8., 13., 18., 23., 28., 33.])), 
 	"tagMaxPt": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0]))
 }
@@ -57,8 +59,6 @@ counts_truth_2d = {}
 counts_reco = {}
 counts_truth = {}
 
-w_rap = np.array([1.09198, 1.19933, 1.07546, 1.01259, 1.02502, 0.931137, 0.859007, 0.79283, 1.0701])
-dw_rap = np.array([0.0507711, 0.056414, 0.0519576, 0.0492406, 0.0523921, 0.0530334, 0.046866, 0.0562674, 0.104374])
 
 #for var in vars:
 #	bigh_reco[var] = {}
@@ -84,7 +84,7 @@ for btype in btypes:
 		
 		# Extract values as arrays, and apply rapidity weights
 		for sparse_key in bigh_reco_2d[btype][side].values(sumw2=False).keys():
-			counts_reco_2d[btype][side][sparse_key] = bigh_reco_2d[btype][side].values(sumw2=False)[sparse_key] * w_rap
+			counts_reco_2d[btype][side][sparse_key] = bigh_reco_2d[btype][side].values(sumw2=False)[sparse_key] #* w_rap
 
 			# Project to 1d pt and y arrays
 			counts_reco[btype][side][sparse_key] = {}
@@ -93,12 +93,14 @@ for btype in btypes:
 			print(counts_reco_2d[btype][side][sparse_key])
 			counts_reco[btype][side][sparse_key]["pt"] = np.sum(counts_reco_2d[btype][side][sparse_key], axis=1)
 			counts_reco[btype][side][sparse_key]["y"] = np.sum(counts_reco_2d[btype][side][sparse_key], axis=0)
-			print("pt")
-			print(counts_reco[btype][side][sparse_key]["pt"])
-			print("y")
-			print(counts_reco[btype][side][sparse_key]["y"])
+			#print("pt")
+			#print(counts_reco[btype][side][sparse_key]["pt"])
+			#print("y")
+			#print(counts_reco[btype][side][sparse_key]["y"])
+		#print("asdf")
 		for sparse_key in bigh_truth_2d[btype][side].values(sumw2=False).keys():
-			counts_truth_2d[btype][side][sparse_key] = bigh_truth_2d[btype][side].values(sumw2=False)[sparse_key] * w_rap
+			print(sparse_key)
+			counts_truth_2d[btype][side][sparse_key] = bigh_truth_2d[btype][side].values(sumw2=False)[sparse_key] #* w_rap
 			counts_truth[btype][side][sparse_key] = {}
 			counts_truth[btype][side][sparse_key]["pt"] = np.sum(counts_truth_2d[btype][side][sparse_key], axis=1)
 			counts_truth[btype][side][sparse_key]["y"] = np.sum(counts_truth_2d[btype][side][sparse_key], axis=0)
@@ -126,9 +128,9 @@ for var in vars:
 	first = True
 
 	for btype in btypes:
+		print(counts_truth[btype]["probe"].keys())
 		probefilter_counts = counts_truth[btype]["probe"][(f"{btype_longnames[btype]}_inclusive", "probefilter")][var]
 		inclusive_counts = counts_truth[btype]["probe"][(f"{btype_longnames[btype]}_inclusive", "inclusive")][var]
-		mufilter_counts = counts_truth[btype]["probe"][(f"{btype_longnames[btype]}_mufilter", "mufilter")][var]
 
 		eff_probefilter[var][btype] = probefilter_counts / inclusive_counts
 		deff_probefilter[var][btype] = np.sqrt(eff_probefilter[var][btype] * (1. - eff_probefilter[var][btype]) / inclusive_counts)
@@ -142,6 +144,37 @@ for var in vars:
 		first = False
 	avg_eff_probefilter[var] = this_avg_eff_probefilter / sum_inclusive_counts
 	davg_eff_probefilter[var] = np.sqrt(avg_eff_probefilter[var] * (1. - avg_eff_probefilter[var]) / sum_inclusive_counts)
+
+
+# MuFilter efficency, needed for tag side
+eff_mufilter = {}
+deff_mufilter = {}
+avg_eff_mufilter = {}
+davg_eff_mufilter = {}
+for var in vars:
+	eff_mufilter[var] = {}
+	deff_mufilter[var] = {}
+	this_avg_eff_mufilter = None 
+	this_sum_inclusive_counts = None
+	first = True
+
+	for btype in btypes:
+		#print(counts_truth[btype]["tag"].keys())
+		mufilter_counts = counts_truth[btype]["tag"][(f"{btype_longnames[btype]}_inclusive", "mufilter")][var]
+		inclusive_counts = counts_truth[btype]["tag"][(f"{btype_longnames[btype]}_inclusive", "inclusive")][var]
+
+		eff_mufilter[var][btype] = mufilter_counts / inclusive_counts
+		deff_mufilter[var][btype] = np.sqrt(eff_mufilter[var][btype] * (1. - eff_mufilter[var][btype]) / inclusive_counts)
+
+		if first:
+			this_avg_eff_mufilter = copy.deepcopy(mufilter_counts)
+			sum_inclusive_counts = copy.deepcopy(inclusive_counts)
+		else:
+			this_avg_eff_mufilter = this_avg_eff_mufilter + mufilter_counts
+			sum_inclusive_counts = sum_inclusive_counts + inclusive_counts
+		first = False
+	avg_eff_mufilter[var] = this_avg_eff_mufilter / sum_inclusive_counts
+	davg_eff_mufilter[var] = np.sqrt(avg_eff_mufilter[var] * (1. - avg_eff_mufilter[var]) / sum_inclusive_counts)
 
 
 # Single-trigger efficiency
@@ -158,9 +191,9 @@ for var in vars:
 		for side in ["probe", "tag"]: # , "probeMaxPt", "tagMaxPt"
 			eff[var][btype][side] = {}
 			deff[var][btype][side] = {}
-			if side == "probe":
-				eff[var][btype]["probe_total"] = {}
-				deff[var][btype]["probe_total"] = {}
+
+			eff[var][btype][f"{side}_total"] = {}
+			deff[var][btype][f"{side}_total"] = {}
 
 			for trigger in triggers:
 				use_truth_side = True
@@ -175,21 +208,35 @@ for var in vars:
 						matched_key = (f"{btype_longnames[btype]}_probefilter", f"matched_{side.replace('MaxPt', '')}_{trigger}")
 						matched_swap_key = (f"{btype_longnames[btype]}_probefilter", f"matched_swap_{side.replace('MaxPt', '')}_{trigger}")
 						inclusive_key = (f"{btype_longnames[btype]}_probefilter", "inclusive")
+						#fiducial_key = (f"{btype_longnames[btype]}_probefilter", "fiducial")
 					elif side == "tag":
 						matched_key = (f"{btype_longnames[btype]}_mufilter", f"matched_{side.replace('MaxPt', '')}_{trigger}")
 						matched_swap_key = (f"{btype_longnames[btype]}_mufilter", f"matched_swap_{side.replace('MaxPt', '')}_{trigger}")
 						inclusive_key = (f"{btype_longnames[btype]}_mufilter", "inclusive")
+						#fiducial_key = (f"{btype_longnames[btype]}_mufilter", "fiducial")
 
-
+					#print(counts_truth[btype][side.replace("MaxPt", "")].keys())
 					counts_matched = counts_truth[btype][side.replace("MaxPt", "")][matched_key][var]
 					if btype == "Bd":
 						counts_matched += counts_truth[btype][side.replace("MaxPt", "")][matched_swap_key][var]
-					counts_inclusive = counts_truth[btype][side.replace("MaxPt", "")][][var]
+					counts_inclusive = counts_truth[btype][side.replace("MaxPt", "")][inclusive_key][var]
 				else:
-					counts_matched = counts_reco[btype][side][(f"{btype_longnames[btype]}_probefilter", f"{side}match_{trigger}")][var]
+					# Set the "sparse keys" for looking up numerator and denominator counts
+					# Remember, the key is (dataset_tag, selection)
+					# See mc_efficiency_processor.py for more info
+					if side == "probe": 
+						matched_key = (f"{btype_longnames[btype]}_probefilter", f"{side}match_{trigger}")
+						matched_swap_key = (f"{btype_longnames[btype]}_probefilter", f"{side}matchswap_{trigger}")
+						inclusive_key = (f"{btype_longnames[btype]}_probefilter", "inclusive")
+					elif side == "tag":
+						matched_key = (f"{btype_longnames[btype]}_mufilter", f"{side}match_{trigger}")
+						matched_swap_key = (f"{btype_longnames[btype]}_mufilter", f"{side}matchswap_{trigger}")
+						inclusive_key = (f"{btype_longnames[btype]}_mufilter", "inclusive")
+
+					counts_matched = counts_reco[btype][side][matched_key][var]
 					if btype == "Bd":
-						counts_matched += counts_reco[btype][side][(f"{btype_longnames[btype]}_probefilter", f"{side}matchswap_{trigger}")][var]
-					counts_inclusive = counts_reco[btype][side][(f"{btype_longnames[btype]}_probefilter", "inclusive")][var]
+						counts_matched += counts_reco[btype][side][matched_swap_key][var]
+					counts_inclusive = counts_reco[btype][side][inclusive_key][var]
 
 				eff_recosel = counts_matched / counts_inclusive
 				deff_recosel = np.sqrt(eff_recosel * (1. - eff_recosel) / counts_inclusive)
@@ -202,6 +249,12 @@ for var in vars:
 					deff[var][btype]["probe_total"][trigger] = eff[var][btype]["probe_total"][trigger] * np.sqrt(
 						(deff_recosel / eff_recosel)**2 + (davg_eff_probefilter[var] / avg_eff_probefilter[var])**2
 						)
+				elif side == "tag":
+					eff[var][btype]["tag_total"][trigger] = eff_recosel * eff_mufilter[var][btype]
+					deff[var][btype]["tag_total"][trigger] = eff[var][btype]["tag_total"][trigger] * np.sqrt(
+						(deff_recosel / eff_recosel)**2 + (deff_mufilter[var][btype] / eff_mufilter[var][btype])**2
+						)
+
 
 
 # Efficiencies for final trigger strategies
@@ -220,7 +273,7 @@ unique_lumis = {
 total_lumi = 34698.771755487
 for var in vars:
 	for btype in btypes:
-		for side in ["probe", "tag", "probe_total"]: # , "probeMaxPt", "tagMaxPt"
+		for side in ["probe", "tag", "probe_total", "tag_total"]: # , "probeMaxPt", "tagMaxPt"
 			# HLT_all strategy
 			eff[var][btype][side]["HLT_all"] = 0.
 			deff[var][btype][side]["HLT_all"] = 0.
@@ -270,12 +323,11 @@ for var in vars:
 with open(os.path.expandvars("$BDATA/efficiency/efficiency3.pkl"), "wb") as f:
 	pickle.dump(eff_deff, f)
 
-
 # Plots
 for var in vars:
-	for side in ["tag", "probe", "probe_total", "tagMaxPt", "probeMaxPt"]:
-		bin_centers = bigh_truth_2d["Bs"][side.replace("probe_total", "probe")].axis(var).centers()
-		xerrs = (bigh_truth_2d["Bs"][side.replace("probe_total", "probe")].axis(var).edges()[1:] - bigh_truth_2d["Bs"][side.replace("probe_total", "probe")].axis(var).edges()[:-1]) / 2
+	for side in ["tag", "probe", "probe_total", "tag_total"]:# "tagMaxPt", "probeMaxPt"
+		bin_centers = bigh_truth_2d["Bs"][side.replace("_total", "")].axis(var).centers()
+		xerrs = (bigh_truth_2d["Bs"][side.replace("_total", "")].axis(var).edges()[1:] - bigh_truth_2d["Bs"][side.replace("_total", "")].axis(var).edges()[:-1]) / 2
 		colors = {
 			"Bd": "red",
 			"Bu": "blue", 
@@ -305,7 +357,7 @@ for var in vars:
 					)
 			if side == "probe_total":
 				ax.set_ylim(1.e-6, 5.e-3)
-			elif side == "tag" or side == "probe":
+			elif side == "tag" or side == "probe" or side == "tag_total":
 				ax.set_ylim(1.e-5, 0.5)
 			ax.set_yscale("log")
 			if var == "pt":
@@ -367,6 +419,52 @@ for var in vars:
 	ax.legend()
 	print(f"{figure_directory}/probefilter_efficiency_{var}.png")
 	fig.savefig(f"{figure_directory}/probefilter_efficiency_{var}.png")
+
+# MuFilter plot
+for var in vars:
+	fig, ax = plt.subplots(1, 1, figsize=(10,7))
+	bin_centers = bigh_truth_2d["Bs"]["tag"].axis(var).centers()
+	xerrs = (bigh_truth_2d["Bs"]["tag"].axis(var).edges()[1:] - bigh_truth_2d["Bs"]["tag"].axis(var).edges()[:-1]) / 2
+	colors = {
+		"Bd": "red",
+		"Bu": "blue", 
+		"Bs": "green"
+	}
+	labels = {
+		"Bd": r"$B^{0}$", 
+		"Bu": r"$B^{\pm}$",
+		"Bs": r"$B_{s}$"
+	}
+	for btype in btypes:
+		#pprint(eff[btype][side][trigger_strategy])
+		ax.errorbar(
+			x=bin_centers, 
+			y=eff_mufilter[var][btype], 
+			xerr=xerrs,
+			yerr=deff_mufilter[var][btype], 
+			marker=".", 
+			markersize=10.,
+			color=colors[btype],
+			label=labels[btype],
+			ls="none",
+			ecolor=colors[btype],
+			elinewidth=1,
+			)
+	ax.set_ylim(0., 1.)
+	#ax.set_yscale("log")
+	if var == "pt":
+		ax.set_xlim(0., 45.)
+		ax.set_xlabel(r"$p_{T}$ [GeV]")
+	elif var == "y":
+		ax.set_xlim(0., 2.5)
+		ax.set_xlabel(r"$|y|$")
+	ax.set_ylabel("MuFilter efficiency")
+	ax.xaxis.set_ticks_position("both")
+	ax.yaxis.set_ticks_position("both")
+	ax.tick_params(direction="in")
+	ax.legend()
+	print(f"{figure_directory}/mufilter_efficiency_{var}.png")
+	fig.savefig(f"{figure_directory}/mufilter_efficiency_{var}.png")
 
 
 # Trigger ratios
@@ -459,9 +557,9 @@ for var in vars:
 
 # Trigger comparison
 for var in vars:
-	for side in ["tag", "probe", "probe_total"]:
-		bin_centers = bigh_truth_2d["Bs"][side.replace("probe_total", "probe")].axis(var).centers()
-		xerrs = (bigh_truth_2d["Bs"][side.replace("probe_total", "probe")].axis(var).edges()[1:] - bigh_truth_2d["Bs"][side.replace("probe_total", "probe")].axis(var).edges()[:-1]) / 2
+	for side in ["tag", "probe", "probe_total", "tag_total"]:
+		bin_centers = bigh_truth_2d["Bs"][side.replace("_total", "")].axis(var).centers()
+		xerrs = (bigh_truth_2d["Bs"][side.replace("_total", "")].axis(var).edges()[1:] - bigh_truth_2d["Bs"][side.replace("_total", "")].axis(var).edges()[:-1]) / 2
 		colors = {
 			"HLT_Mu7_IP4": "green", 
 			"HLT_Mu9_IP5": "purple", 

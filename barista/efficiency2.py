@@ -60,8 +60,8 @@ for btype in btypes:
 	bigh_reco["y"][btype] = {}
 	bigh_truth["y"][btype] = {}
 	for side in ["probe", "tag"]:
-		bigh_reco["y"][btype][side] = coffea_files[btype][f"{btype_shortnames[btype]}_fit_pt_absy_mass"].integrate("fit_mass").integrate("fit_pt", slice(5.0, 30.0)).rebin("fit_absy", axes["y"][side])
-		bigh_truth["y"][btype][side] = coffea_files[btype][f"Truth{btype_shortnames[btype]}_pt_absy_mass"].integrate("mass").integrate("pt", slice(5.0, 30.0)).rebin("absy", axes["y"][side])
+		bigh_reco["y"][btype][side] = coffea_files[btype][f"{btype_shortnames[btype]}_fit_pt_absy_mass"].integrate("fit_mass").integrate("fit_pt", slice(10.0, 30.0)).rebin("fit_absy", axes["y"][side])
+		bigh_truth["y"][btype][side] = coffea_files[btype][f"Truth{btype_shortnames[btype]}_pt_absy_mass"].integrate("mass").integrate("pt", slice(10.0, 30.0)).rebin("absy", axes["y"][side])
 
 
 # Probefilter efficency, needed for probe side
@@ -118,11 +118,9 @@ for var in vars:
 			for trigger in triggers:
 				if side == "probe":
 					h_truth_var = bigh_truth[var][btype][side].integrate("dataset", [f"{btype_longnames[btype]}_probefilter"])
-				elif side == "tag":
-					h_truth_var = bigh_truth[var][btype][side].integrate("dataset", [f"{btype_longnames[btype]}_probefilter"])
-				if side == "probe":
 					h_reco_var = bigh_reco[var][btype][side].integrate("dataset", [f"{btype_longnames[btype]}_probefilter"])
 				elif side == "tag":
+					h_truth_var = bigh_truth[var][btype][side].integrate("dataset", [f"{btype_longnames[btype]}_probefilter"])
 					h_reco_var = bigh_reco[var][btype][side].integrate("dataset", [f"{btype_longnames[btype]}_probefilter"])
 
 				use_truth_side = True

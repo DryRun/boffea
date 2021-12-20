@@ -13,7 +13,7 @@ def do_count_photon_children(mother_index_flat, pdgId_flat, pt_flat, offsets_in)
         for index in range(stop_src - start_src):
             mother_pdgId = pdgId_flat[start_src + index]
             nphotonchildren = 0
-            if abs(mother_pdgId) in [511, 521, 531]:
+            if abs(mother_pdgId) in [511, 521, 531, 5122]:
                 for possible_child in range(index, stop_src - start_src):
                     if (mother_index_flat[start_src + possible_child] == index) \
                     and (pdgId_flat[start_src + possible_child] == 22) \

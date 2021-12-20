@@ -49,7 +49,7 @@ cwd = os.getcwd()
 os.chdir(working_directory)
 
 # Tar working area
-tarball_dir = "/home/dryu/BFrag/tarballs"
+tarball_dir = "/home/dyu7/BFrag/tarballs"
 print("Tarring user code...")
 os.system(f"tar -czf {tarball_dir}/usercode.tar.gz -C $HOME/BFrag boffea/barista boffea/brazil --exclude='*.root' --exclude='*.coffea' --exclude='*.png' --exclude='*.pdf' --exclude='*.tar.gz'")
 print("...done.")
@@ -96,7 +96,7 @@ for runp in runps:
 	with open(f"{working_subdir}/localrun.sh", "w") as localrun_script:
 		localrun_script.write("#!/bin/bash\n")
 		for subjob in subjobs:
-			localrun_script.write(f"python /home/dryu/BFrag/boffea/barista/data/data_processor.py --dataset {subjob} -s {subjob} -w 8\n")
+			localrun_script.write(f"python /home/dyu7/BFrag/boffea/barista/data/data_processor.py --dataset {subjob} -s {subjob} -w 8\n")
 
 	files_to_transfer = [f"{tarball_dir}/usercode.tar.gz", f"{tarball_dir}/venv.tar.gz"]
 

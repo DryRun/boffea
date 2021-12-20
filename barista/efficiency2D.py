@@ -17,7 +17,15 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptTitle(0)
 
-figure_directory = "/home/dryu/BFrag/data/efficiency/figures"
+import argparse
+parser = argparse.ArgumentParser(description="Compute efficiencies")
+parser.add_argument("--selection", "-s", type=str, default="nominal", help="Selection name (nominal or HiTrkPt)")
+args = parser.parse_args()
+
+
+figure_directory = os.path.expandvars(f"$BDATA/efficiency/figures/{args.selection}")
+
+# Configure loops
 
 triggers = ["HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6"]
 btypes = ["Bu", "Bs", "Bd"]
@@ -35,17 +43,17 @@ btype_shortnames = {
 # MC probefilter efficiency
 coffea_files = {}
 for btype in btypes:
-	coffea_files[btype] = util.load(f"{btype_longnames[btype]}/MCEfficiencyHistograms.coffea")
+	coffea_files[btype] = util.load(f"{btype_longnames[btype]}/MCEfficiencyHistograms_{btype}.coffea")
 
 axes = {}
 # pt: probe=5 bins, tag=13 bins
 axes["pt"] = {
-	"probe": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([8., 13., 18., 23., 28., 33., 100.])), # [5., 10., 15., 20., 25., 30., 100.0]
-	"tag": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0, 100.0]))
+	"probe": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([8., 13., 18., 23., 28., 33.])), 
+	"tag": hist.Bin("pt", r"$p_{T}$ [GeV]", np.array([11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0])), # 10.0, 
 }
 axes["y"] = {
-	"probe": hist.Bin("y", r"$|y|$", np.array(np.arange(0., 2.5+0.5, 0.5))), 
-	"tag": hist.Bin("y", r"$|y|$", np.array(np.arange(0., 2.5+0.5, 0.5)))
+	"probe": hist.Bin("y", r"$|y|$", np.array(np.arange(0., 2.25+0.25, 0.25))), 
+	"tag": hist.Bin("y", r"$|y|$", np.array(np.arange(0., 1.75+0.25, 0.25))),
 }
 
 bigh_reco = {}
@@ -121,13 +129,21 @@ for btype in btypes:
 
 			use_truth_side = True
 			if use_truth_side:
+				if side == "probe": 
+					matched_key = (f"matched_fid_{side}_{trigger}",)
+					matched_swap_key = (f"matched_swap_fid_{side}_{trigger}",)
+					inclusive_key = ("fiducial",)
+				elif side == "tag":
+					matched_key = (f"matched_fid_{side}_{trigger}",)
+					matched_swap_key = (f"matched_swap_fid_{side}_{trigger}",)
+					inclusive_key = ("fiducial",)
+				print("DEBUG")
+				pprint(h_truth_var.values(sumw2=False))
+				counts_matched = h_truth_var.values(sumw2=False)[matched_key]
 				if btype == "Bd":
-					h_truth_var_matched = h_truth_var.integrate("selection", ([f"matched_{side}_{trigger}", f"matched_swap_{side}_{trigger}"]))
-				else:
-					h_truth_var_matched = h_truth_var.integrate("selection", ([f"matched_{side}_{trigger}"]))
-				h_truth_var_inclusive     = h_truth_var.integrate("selection", (["inclusive"]))
-				counts_matched = h_truth_var_matched.values(sumw2=False)[()]
-				counts_inclusive = h_truth_var_inclusive.values(sumw2=False)[()]
+					counts_matched += h_truth_var.values(sumw2=False)[matched_swap_key]
+				counts_inclusive = h_truth_var.values(sumw2=False)[inclusive_key]
+
 			else:
 				if btype == "Bd":
 					h_reco_var_matched = h_reco_var.integrate("selection", ([f"{side}match_{trigger}", f"{side}matchswap_{side}_{trigger}"]))

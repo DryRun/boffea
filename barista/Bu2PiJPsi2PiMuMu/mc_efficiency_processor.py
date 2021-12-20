@@ -165,6 +165,8 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       l1_softMvaId = reco_muons.softMvaId[reco_bukmumu.l1_idx],
       l2_softId    = reco_muons.softId[reco_bukmumu.l2_idx],
       l2_softMvaId = reco_muons.softMvaId[reco_bukmumu.l2_idx],
+      l1_MediumId    = reco_muons.MediumId[reco_bukmumu.l1_idx],
+      l2_MediumId    = reco_muons.MediumId[reco_bukmumu.l2_idx],
     )
 
     # Truth matching
@@ -583,7 +585,7 @@ if __name__ == "__main__":
 
   # Inputs
   in_txt = {
-      "Bu2PiJpsi2KMuMu_inclusive": "/home/dryu/BFrag/boffea/barista/filelists/v2_7/files_Bu2PiJPsi2PiMuMu.txt",
+      "Bu2PiJpsi2KMuMu_inclusive": "/home/dyu7/BFrag/boffea/barista/filelists/v2_7/files_Bu2PiJPsi2PiMuMu.txt",
   }
   dataset_files = {}
   for dataset_name, filelistpath in in_txt.items():
