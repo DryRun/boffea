@@ -4,4 +4,4 @@ if [ -z "$1" ]; then
 else
 	PORT="$1";
 fi
-ssh -N -L localhost:${PORT}:localhost:${PORT} dryu@brux7.hep.brown.edu
+ssh -N -L localhost:${PORT}:localhost:${PORT} dyu7@brux20.hep.brown.edu

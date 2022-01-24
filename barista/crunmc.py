@@ -86,6 +86,11 @@ for dataset in datasets:
 	with open(f"{working_subdir}/run.sh", "w") as run_script:
 		run_script.write("#!/bin/bash\n")
 		run_script.write("lscpu\n")
+		run_script.write("cat /etc/os-release\n\n")
+		run_script.write("lsb_release -a\n\n")
+		run_script.write("hostnamectl\n\n")
+		run_script.write("uname -r\n\n")
+		#run_script.write("export LD_LIBRARY_PATH=$PWD:$LD_LIBRARY_PATH\n")
 		run_script.write("tar -xzf usercode.tar.gz\n")
 		run_script.write("tar -xzf venv.tar.gz\n")
 		run_script.write("ls -lrth\n")
@@ -94,6 +99,7 @@ for dataset in datasets:
 		#run_script.write("source /cvmfs/sft.cern.ch/lcg/views/LCG_95apython3/x86_64-centos7-gcc8-opt/setup.sh\n")
 		#run_script.write("source venv/bin/activate\n")
 		run_script.write("source env.sh\n")
+		run_script.write("echo $LD_LIBRARY_PATH\n")
 		#run_script.write("DATASET_SUBJOBS=({})\n".format(" ".join(subjobs)))
 		run_script.write("RETRY_COUNTER=0\n")
 		run_script.write("while [[ \"$RETRY_COUNTER\" -lt 5 && ! \"$(find . -maxdepth 1 -name '*coffea' -print -quit)\" ]]; do\n")
@@ -118,7 +124,7 @@ for dataset in datasets:
 	files_to_transfer = [f"{tarball_dir}/usercode.tar.gz", f"{tarball_dir}/venv.tar.gz"]
 
 	# Make condor command
-	csub_command = f"csub {working_subdir}/run.sh -F {','.join(files_to_transfer)} -n {this_nsubjobs} -d {working_subdir} --mem 6000"
+	csub_command = f"csub {working_subdir}/run.sh -F {','.join(files_to_transfer)} -n {this_nsubjobs} -d {working_subdir} --mem 6000 2>&1"
 	print(csub_command)
 	with open(f"{working_subdir}/csub_command.sh", "w") as csub_script:
 		csub_script.write("#!/bin/bash\n")

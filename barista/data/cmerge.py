@@ -158,8 +158,9 @@ if __name__ == "__main__":
         input_files = glob.glob(f"{args.dir}/{runpart}/DataHistograms_Run*_part*subjob*.coffea")
         cmerge_args.append([output_file, input_files, args.force])
 
-    #for cmerge_arg in cmerge_args:
-    #    cmerge(*cmerge_arg)
+    for cmerge_arg in cmerge_args:
+        cmerge(*cmerge_arg)
+    '''
     import concurrent.futures
     try:
         executor = concurrent.futures.ProcessPoolExecutor(max_workers=8)
@@ -181,6 +182,7 @@ if __name__ == "__main__":
         for job in futures_set:
             _cancel(job)
         raise
+    '''
 
     print("...done merging coffea subjobs.")
 
@@ -203,31 +205,31 @@ if __name__ == "__main__":
             "output_file": output_root_file, 
             "combine_datasets": True,
             "force": args.force})
-    #for coffea2roofit_kwarg in coffea2roofit_kwargs:
-    #    coffea2roofit(**coffea2roofit_kwarg)
-    try:
-        executor = concurrent.futures.ProcessPoolExecutor(max_workers=8)
-        futures_set = set(executor.submit(coffea2roofit, **coffea2roofit_kwarg) for coffea2roofit_kwarg in coffea2roofit_kwargs)
-        njobs = len(futures_set)
-        start = time.time()
-        nfinished = 0
-        while len(futures_set) > 0:
-            finished = set(job for job in futures_set if job.done())
-            futures_set.difference_update(finished)
-            nfinished += len(finished)
-            for fjob in finished:
-                fjob.result()
-            print("Finished: {} / {}".format(nfinished, njobs))
-            print("Outstanding: {} / {}".format(len(futures_set), njobs))
-            print("Time [s]: {}".format(time.time() - start))
-            time.sleep(10)
-    except KeyboardInterrupt:
-        for job in futures_set:
-            _cancel(job)
-        if status:
-            print("Received SIGINT, killed pending jobs.  Running jobs will continue to completion.", file=sys.stderr)
-            print("Running jobs:", sum(1 for j in futures_set if j.running()), file=sys.stderr)
-    except Exception:
-        for job in futures_set:
-            _cancel(job)
-        raise
+    for coffea2roofit_kwarg in coffea2roofit_kwargs:
+        coffea2roofit(**coffea2roofit_kwarg)
+    #try:
+    #    executor = concurrent.futures.ProcessPoolExecutor(max_workers=8)
+    #    futures_set = set(executor.submit(coffea2roofit, **coffea2roofit_kwarg) for coffea2roofit_kwarg in coffea2roofit_kwargs)
+    #    njobs = len(futures_set)
+    #    start = time.time()
+    #    nfinished = 0
+    #    while len(futures_set) > 0:
+    #        finished = set(job for job in futures_set if job.done())
+    #        futures_set.difference_update(finished)
+    #        nfinished += len(finished)
+    #        for fjob in finished:
+    #            fjob.result()
+    #        print("Finished: {} / {}".format(nfinished, njobs))
+    #        print("Outstanding: {} / {}".format(len(futures_set), njobs))
+    #        print("Time [s]: {}".format(time.time() - start))
+    #        time.sleep(10)
+    #except KeyboardInterrupt:
+    #    for job in futures_set:
+    #        _cancel(job)
+    #    if status:
+    #        print("Received SIGINT, killed pending jobs.  Running jobs will continue to completion.", file=sys.stderr)
+    #        print("Running jobs:", sum(1 for j in futures_set if j.running()), file=sys.stderr)
+    #except Exception:
+    #    for job in futures_set:
+    #        _cancel(job)
+    #    raise
