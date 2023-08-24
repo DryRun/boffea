@@ -1,7 +1,7 @@
 import ROOT
 
 BU_FIT_WINDOW = [5.05, 5.5]
-BD_FIT_WINDOW = [5.05, 5.4]
+BD_FIT_WINDOW = [5.15, 5.4]
 BS_FIT_WINDOW = [5.2, 5.52]
 
 BU_FIT_WINDOW_MC = [5.1, 5.45]
@@ -14,11 +14,12 @@ BS_FIT_NBINS = 100
 
 # Fit bins
 #ptbins_probe = [5.0, 10.0, 15.0, 20.0, 25.0, 30.0]
-ptbins_probe = [8., 13., 18., 23., 28., 33.]
+ptbins_probe = [8., 13., 18., 23., 28., 33., 50., 1000.0]
+ptbins_probe2 = [10., 15., 20., 25., 30., 35., 40., 50., 1000.0]
 ptbins_tag = [11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 23.0, 26.0, 29.0, 34.0, 45.0, 60.0, 1000.0] # 10.0, 
 ybins = [0.0, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 2.0, 2.25]
 
-fit_cuts = {"tag": [], "probe": [], "tagx": []}
+fit_cuts = {"tag": [], "probe": [], "tagx": [], "probe2": []}
 cut_strings = {}
 fit_text = {} # Text for plots
 
@@ -36,7 +37,8 @@ for ipt in range(len(ptbins_probe) - 1):
     fit_cuts["probe"].append(cut_name)
     #fit_cuts["tag"].append(cut_name)
     cut_strings[cut_name] = cut_str
-    fit_text[cut_name] = "{}<pT<{}".format(ptbins_probe[ipt], ptbins_probe[ipt+1])
+    #fit_text[cut_name] = "{}<p_{T}<{}".format(ptbins_probe[ipt], ptbins_probe[ipt+1])
+    fit_text[cut_name] = r"p_{{T}}#in({}, {})".format(ptbins_probe[ipt], ptbins_probe[ipt+1])
     cut_xvals[cut_name] = (ptbins_probe[ipt], ptbins_probe[ipt+1])
 
 # pT, tag
@@ -45,19 +47,31 @@ for ipt in range(len(ptbins_tag) - 1):
     cut_name = "ptbin_{}_{}".format(ptbins_tag[ipt], ptbins_tag[ipt+1]).replace(".", "p")
     fit_cuts["tag"].append(cut_name)
     cut_strings[cut_name] = cut_str
-    fit_text[cut_name] = "{}<pT<{}".format(ptbins_tag[ipt], ptbins_tag[ipt+1])
+    #fit_text[cut_name] = "{}<pT<{}".format(ptbins_tag[ipt], ptbins_tag[ipt+1])
+    fit_text[cut_name] = r"p_{{T}}#in({}, {})".format(ptbins_tag[ipt], ptbins_tag[ipt+1])
     cut_xvals[cut_name] = (ptbins_tag[ipt], ptbins_tag[ipt+1])
 
 # y, both sides
 for iy in range(len(ybins) - 1):
-    cut_str = "(pt > 12.0) && (pt < 45.0) && ({} < abs(y)) && (abs(y) < {})".format(ybins[iy], ybins[iy+1])
+    cut_str = "(pt > 13.0) && (pt < 50.0) && ({} < abs(y)) && (abs(y) < {})".format(ybins[iy], ybins[iy+1])
     cut_name = "ybin_{}_{}".format(ybins[iy], ybins[iy+1]).replace(".", "p")
     fit_cuts["probe"].append(cut_name)
     if ybins[iy+1] <= 1.75:
         fit_cuts["tag"].append(cut_name)
     cut_strings[cut_name] = cut_str
-    fit_text[cut_name] = "{}<|y|<{}".format(ybins[iy], ybins[iy+1])
+    #fit_text[cut_name] = "{}<|y|<{}".format(ybins[iy], ybins[iy+1])
+    fit_text[cut_name] = r"|y|#in({}, {})".format(ybins[iy], ybins[iy+1])
     cut_xvals[cut_name] = (ybins[iy], ybins[iy+1])
+
+# pT, probe2
+for ipt in range(len(ptbins_probe2) - 1):
+    cut_str = "(abs(y) < 2.2) && (pt > {}) && (pt < {})".format(ptbins_probe2[ipt], ptbins_probe2[ipt+1])
+    cut_name = "ptbin_{}_{}".format(ptbins_probe2[ipt], ptbins_probe2[ipt+1]).replace(".", "p")
+    fit_cuts["probe2"].append(cut_name)
+    #fit_cuts["tag"].append(cut_name)
+    cut_strings[cut_name] = cut_str
+    fit_text[cut_name] = "{}<pT<{}".format(ptbins_probe2[ipt], ptbins_probe2[ipt+1])
+    cut_xvals[cut_name] = (ptbins_probe2[ipt], ptbins_probe2[ipt+1])
 
 fit_cuts["tagx"] = fit_cuts["tag"]
 
@@ -180,6 +194,30 @@ def MakeTripleGaussian(ws, mass_range, tag="", rcache=None):
         rcache.extend([tg_x, tg_mean, tg_s1, tg_s2, tg_s3, tg_aa, tg_bb])
     return tg_pdf
 
+# Triple gaussian with sigma3=constant, sigma1=c * sigma1, sigma2 = c * sigma2
+def MakeTripleGaussianConstrained(ws, mass_range, tag="", rcache=None):
+    ROOT.gSystem.Load("include/TripleGaussianPdf_cc.so")
+    from ROOT import TripleGaussianPdf
+    name = "signal{}".format(tag)
+
+    tg_x = ws.var("mass")
+    tg_mean = ws.factory(f"tg_mean{tag}[{0.5*(mass_range[0]+mass_range[1])}, {mass_range[0]}, {mass_range[1]}]")
+    tg_s1 = ws.factory(f"tg_sigma1{tag}[0.012, 0.008, 0.15]")
+    tg_s2 = ws.factory(f"tg_sigma2{tag}[0.02, 0.01, 0.2]")
+    tg_cs = ws.factory(f"tg_cs{tag}[1.0, 0.3, 3.0]")
+    tg_ss1 = ws.factory(f"prod::tg_sigma1_actual{tag}(tg_sigma1{tag}, tg_cs{tag})")
+    tg_ss2 = ws.factory(f"prod::tg_sigma2_actual{tag}(tg_sigma2{tag}, tg_cs{tag})")
+
+    tg_s3 = ws.factory(f"tg_sigma3{tag}[0.08, 0.01, 0.3]")
+    tg_aa = ws.factory(f"tg_aa{tag}[0.67, 0., 1.]")
+    tg_bb = ws.factory(f"tg_bb{tag}[0.67, 0., 1.]")
+
+    tg_pdf = TripleGaussianPdf(name, name, tg_x, tg_mean, tg_ss1, tg_ss2, tg_s3, tg_aa, tg_bb)
+
+    if rcache:
+        rcache.extend([tg_x, tg_mean, tg_s1, tg_s2, tg_s3, tg_aa, tg_bb, tg_ss1, tg_ss2, tg_cs])
+    return tg_pdf
+
 # Stuff for handling different selections:
 
 def get_Bcands_name_data(btype, side, trigger, selection="nominal"):
@@ -216,34 +254,34 @@ def get_Bcands_name_mc(btype, side, trigger, selection="nominal"):
 
 def get_MC_fit_params(btype, selection="nominal", fitfunc="johnson", frozen="False"):
     if btype == "Bd":
-        fit_params_file = f"/home/dryu/BFrag/boffitting/barista/fitting/Bd/prefitparams_MC_Bd_{selection}_{fitfunc}.pkl"
+        fit_params_file = f"/home/dyu7/BFrag/boffitting/barista/fitting/Bd/prefitparams_MC_Bd_{selection}_{fitfunc}.pkl"
         if frozen:
             fit_params_file.replace(".pkl", "_frozen.pkl")
 
     elif btype == "Bu":
-        fit_params_file = f"/home/dryu/BFrag/boffitting/barista/fitting/Bu/fitparams_MC_Bu_{selection}_{fitfunc}.pkl"
+        fit_params_file = f"/home/dyu7/BFrag/boffitting/barista/fitting/Bu/fitparams_MC_Bu_{selection}_{fitfunc}.pkl"
         if frozen:
             fit_params_file.replace(".pkl", "_frozen.pkl")
 
     elif btype == "Bs":
-        fit_params_file = f"/home/dryu/BFrag/boffitting/barista/fitting/Bs/fitparams_MC_Bs_{selection}_{fitfunc}.pkl"
+        fit_params_file = f"/home/dyu7/BFrag/boffitting/barista/fitting/Bs/fitparams_MC_Bs_{selection}_{fitfunc}.pkl"
         if frozen:
             fit_params_file.replace(".pkl", "_frozen.pkl")
     return fit_params_file
 
 def get_MC_fit_errs(btype, selection="nominal", fitfunc="johnson", frozen="False"):
     if btype == "Bd":
-        fit_errs_file = f"/home/dryu/BFrag/boffitting/barista/fitting/Bd/prefiterrs_MC_Bd_{selection}_{fitfunc}.pkl"
+        fit_errs_file = f"/home/dyu7/BFrag/boffitting/barista/fitting/Bd/prefiterrs_MC_Bd_{selection}_{fitfunc}.pkl"
         if frozen:
             fit_errs_file.replace(".pkl", "_frozen.pkl")
 
     elif btype == "Bu":
-        fit_errs_file = f"/home/dryu/BFrag/boffitting/barista/fitting/Bu/fiterrs_MC_Bu_{selection}_{fitfunc}.pkl"
+        fit_errs_file = f"/home/dyu7/BFrag/boffitting/barista/fitting/Bu/fiterrs_MC_Bu_{selection}_{fitfunc}.pkl"
         if frozen:
             fit_errs_file.replace(".pkl", "_frozen.pkl")
 
     elif btype == "Bs":
-        fit_errs_file = f"/home/dryu/BFrag/boffitting/barista/fitting/Bs/fiterrs_MC_Bs_{selection}_{fitfunc}.pkl"
+        fit_errs_file = f"/home/dyu7/BFrag/boffitting/barista/fitting/Bs/fiterrs_MC_Bs_{selection}_{fitfunc}.pkl"
         if frozen:
             fit_errs_file.replace(".pkl", "_frozen.pkl")
     return fit_errs_file
