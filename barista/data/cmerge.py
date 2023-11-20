@@ -25,6 +25,7 @@ def cmerge(output_file, input_files, force=False):
         raise ValueError("Output file {} already exists. Use option force to overwrite.".format(output_file))
     output = None
     for input_file in input_files:
+        print(input_file)
         this_content = util.load(input_file)
         # Merge datasets to save space
         keys = list(this_content.keys())
@@ -142,49 +143,52 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Add coffea subjobs back together")
     parser.add_argument("-d", "--dir", type=str, help="Folder containing subjobs")
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite")
+    parser.add_argument("-r", "--rootonly", action="store_true", help="Skip coffea part")
     args = parser.parse_args()
 
     if not os.path.isdir(args.dir):
         raise ValueError("Directory {} does not exist".format(args.dir))
 
-    print("Merging coffea subjobs...")
     runpart_dirs = sorted(glob.glob(f"{args.dir}/Run2018*_part*/"))
     runparts = [x.split("/")[-2] for x in runpart_dirs]
-    cmerge_args = []
-    for runpart in runparts:
-        #if not os.path.isdir(f"{args.dir}/{runpart}/add_eff"):
-        #    raise ValueError(f"{args.dir}/{runpart}/add_eff does not exist. Did you run add_efficiency.py first?")
-        output_file = f"{args.dir}/{runpart}.coffea"
-        input_files = glob.glob(f"{args.dir}/{runpart}/DataHistograms_Run*_part*subjob*.coffea")
-        cmerge_args.append([output_file, input_files, args.force])
 
-    for cmerge_arg in cmerge_args:
-        cmerge(*cmerge_arg)
-    '''
-    import concurrent.futures
-    try:
-        executor = concurrent.futures.ProcessPoolExecutor(max_workers=8)
-        futures_set = set(executor.submit(cmerge, *cmerge_arg) for cmerge_arg in cmerge_args)
-        njobs = len(futures_set)
-        start = time.time()
-        nfinished = 0
-        while len(futures_set) > 0:
-            finished = set(job for job in futures_set if job.done())
-            futures_set.difference_update(finished)
-            nfinished += len(finished)
-            for fjob in finished:
-                fjob.result()
-            print("Finished: {} / {}".format(nfinished, njobs))
-            print("Outstanding: {} / {}".format(len(futures_set), njobs))
-            print("Time [s]: {}".format(time.time() - start))
-            time.sleep(10)
-    except Exception:
-        for job in futures_set:
-            _cancel(job)
-        raise
-    '''
+    if not args.rootonly:
+        print("Merging coffea subjobs...")
+        cmerge_args = []
+        for runpart in runparts:
+            #if not os.path.isdir(f"{args.dir}/{runpart}/add_eff"):
+            #    raise ValueError(f"{args.dir}/{runpart}/add_eff does not exist. Did you run add_efficiency.py first?")
+            output_file = f"{args.dir}/{runpart}.coffea"
+            input_files = glob.glob(f"{args.dir}/{runpart}/DataHistograms_Run*_part*subjob*.coffea")
+            cmerge_args.append([output_file, input_files, args.force])
 
-    print("...done merging coffea subjobs.")
+        for cmerge_arg in cmerge_args:
+            cmerge(*cmerge_arg)
+        '''
+        import concurrent.futures
+        try:
+            executor = concurrent.futures.ProcessPoolExecutor(max_workers=8)
+            futures_set = set(executor.submit(cmerge, *cmerge_arg) for cmerge_arg in cmerge_args)
+            njobs = len(futures_set)
+            start = time.time()
+            nfinished = 0
+            while len(futures_set) > 0:
+                finished = set(job for job in futures_set if job.done())
+                futures_set.difference_update(finished)
+                nfinished += len(finished)
+                for fjob in finished:
+                    fjob.result()
+                print("Finished: {} / {}".format(nfinished, njobs))
+                print("Outstanding: {} / {}".format(len(futures_set), njobs))
+                print("Time [s]: {}".format(time.time() - start))
+                time.sleep(10)
+        except Exception:
+            for job in futures_set:
+                _cancel(job)
+            raise
+        '''
+
+        print("...done merging coffea subjobs.")
 
     print("Converting coffea files to ROOT TTrees for RooFit")
     # Determine which objects to convert (any coffea object with "Bcands" in name)

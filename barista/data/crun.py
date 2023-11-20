@@ -51,7 +51,7 @@ os.chdir(working_directory)
 # Tar working area
 tarball_dir = "/home/dyu7/BFrag/tarballs"
 print("Tarring user code...")
-os.system(f"tar -czf {tarball_dir}/usercode.tar.gz -C $HOME/BFrag boffea/barista boffea/brazil --exclude='*.root' --exclude='*.coffea' --exclude='*.png' --exclude='*.pdf' --exclude='*.tar.gz'")
+os.system(f"tar -czf {tarball_dir}/usercode.tar.gz -C $HOME/BFrag boffea/barista boffea/brazil --exclude='*.root' --exclude='*.coffea' --exclude='*.coffea.*' --exclude='*.png' --exclude='*.pdf' --exclude='*.tar.gz'")
 print("...done.")
 if args.retar_venv:
 	print("Tarring virtualenv...")
@@ -78,6 +78,11 @@ for runp in runps:
 		#run_script.write("source /cvmfs/sft.cern.ch/lcg/views/LCG_95apython3/x86_64-centos7-gcc8-opt/setup.sh\n")
 		#run_script.write("source venv/bin/activate\n")
 		run_script.write("source env.sh\n")
+		run_script.write("echo $PATH\n")		
+		run_script.write("echo $PYTHONPATH\n")
+		#run_script.write("ls -lrth /user_data/dryu/BFrag/boffea/venv/bin\n")
+		#run_script.write("ls -lrth /user_data/dryu/BFrag/boffea/venv/lib/python3.8/site-packages\n")
+		#run_script.write("ls /isilon/hadoop/store/user/dryu/BParkingNANO/v2_6/hadd/\n")
 		run_script.write("DATASET_SUBJOBS=({})\n".format(" ".join(subjobs)))
 		run_script.write("RETRY_COUNTER=0\n")
 		run_script.write("while [[ \"$RETRY_COUNTER\" -lt 5 && ! \"$(find . -maxdepth 1 -name '*coffea' -print -quit)\" ]]; do\n")

@@ -33,7 +33,7 @@ from brazil.fonll_sfs import fonll_sfs
 np.set_printoptions(threshold=np.inf)
 
 def where(predicate, iftrue, iffalse):
-    predicate = predicate.astype(np.bool)   # just to make sure they're 0/1
+    predicate = predicate.astype(bool)   # just to make sure they're 0/1
     return predicate*iftrue + (1 - predicate)*iffalse
 
 class MCEfficencyProcessor(processor.ProcessorABC):
@@ -58,28 +58,35 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       self._Bcand_selections.append(f"tagxmatch_{trigger}")
       #self._Bcand_selections.append(f"tagHiTrkPtmatch_{trigger}")
       #self._Bcand_selections.append(f"probeHiTrkPtmatch_{trigger}")
-      self._Bcand_selections.append(f"tagHiMuonPtmatch_{trigger}")
-      self._Bcand_selections.append(f"probeHiMuonPtmatch_{trigger}")
-      self._Bcand_selections.append(f"tagMediumMuonPtmatch_{trigger}")
-      self._Bcand_selections.append(f"probeMediumMuonPtmatch_{trigger}")
-      self._Bcand_selections.append(f"tagHugeMuonPtmatch_{trigger}")
-      self._Bcand_selections.append(f"probeHugeMuonPtmatch_{trigger}")
+      #self._Bcand_selections.append(f"probeHiMuonPtmatch_{trigger}")
+      #self._Bcand_selections.append(f"probeMediumMuonPtmatch_{trigger}")
+      #self._Bcand_selections.append(f"tagHugeMuonPtmatch_{trigger}")
+      #self._Bcand_selections.append(f"probeHugeMuonPtmatch_{trigger}")
       self._Bcand_selections.append(f"tagVarMuonPtmatch_{trigger}")
+      self._Bcand_selections.append(f"tagxVarMuonPtmatch_{trigger}")
       self._Bcand_selections.append(f"probeVarMuonPtmatch_{trigger}")
-      self._Bcand_selections.append(f"tagMediumMuonmatch_{trigger}")
-      self._Bcand_selections.append(f"probeMediumMuonmatch_{trigger}")
+
+      self._Bcand_selections.append(f"tagMediumMuonPtmatch_{trigger}")
+      self._Bcand_selections.append(f"tagxMediumMuonPtmatch_{trigger}")
+      self._Bcand_selections.append(f"tagHiMuonPtmatch_{trigger}")
+      self._Bcand_selections.append(f"tagxHiMuonPtmatch_{trigger}")
+
+      self._Bcand_selections.append(f"tagMediumMuonIDmatch_{trigger}")
+      self._Bcand_selections.append(f"tagxMediumMuonIDmatch_{trigger}")
+      #self._Bcand_selections.append(f"probeMediumMuonmatch_{trigger}")
       #self._Bcand_selections.append(f"probeJmatch_{trigger}")
     for selection_name in self._Bcand_selections:
       self._accumulator[f"Bcands_{selection_name}"] = processor.defaultdict_accumulator(partial(Bcand_accumulator, cols=["pt", "y", "phi", "mass"])) # eta
 
-    #self._accumulator["Bcands_Bs_opt"] = processor.defaultdict_accumulator(
-    #      partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass", 
-    #        "sv_prob", "l_xy_sig", "l_xy", "cos2D", 
-    #        "dm_phi", "dm_jpsi", 
-    #        "l1_pt", "l2_pt", "k1_pt", "k2_pt", 
-    #        "l1_eta", "l2_eta", "k1_eta", "k2_eta", 
-    #        "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", 
-    #])) 
+    self._accumulator["Bcands_Bs_opt"] = processor.defaultdict_accumulator(
+          partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass", 
+            "sv_prob", "l_xy_sig", "l_xy", "cos2D", 
+            "dm_phi", "dm_jpsi", 
+            "l1_pt", "l2_pt", "k1_pt", "k2_pt", 
+            "l1_eta", "l2_eta", "k1_eta", "k2_eta", 
+            "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", 
+            "isTag_HLT_Mu7_IP4", "isTag_HLT_Mu9_IP5", "isTag_HLT_Mu9_IP6", "isTag_HLT_Mu12_IP6", 
+    ])) 
 
     self._accumulator["nMuon"]          = hist.Hist("Events", dataset_axis, hist.Bin("nMuon", r"Number of muons", 11,-0.5, 10.5))
     #self._accumulator["nMuon_isTrig"]   = hist.Hist("Events", dataset_axis, hist.Bin("nMuon_isTrig", r"Number of triggering muons", 11,-0.5, 10.5))
@@ -122,6 +129,8 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     #self._accumulator["Bs_svprob_vs_pt"]  = hist.Hist("Events", dataset_axis, hist.Bin("sv_prob", r"SV prob", 100, 0., 1.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
     self._accumulator["Bs_l1_softId_vs_pt"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l1_softId", r"l1 soft ID", 2, -0.5, 1.5), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
     self._accumulator["Bs_l2_softId_vs_pt"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l2_softId", r"l2 soft ID", 2, -0.5, 1.5), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
+    self._accumulator["Bs_l1pt_vs_l1eta"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l1_pt", r"$p_{T}(l1)$ [GeV]", 100, 0., 10.), hist.Bin("l1_eta", r"$\eta(l1)$ [GeV]", 60, 0., 3.))
+    self._accumulator["Bs_l2pt_vs_l2eta"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l2_pt", r"$p_{T}(l2)$ [GeV]", 100, 0., 10.), hist.Bin("l2_eta", r"$\eta(l2)$ [GeV]", 60, 0., 3.))
     #self._accumulator["Bs_lxysig_vs_pt"]  = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("l_xy_sig", r"$L_{xy}/\sigma(L_{xy})$", 60, -1., 11.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
     #self._accumulator["Bs_phimass_vs_pt"] = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("phi_m", r"$m(\phi)$ [GeV]",  50, PHI_1020_MASS*0.8, PHI_1020_MASS*1.2), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
     #self._accumulator["Bs_phipt_vs_pt"]   = hist.Hist("Events", dataset_axis, selection_axis_reco, hist.Bin("phi_pt", r"$p_{T}(\phi)$ [GeV]",  50, 0., 25.), hist.Bin("pt", r"$p_{T}^{(fit)}$ [GeV]", 20, 0., 50.))
@@ -351,11 +360,23 @@ class MCEfficencyProcessor(processor.ProcessorABC):
 
     reco_bskkmumu.add_attributes(l_xy_sig = where(reco_bskkmumu.l_xy_unc > 0, reco_bskkmumu.l_xy / reco_bskkmumu.l_xy_unc, -1.e20))
     """
-    tagmuon_ptcuts = {
+    tagmuon_ptcuts_loose = {
      "HLT_Mu7_IP4": 7*1.05,
      "HLT_Mu9_IP5": 9*1.05,
      "HLT_Mu9_IP6": 9*1.05,
      "HLT_Mu12_IP6": 12*1.05,
+    }
+    tagmuon_ptcuts_medium = {
+     "HLT_Mu7_IP4": 7*1.15,
+     "HLT_Mu9_IP5": 9*1.15,
+     "HLT_Mu9_IP6": 9*1.15,
+     "HLT_Mu12_IP6": 12*1.15,
+    }
+    tagmuon_ptcuts_tight = {
+     "HLT_Mu7_IP4": 7*1.25,
+     "HLT_Mu9_IP5": 9*1.25,
+     "HLT_Mu9_IP6": 9*1.25,
+     "HLT_Mu12_IP6": 12*1.25,
     }
     tagmuon_ipcuts = {
      "HLT_Mu7_IP4": 4 * 1.05, 
@@ -373,14 +394,40 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       reco_bskkmumu.add_attributes(**{
         f"Muon1IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx],
         f"Muon2IsTrig_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx],
+        f"Muon1IsTrigLoose_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts_loose[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l1_idx]) < tagmuon_etacuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigLoose_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts_loose[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l2_idx]) < tagmuon_etacuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon1IsTrigMedium_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts_medium[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l1_idx]) < tagmuon_etacuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon2IsTrigMedium_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts_medium[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l2_idx]) < tagmuon_etacuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
         f"Muon1IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx] \
-                                        & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts_tight[trigger]) \
                                         & (abs(reco_muons.eta[reco_bskkmumu.l1_idx]) < tagmuon_etacuts[trigger]) \
                                         & (abs(reco_muons.dxySig[reco_bskkmumu.l1_idx]) > tagmuon_ipcuts[trigger]),
         f"Muon2IsTrigTight_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx] \
-                                        & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts[trigger]) \
+                                        & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts_tight[trigger]) \
                                         & (abs(reco_muons.eta[reco_bskkmumu.l2_idx]) < tagmuon_etacuts[trigger]) \
                                         & (abs(reco_muons.dxySig[reco_bskkmumu.l2_idx]) > tagmuon_ipcuts[trigger]),
+        f"Muon1IsTrigMediumID_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l1_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l1_idx] > tagmuon_ptcuts_loose[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l1_idx]) < tagmuon_etacuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l1_idx]) > tagmuon_ipcuts[trigger]) \
+                                        & reco_muons.mediumId[reco_bskkmumu.l1_idx],
+        f"Muon2IsTrigMediumID_{trigger}": getattr(reco_muons, f"isTriggeringFull_{trigger}")[reco_bskkmumu.l2_idx] \
+                                        & (reco_muons.pt[reco_bskkmumu.l2_idx] > tagmuon_ptcuts_loose[trigger]) \
+                                        & (abs(reco_muons.eta[reco_bskkmumu.l2_idx]) < tagmuon_etacuts[trigger]) \
+                                        & (abs(reco_muons.dxySig[reco_bskkmumu.l2_idx]) > tagmuon_ipcuts[trigger]) \
+                                        & reco_muons.mediumId[reco_bskkmumu.l2_idx],
       })
       reco_bskkmumu.add_attributes(**{
         f"Muon1IsTrigMaxPt_{trigger}": getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") & (reco_muons.pt[reco_bskkmumu.l1_idx] == reco_muons.pt.max()),
@@ -414,8 +461,14 @@ class MCEfficencyProcessor(processor.ProcessorABC):
     selections["l_xy_sig"] = (abs(reco_bskkmumu.l_xy_sig) > final_cuts["Bs"]["l_xy_sig"])
     selections["sv_prob"]  = (reco_bskkmumu.sv_prob > final_cuts["Bs"]["sv_prob"])
     selections["cos2D"]    = (reco_bskkmumu.fit_cos2D > final_cuts["Bs"]["cos2D"])
-    selections["l1"]       =  (reco_bskkmumu.l1_pt > final_cuts["Bs"]["l1_pt"]) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
-    selections["l2"]       =  (reco_bskkmumu.l2_pt > final_cuts["Bs"]["l2_pt"]) & (abs(reco_bskkmumu.l2_eta) < 2.4) & (reco_bskkmumu.l2_softId)
+    #selections["l1"]       =  (reco_bskkmumu.l1_pt > final_cuts["Bs"]["l1_pt"]) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
+    #selections["l2"]       =  (reco_bskkmumu.l2_pt > final_cuts["Bs"]["l2_pt"]) & (abs(reco_bskkmumu.l2_eta) < 2.4) & (reco_bskkmumu.l2_softId)
+    selections["l1"]       = (abs(reco_bskkmumu.l1_eta) < 2.4) \
+                                    & (reco_bskkmumu.l1_softId) \
+                                    & varmuonpt(reco_bskkmumu.l1_pt, abs(reco_bskkmumu.l1_eta))
+    selections["l2"]       = (abs(reco_bskkmumu.l2_eta) < 2.4) \
+                                    & (reco_bskkmumu.l2_softId) \
+                                    & varmuonpt(reco_bskkmumu.l2_pt, abs(reco_bskkmumu.l2_eta))
     #selections["l1"]      = (reco_bskkmumu.l1_pt > 1.5) & (abs(reco_bskkmumu.l1_eta) < 2.4) & (reco_bskkmumu.l1_softId)
     #selections["l2"]      = (abs(reco_bskkmumu.l2_eta) < 2.4) & (reco_bskkmumu.l2_softId)
     #selections["l2"]      = (selections["l2"] & where(abs(reco_bskkmumu.l2_eta) < 1.4, 
@@ -480,7 +533,7 @@ class MCEfficencyProcessor(processor.ProcessorABC):
 
       selections[f"recomatch_{trigger}"]      = selections["reco"] & trigger_mask
 
-      selections[f"tag_{trigger}"]            = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}"))
+      selections[f"tag_{trigger}"]            = selections["reco"] & trigger_mask & (getattr(reco_bskkmumu, f"Muon1IsTrigLoose_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigLoose_{trigger}"))
       selections[f"tagmatch_{trigger}"]       = selections[f"tag_{trigger}"] & selections["truthmatched"]
       selections[f"tagunmatched_{trigger}"]   = selections[f"tag_{trigger}"] & (~selections["truthmatched"])
 
@@ -499,49 +552,62 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       #selections[f"probeHiTrkPtmatch_{trigger}"]     = selections[f"probeHiTrkPt_{trigger}"] & selections["truthmatched"]
       #selections[f"probeHiTrkPtunmatched_{trigger}"] = selections[f"probeHiTrkPt_{trigger}"] & (~selections["truthmatched"])
 
-      selections[f"tagHiMuonPt_{trigger}"]            = selections[f"tag_{trigger}"] & selections["l1HiPt"] & selections["l2HiPt"]
-      selections[f"tagHiMuonPtmatch_{trigger}"]       = selections[f"tagHiMuonPt_{trigger}"] & selections["truthmatched"]
-      selections[f"tagHiMuonPtunmatched_{trigger}"]   = selections[f"tagHiMuonPt_{trigger}"] & (~selections["truthmatched"])
+      #selections[f"probeHiMuonPt_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1HiPt"] & selections["l2HiPt"]
+      #selections[f"probeHiMuonPtmatch_{trigger}"]     = selections[f"probeHiMuonPt_{trigger}"] & selections["truthmatched"]
+      #selections[f"probeHiMuonPtunmatched_{trigger}"] = selections[f"probeHiMuonPt_{trigger}"] & (~selections["truthmatched"])
 
-      selections[f"probeHiMuonPt_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1HiPt"] & selections["l2HiPt"]
-      selections[f"probeHiMuonPtmatch_{trigger}"]     = selections[f"probeHiMuonPt_{trigger}"] & selections["truthmatched"]
-      selections[f"probeHiMuonPtunmatched_{trigger}"] = selections[f"probeHiMuonPt_{trigger}"] & (~selections["truthmatched"])
+      #selections[f"probeMediumMuonPt_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1MediumPt"] & selections["l2MediumPt"]
+      #selections[f"probeMediumMuonPtmatch_{trigger}"]     = selections[f"probeMediumMuonPt_{trigger}"] & selections["truthmatched"]
+      #selections[f"probeMediumMuonPtunmatched_{trigger}"] = selections[f"probeMediumMuonPt_{trigger}"] & (~selections["truthmatched"])
 
-      selections[f"tagMediumMuonPt_{trigger}"]            = selections[f"tag_{trigger}"] & selections["l1MediumPt"] & selections["l2MediumPt"]
-      selections[f"tagMediumMuonPtmatch_{trigger}"]       = selections[f"tagMediumMuonPt_{trigger}"] & selections["truthmatched"]
-      selections[f"tagMediumMuonPtunmatched_{trigger}"]   = selections[f"tagMediumMuonPt_{trigger}"] & (~selections["truthmatched"])
+      #selections[f"tagHugeMuonPt_{trigger}"]            = selections[f"tag_{trigger}"] & selections["l1HugePt"] & selections["l2HugePt"]
+      #selections[f"tagHugeMuonPtmatch_{trigger}"]       = selections[f"tagHugeMuonPt_{trigger}"] & selections["truthmatched"]
+      #selections[f"tagHugeMuonPtunmatched_{trigger}"]   = selections[f"tagHugeMuonPt_{trigger}"] & (~selections["truthmatched"])
 
-      selections[f"probeMediumMuonPt_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1MediumPt"] & selections["l2MediumPt"]
-      selections[f"probeMediumMuonPtmatch_{trigger}"]     = selections[f"probeMediumMuonPt_{trigger}"] & selections["truthmatched"]
-      selections[f"probeMediumMuonPtunmatched_{trigger}"] = selections[f"probeMediumMuonPt_{trigger}"] & (~selections["truthmatched"])
-
-      selections[f"tagHugeMuonPt_{trigger}"]            = selections[f"tag_{trigger}"] & selections["l1HugePt"] & selections["l2HugePt"]
-      selections[f"tagHugeMuonPtmatch_{trigger}"]       = selections[f"tagHugeMuonPt_{trigger}"] & selections["truthmatched"]
-      selections[f"tagHugeMuonPtunmatched_{trigger}"]   = selections[f"tagHugeMuonPt_{trigger}"] & (~selections["truthmatched"])
-
-      selections[f"probeHugeMuonPt_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1HugePt"] & selections["l2HugePt"]
-      selections[f"probeHugeMuonPtmatch_{trigger}"]     = selections[f"probeHugeMuonPt_{trigger}"] & selections["truthmatched"]
-      selections[f"probeHugeMuonPtunmatched_{trigger}"] = selections[f"probeHugeMuonPt_{trigger}"] & (~selections["truthmatched"])
+      #selections[f"probeHugeMuonPt_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1HugePt"] & selections["l2HugePt"]
+      #selections[f"probeHugeMuonPtmatch_{trigger}"]     = selections[f"probeHugeMuonPt_{trigger}"] & selections["truthmatched"]
+      #selections[f"probeHugeMuonPtunmatched_{trigger}"] = selections[f"probeHugeMuonPt_{trigger}"] & (~selections["truthmatched"])
 
       selections[f"tagVarMuonPt_{trigger}"]            = selections[f"tag_{trigger}"] & selections["l1VarPt"] & selections["l2VarPt"]
       selections[f"tagVarMuonPtmatch_{trigger}"]       = selections[f"tagVarMuonPt_{trigger}"] & selections["truthmatched"]
       selections[f"tagVarMuonPtunmatched_{trigger}"]   = selections[f"tagVarMuonPt_{trigger}"] & (~selections["truthmatched"])
 
+      selections[f"tagxVarMuonPt_{trigger}"]            = selections[f"tagx_{trigger}"] & selections["l1VarPt"] & selections["l2VarPt"]
+      selections[f"tagxVarMuonPtmatch_{trigger}"]       = selections[f"tagxVarMuonPt_{trigger}"] & selections["truthmatched"]
+      selections[f"tagxVarMuonPtunmatched_{trigger}"]   = selections[f"tagxVarMuonPt_{trigger}"] & (~selections["truthmatched"])
+
       selections[f"probeVarMuonPt_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1VarPt"] & selections["l2VarPt"]
       selections[f"probeVarMuonPtmatch_{trigger}"]     = selections[f"probeVarMuonPt_{trigger}"] & selections["truthmatched"]
       selections[f"probeVarMuonPtunmatched_{trigger}"] = selections[f"probeVarMuonPt_{trigger}"] & (~selections["truthmatched"])
 
-      selections[f"tagMediumMuon_{trigger}"]            = selections[f"tag_{trigger}"] & selections["l1Medium"] & selections["l2Medium"]
-      selections[f"tagMediumMuonmatch_{trigger}"]       = selections[f"tagMediumMuon_{trigger}"] & selections["truthmatched"]
-      selections[f"tagMediumMuonunmatched_{trigger}"]   = selections[f"tagMediumMuon_{trigger}"] & (~selections["truthmatched"])
+      selections[f"tagMediumMuonPt_{trigger}"]            = selections[f"tagVarMuonPt_{trigger}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigMedium_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigMedium_{trigger}"))
+      selections[f"tagMediumMuonPtmatch_{trigger}"]       = selections[f"tagMediumMuonPt_{trigger}"] & selections["truthmatched"]
+      selections[f"tagMediumMuonPtunmatched_{trigger}"]   = selections[f"tagMediumMuonPt_{trigger}"] & (~selections["truthmatched"])
 
-      selections[f"tagxMediumMuon_{trigger}"]            = selections[f"tagx_{trigger}"] & selections["l1Medium"] & selections["l2Medium"]
-      selections[f"tagxMediumMuonmatch_{trigger}"]       = selections[f"tagxMediumMuon_{trigger}"] & selections["truthmatched"]
-      selections[f"tagxMediumMuonunmatched_{trigger}"]   = selections[f"tagxMediumMuon_{trigger}"] & (~selections["truthmatched"])
+      selections[f"tagxMediumMuonPt_{trigger}"]            = selections[f"tagxVarMuonPt_{trigger}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigMedium_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigMedium_{trigger}"))
+      selections[f"tagxMediumMuonPtmatch_{trigger}"]       = selections[f"tagxMediumMuonPt_{trigger}"] & selections["truthmatched"]
+      selections[f"tagxMediumMuonPtunmatched_{trigger}"]   = selections[f"tagxMediumMuonPt_{trigger}"] & (~selections["truthmatched"])
 
-      selections[f"probeMediumMuon_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1Medium"] & selections["l2Medium"]
-      selections[f"probeMediumMuonmatch_{trigger}"]     = selections[f"probeMediumMuon_{trigger}"] & selections["truthmatched"]
-      selections[f"probeMediumMuonunmatched_{trigger}"] = selections[f"probeMediumMuon_{trigger}"] & (~selections["truthmatched"])
+      selections[f"tagHiMuonPt_{trigger}"]            = selections[f"tagVarMuonPt_{trigger}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}"))
+      selections[f"tagHiMuonPtmatch_{trigger}"]       = selections[f"tagHiMuonPt_{trigger}"] & selections["truthmatched"]
+      selections[f"tagHiMuonPtunmatched_{trigger}"]   = selections[f"tagHiMuonPt_{trigger}"] & (~selections["truthmatched"])
+
+      selections[f"tagxHiMuonPt_{trigger}"]            = selections[f"tagxVarMuonPt_{trigger}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigTight_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigTight_{trigger}"))
+      selections[f"tagxHiMuonPtmatch_{trigger}"]       = selections[f"tagxHiMuonPt_{trigger}"] & selections["truthmatched"]
+      selections[f"tagxHiMuonPtunmatched_{trigger}"]   = selections[f"tagxHiMuonPt_{trigger}"] & (~selections["truthmatched"])
+
+
+      selections[f"tagMediumMuonID_{trigger}"]            = selections[f"tag_{trigger}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigMediumID_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigMediumID_{trigger}"))
+      selections[f"tagMediumMuonIDmatch_{trigger}"]       = selections[f"tagMediumMuonID_{trigger}"] & selections["truthmatched"]
+      selections[f"tagMediumMuonIDunmatched_{trigger}"]   = selections[f"tagMediumMuonID_{trigger}"] & (~selections["truthmatched"])
+
+      selections[f"tagxMediumMuonID_{trigger}"]            = selections[f"tagx_{trigger}"] & (getattr(reco_bskkmumu, f"Muon1IsTrigMediumID_{trigger}") | getattr(reco_bskkmumu, f"Muon2IsTrigMediumID_{trigger}"))
+      selections[f"tagxMediumMuonIDmatch_{trigger}"]       = selections[f"tagxMediumMuonID_{trigger}"] & selections["truthmatched"]
+      selections[f"tagxMediumMuonIDunmatched_{trigger}"]   = selections[f"tagxMediumMuonID_{trigger}"] & (~selections["truthmatched"])
+
+      #selections[f"probeMediumMuonID_{trigger}"]          = selections[f"probe_{trigger}"] & selections["l1Medium"] & selections["l2Medium"]
+      #selections[f"probeMediumMuonIDmatch_{trigger}"]     = selections[f"probeMediumMuonID_{trigger}"] & selections["truthmatched"]
+      #selections[f"probeMediumMuonIDunmatched_{trigger}"] = selections[f"probeMediumMuonID_{trigger}"] & (~selections["truthmatched"])
 
     # If more than one B is selected, choose best chi2
     selections["recomatch"] = selections["recomatch"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections["recomatch"]].min())
@@ -568,40 +634,49 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       selections[f"tagHiMuonPt_{trigger}"]            = selections[f"tagHiMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHiMuonPt_{trigger}"]].min())
       selections[f"tagHiMuonPtmatch_{trigger}"]       = selections[f"tagHiMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHiMuonPtmatch_{trigger}"]].min())
       selections[f"tagHiMuonPtunmatched_{trigger}"]   = selections[f"tagHiMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHiMuonPtunmatched_{trigger}"]].min())
-      selections[f"probeHiMuonPt_{trigger}"]          = selections[f"probeHiMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHiMuonPt_{trigger}"]].min())
-      selections[f"probeHiMuonPtmatch_{trigger}"]     = selections[f"probeHiMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHiMuonPtmatch_{trigger}"]].min())
-      selections[f"probeHiMuonPtunmatched_{trigger}"] = selections[f"probeHiMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHiMuonPtunmatched_{trigger}"]].min())
+      selections[f"tagxHiMuonPt_{trigger}"]            = selections[f"tagxHiMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxHiMuonPt_{trigger}"]].min())
+      selections[f"tagxHiMuonPtmatch_{trigger}"]       = selections[f"tagxHiMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxHiMuonPtmatch_{trigger}"]].min())
+      selections[f"tagxHiMuonPtunmatched_{trigger}"]   = selections[f"tagxHiMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxHiMuonPtunmatched_{trigger}"]].min())
+      #selections[f"probeHiMuonPt_{trigger}"]          = selections[f"probeHiMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHiMuonPt_{trigger}"]].min())
+      #selections[f"probeHiMuonPtmatch_{trigger}"]     = selections[f"probeHiMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHiMuonPtmatch_{trigger}"]].min())
+      #selections[f"probeHiMuonPtunmatched_{trigger}"] = selections[f"probeHiMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHiMuonPtunmatched_{trigger}"]].min())
 
       selections[f"tagMediumMuonPt_{trigger}"]            = selections[f"tagMediumMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonPt_{trigger}"]].min())
       selections[f"tagMediumMuonPtmatch_{trigger}"]       = selections[f"tagMediumMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonPtmatch_{trigger}"]].min())
       selections[f"tagMediumMuonPtunmatched_{trigger}"]   = selections[f"tagMediumMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonPtunmatched_{trigger}"]].min())
-      selections[f"probeMediumMuonPt_{trigger}"]          = selections[f"probeMediumMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonPt_{trigger}"]].min())
-      selections[f"probeMediumMuonPtmatch_{trigger}"]     = selections[f"probeMediumMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonPtmatch_{trigger}"]].min())
-      selections[f"probeMediumMuonPtunmatched_{trigger}"] = selections[f"probeMediumMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonPtunmatched_{trigger}"]].min())
+      selections[f"tagxMediumMuonPt_{trigger}"]            = selections[f"tagxMediumMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonPt_{trigger}"]].min())
+      selections[f"tagxMediumMuonPtmatch_{trigger}"]       = selections[f"tagxMediumMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonPtmatch_{trigger}"]].min())
+      selections[f"tagxMediumMuonPtunmatched_{trigger}"]   = selections[f"tagxMediumMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonPtunmatched_{trigger}"]].min())
+      #selections[f"probeMediumMuonPt_{trigger}"]          = selections[f"probeMediumMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonPt_{trigger}"]].min())
+      #selections[f"probeMediumMuonPtmatch_{trigger}"]     = selections[f"probeMediumMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonPtmatch_{trigger}"]].min())
+      #selections[f"probeMediumMuonPtunmatched_{trigger}"] = selections[f"probeMediumMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonPtunmatched_{trigger}"]].min())
 
-      selections[f"tagHugeMuonPt_{trigger}"]            = selections[f"tagHugeMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHugeMuonPt_{trigger}"]].min())
-      selections[f"tagHugeMuonPtmatch_{trigger}"]       = selections[f"tagHugeMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHugeMuonPtmatch_{trigger}"]].min())
-      selections[f"tagHugeMuonPtunmatched_{trigger}"]   = selections[f"tagHugeMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHugeMuonPtunmatched_{trigger}"]].min())
-      selections[f"probeHugeMuonPt_{trigger}"]          = selections[f"probeHugeMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHugeMuonPt_{trigger}"]].min())
-      selections[f"probeHugeMuonPtmatch_{trigger}"]     = selections[f"probeHugeMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHugeMuonPtmatch_{trigger}"]].min())
-      selections[f"probeHugeMuonPtunmatched_{trigger}"] = selections[f"probeHugeMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHugeMuonPtunmatched_{trigger}"]].min())
+      #selections[f"tagHugeMuonPt_{trigger}"]            = selections[f"tagHugeMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHugeMuonPt_{trigger}"]].min())
+      #selections[f"tagHugeMuonPtmatch_{trigger}"]       = selections[f"tagHugeMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHugeMuonPtmatch_{trigger}"]].min())
+      #selections[f"tagHugeMuonPtunmatched_{trigger}"]   = selections[f"tagHugeMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagHugeMuonPtunmatched_{trigger}"]].min())
+      #selections[f"probeHugeMuonPt_{trigger}"]          = selections[f"probeHugeMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHugeMuonPt_{trigger}"]].min())
+      #selections[f"probeHugeMuonPtmatch_{trigger}"]     = selections[f"probeHugeMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHugeMuonPtmatch_{trigger}"]].min())
+      #selections[f"probeHugeMuonPtunmatched_{trigger}"] = selections[f"probeHugeMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeHugeMuonPtunmatched_{trigger}"]].min())
 
       selections[f"tagVarMuonPt_{trigger}"]            = selections[f"tagVarMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagVarMuonPt_{trigger}"]].min())
       selections[f"tagVarMuonPtmatch_{trigger}"]       = selections[f"tagVarMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagVarMuonPtmatch_{trigger}"]].min())
       selections[f"tagVarMuonPtunmatched_{trigger}"]   = selections[f"tagVarMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagVarMuonPtunmatched_{trigger}"]].min())
+      selections[f"tagxVarMuonPt_{trigger}"]            = selections[f"tagxVarMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxVarMuonPt_{trigger}"]].min())
+      selections[f"tagxVarMuonPtmatch_{trigger}"]       = selections[f"tagxVarMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxVarMuonPtmatch_{trigger}"]].min())
+      selections[f"tagxVarMuonPtunmatched_{trigger}"]   = selections[f"tagxVarMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxVarMuonPtunmatched_{trigger}"]].min())
       selections[f"probeVarMuonPt_{trigger}"]          = selections[f"probeVarMuonPt_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeVarMuonPt_{trigger}"]].min())
       selections[f"probeVarMuonPtmatch_{trigger}"]     = selections[f"probeVarMuonPtmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeVarMuonPtmatch_{trigger}"]].min())
       selections[f"probeVarMuonPtunmatched_{trigger}"] = selections[f"probeVarMuonPtunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeVarMuonPtunmatched_{trigger}"]].min())
 
-      selections[f"tagMediumMuon_{trigger}"]            = selections[f"tagMediumMuon_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuon_{trigger}"]].min())
-      selections[f"tagMediumMuonmatch_{trigger}"]       = selections[f"tagMediumMuonmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonmatch_{trigger}"]].min())
-      selections[f"tagMediumMuonunmatched_{trigger}"]   = selections[f"tagMediumMuonunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonunmatched_{trigger}"]].min())
-      selections[f"tagxMediumMuon_{trigger}"]            = selections[f"tagxMediumMuon_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuon_{trigger}"]].min())
-      selections[f"tagxMediumMuonmatch_{trigger}"]       = selections[f"tagxMediumMuonmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonmatch_{trigger}"]].min())
-      selections[f"tagxMediumMuonunmatched_{trigger}"]   = selections[f"tagxMediumMuonunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonunmatched_{trigger}"]].min())
-      selections[f"probeMediumMuon_{trigger}"]          = selections[f"probeMediumMuon_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuon_{trigger}"]].min())
-      selections[f"probeMediumMuonmatch_{trigger}"]     = selections[f"probeMediumMuonmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonmatch_{trigger}"]].min())
-      selections[f"probeMediumMuonunmatched_{trigger}"] = selections[f"probeMediumMuonunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonunmatched_{trigger}"]].min())
+      selections[f"tagMediumMuonID_{trigger}"]            = selections[f"tagMediumMuonID_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonID_{trigger}"]].min())
+      selections[f"tagMediumMuonIDmatch_{trigger}"]       = selections[f"tagMediumMuonIDmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonIDmatch_{trigger}"]].min())
+      selections[f"tagMediumMuonIDunmatched_{trigger}"]   = selections[f"tagMediumMuonIDunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagMediumMuonIDunmatched_{trigger}"]].min())
+      selections[f"tagxMediumMuonID_{trigger}"]            = selections[f"tagxMediumMuonID_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonID_{trigger}"]].min())
+      selections[f"tagxMediumMuonIDmatch_{trigger}"]       = selections[f"tagxMediumMuonIDmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonIDmatch_{trigger}"]].min())
+      selections[f"tagxMediumMuonIDunmatched_{trigger}"]   = selections[f"tagxMediumMuonIDunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"tagxMediumMuonIDunmatched_{trigger}"]].min())
+      #selections[f"probeMediumMuon_{trigger}"]          = selections[f"probeMediumMuon_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuon_{trigger}"]].min())
+      #selections[f"probeMediumMuonmatch_{trigger}"]     = selections[f"probeMediumMuonmatch_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonmatch_{trigger}"]].min())
+      #selections[f"probeMediumMuonunmatched_{trigger}"] = selections[f"probeMediumMuonunmatched_{trigger}"] & (reco_bskkmumu.chi2 == reco_bskkmumu.chi2[selections[f"probeMediumMuonunmatched_{trigger}"]].min())
 
 
     # Fill cutflow
@@ -638,16 +713,19 @@ class MCEfficencyProcessor(processor.ProcessorABC):
                               #f"tagHiTrkPt_{trigger}", f"tagHiTrkPtmatch_{trigger}", f"tagHiTrkPtunmatched_{trigger}", \
                               #f"probeHiTrkPt_{trigger}", f"probeHiTrkPtmatch_{trigger}", f"probeHiTrkPtunmatched_{trigger}", \
                               f"tagHiMuonPt_{trigger}", f"tagHiMuonPtmatch_{trigger}", f"tagHiMuonPtunmatched_{trigger}", \
-                              f"probeHiMuonPt_{trigger}", f"probeHiMuonPtmatch_{trigger}", f"probeHiMuonPtunmatched_{trigger}", 
+                              f"tagxHiMuonPt_{trigger}", f"tagxHiMuonPtmatch_{trigger}", f"tagxHiMuonPtunmatched_{trigger}", \
+                              #f"probeHiMuonPt_{trigger}", f"probeHiMuonPtmatch_{trigger}", f"probeHiMuonPtunmatched_{trigger}", 
                               f"tagMediumMuonPt_{trigger}", f"tagMediumMuonPtmatch_{trigger}", f"tagMediumMuonPtunmatched_{trigger}", \
-                              f"probeMediumMuonPt_{trigger}", f"probeMediumMuonPtmatch_{trigger}", f"probeMediumMuonPtunmatched_{trigger}", 
-                              f"tagHugeMuonPt_{trigger}", f"tagHugeMuonPtmatch_{trigger}", f"tagHugeMuonPtunmatched_{trigger}", \
-                              f"probeHugeMuonPt_{trigger}", f"probeHugeMuonPtmatch_{trigger}", f"probeHugeMuonPtunmatched_{trigger}", \
+                              f"tagxMediumMuonPt_{trigger}", f"tagxMediumMuonPtmatch_{trigger}", f"tagxMediumMuonPtunmatched_{trigger}", \
+                              #f"probeMediumMuonPt_{trigger}", f"probeMediumMuonPtmatch_{trigger}", f"probeMediumMuonPtunmatched_{trigger}", 
+                              #f"tagHugeMuonPt_{trigger}", f"tagHugeMuonPtmatch_{trigger}", f"tagHugeMuonPtunmatched_{trigger}", \
+                              #f"probeHugeMuonPt_{trigger}", f"probeHugeMuonPtmatch_{trigger}", f"probeHugeMuonPtunmatched_{trigger}", \
                               f"tagVarMuonPt_{trigger}", f"tagVarMuonPtmatch_{trigger}", f"tagVarMuonPtunmatched_{trigger}", \
+                              f"tagxVarMuonPt_{trigger}", f"tagxVarMuonPtmatch_{trigger}", f"tagxVarMuonPtunmatched_{trigger}", \
                               f"probeVarMuonPt_{trigger}", f"probeVarMuonPtmatch_{trigger}", f"probeVarMuonPtunmatched_{trigger}", \
-                              f"tagMediumMuon_{trigger}", f"tagMediumMuonmatch_{trigger}", f"tagMediumMuonunmatched_{trigger}", \
-                              f"tagxMediumMuon_{trigger}", f"tagxMediumMuonmatch_{trigger}", f"tagxMediumMuonunmatched_{trigger}", \
-                              f"probeMediumMuon_{trigger}", f"probeMediumMuonmatch_{trigger}", f"probeMediumMuonunmatched_{trigger}", 
+                              f"tagMediumMuonID_{trigger}", f"tagMediumMuonIDmatch_{trigger}", f"tagMediumMuonIDunmatched_{trigger}", \
+                              f"tagxMediumMuonID_{trigger}", f"tagxMediumMuonIDmatch_{trigger}", f"tagxMediumMuonIDunmatched_{trigger}", \
+                              #f"probeMediumMuon_{trigger}", f"probeMediumMuonmatch_{trigger}", f"probeMediumMuonunmatched_{trigger}", 
                               ])
     for selection_name in selection_names:
       output["BsToKKMuMu_fit_pt_absy_mass"].fill(dataset=dataset_name, selection=selection_name, 
@@ -679,6 +757,8 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       output["BsToKKMuMu_phi_mass"].fill(dataset=dataset_name, selection=selection_name, mass=reco_bskkmumu.phi_m[selections[selection_name]].flatten())
       output["Bs_l1_softId_vs_pt"].fill(dataset=dataset_name, selection=selection_name, l1_softId=reco_bskkmumu.l1_softId[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
       output["Bs_l2_softId_vs_pt"].fill(dataset=dataset_name, selection=selection_name, l2_softId=reco_bskkmumu.l2_softId[selections[selection_name]].flatten(), pt=reco_bskkmumu.fit_pt[selections[selection_name]].flatten())
+      output["Bs_l1pt_vs_l1eta"].fill(dataset=dataset_name, selection=selection_name, l1_pt=reco_bskkmumu.l1_pt[selections[selection_name]].flatten(), l1_eta=np.abs(reco_bskkmumu.l1_eta[selections[selection_name]]).flatten())
+      output["Bs_l2pt_vs_l2eta"].fill(dataset=dataset_name, selection=selection_name, l2_pt=reco_bskkmumu.l2_pt[selections[selection_name]].flatten(), l2_eta=np.abs(reco_bskkmumu.l2_eta[selections[selection_name]]).flatten())
     # SV optimization
     #svprob_opt_selection = selections["sv_pt"] \
     #                          & selections["l_xy_sig"] \
@@ -844,55 +924,57 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       # High track pT
       truth_selections[f"matched_tagHiMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
       truth_selections[f"matched_tagHiMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagHiMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
-
-      truth_selections[f"matched_probeHiMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
-      truth_selections[f"matched_probeHiMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"probeHiMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
-
       truth_selections[f"matched_fid_tagHiMuonPt_{trigger}"] = truth_selections[f"matched_tagHiMuonPt_{trigger}"] & truth_selections["fiducial"]
-      truth_selections[f"matched_fid_probeHiMuonPt_{trigger}"] = truth_selections[f"matched_probeHiMuonPt_{trigger}"] & truth_selections["fiducial"]
+
+      truth_selections[f"matched_tagxHiMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      truth_selections[f"matched_tagxHiMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagxHiMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+      truth_selections[f"matched_fid_tagxHiMuonPt_{trigger}"] = truth_selections[f"matched_tagxHiMuonPt_{trigger}"] & truth_selections["fiducial"]
 
 
       truth_selections[f"matched_tagMediumMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
       truth_selections[f"matched_tagMediumMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagMediumMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
-
-      truth_selections[f"matched_probeMediumMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
-      truth_selections[f"matched_probeMediumMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"probeMediumMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
-
       truth_selections[f"matched_fid_tagMediumMuonPt_{trigger}"] = truth_selections[f"matched_tagMediumMuonPt_{trigger}"] & truth_selections["fiducial"]
-      truth_selections[f"matched_fid_probeMediumMuonPt_{trigger}"] = truth_selections[f"matched_probeMediumMuonPt_{trigger}"] & truth_selections["fiducial"]
+
+      truth_selections[f"matched_tagxMediumMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      truth_selections[f"matched_tagxMediumMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagxMediumMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+      truth_selections[f"matched_fid_tagxMediumMuonPt_{trigger}"] = truth_selections[f"matched_tagxMediumMuonPt_{trigger}"] & truth_selections["fiducial"]
 
 
-      truth_selections[f"matched_tagHugeMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
-      truth_selections[f"matched_tagHugeMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagHugeMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+      #truth_selections[f"matched_tagHugeMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      #truth_selections[f"matched_tagHugeMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagHugeMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
 
-      truth_selections[f"matched_probeHugeMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
-      truth_selections[f"matched_probeHugeMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"probeHugeMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+      #truth_selections[f"matched_probeHugeMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      #truth_selections[f"matched_probeHugeMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"probeHugeMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
 
-      truth_selections[f"matched_fid_tagHugeMuonPt_{trigger}"] = truth_selections[f"matched_tagHugeMuonPt_{trigger}"] & truth_selections["fiducial"]
-      truth_selections[f"matched_fid_probeHugeMuonPt_{trigger}"] = truth_selections[f"matched_probeHugeMuonPt_{trigger}"] & truth_selections["fiducial"]
+      #truth_selections[f"matched_fid_tagHugeMuonPt_{trigger}"] = truth_selections[f"matched_tagHugeMuonPt_{trigger}"] & truth_selections["fiducial"]
+      #truth_selections[f"matched_fid_probeHugeMuonPt_{trigger}"] = truth_selections[f"matched_probeHugeMuonPt_{trigger}"] & truth_selections["fiducial"]
 
 
       truth_selections[f"matched_tagVarMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
       truth_selections[f"matched_tagVarMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagVarMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
 
+      truth_selections[f"matched_tagxVarMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      truth_selections[f"matched_tagxVarMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"tagxVarMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+
       truth_selections[f"matched_probeVarMuonPt_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
       truth_selections[f"matched_probeVarMuonPt_{trigger}"][truth_selections["matched"]] = selections[f"probeVarMuonPt_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
 
       truth_selections[f"matched_fid_tagVarMuonPt_{trigger}"] = truth_selections[f"matched_tagVarMuonPt_{trigger}"] & truth_selections["fiducial"]
+      truth_selections[f"matched_fid_tagxVarMuonPt_{trigger}"] = truth_selections[f"matched_tagxVarMuonPt_{trigger}"] & truth_selections["fiducial"]
       truth_selections[f"matched_fid_probeVarMuonPt_{trigger}"] = truth_selections[f"matched_probeVarMuonPt_{trigger}"] & truth_selections["fiducial"]
 
-      truth_selections[f"matched_tagMediumMuon_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
-      truth_selections[f"matched_tagMediumMuon_{trigger}"][truth_selections["matched"]] = selections[f"tagMediumMuon_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+      truth_selections[f"matched_tagMediumMuonID_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      truth_selections[f"matched_tagMediumMuonID_{trigger}"][truth_selections["matched"]] = selections[f"tagMediumMuonID_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
 
-      truth_selections[f"matched_tagxMediumMuon_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
-      truth_selections[f"matched_tagxMediumMuon_{trigger}"][truth_selections["matched"]] = selections[f"tagxMediumMuon_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+      truth_selections[f"matched_tagxMediumMuonID_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      truth_selections[f"matched_tagxMediumMuonID_{trigger}"][truth_selections["matched"]] = selections[f"tagxMediumMuonID_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
 
-      truth_selections[f"matched_probeMediumMuon_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
-      truth_selections[f"matched_probeMediumMuon_{trigger}"][truth_selections["matched"]] = selections[f"probeMediumMuon_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
+      #truth_selections[f"matched_probeMediumMuonID_{trigger}"] = truth_bskkmumu.reco_idx.zeros_like().astype(bool)
+      #truth_selections[f"matched_probeMediumMuonID_{trigger}"][truth_selections["matched"]] = selections[f"probeMediumMuonID_{trigger}"][truth_bskkmumu.reco_idx[truth_selections["matched"]]]
 
-      truth_selections[f"matched_fid_tagMediumMuon_{trigger}"] = truth_selections[f"matched_tagMediumMuon_{trigger}"] & truth_selections["fiducial"]
-      truth_selections[f"matched_fid_tagxMediumMuon_{trigger}"] = truth_selections[f"matched_tagxMediumMuon_{trigger}"] & truth_selections["fiducial"]
-      truth_selections[f"matched_fid_probeMediumMuon_{trigger}"] = truth_selections[f"matched_probeMediumMuon_{trigger}"] & truth_selections["fiducial"]
+      truth_selections[f"matched_fid_tagMediumMuonID_{trigger}"] = truth_selections[f"matched_tagMediumMuonID_{trigger}"] & truth_selections["fiducial"]
+      truth_selections[f"matched_fid_tagxMediumMuonID_{trigger}"] = truth_selections[f"matched_tagxMediumMuonID_{trigger}"] & truth_selections["fiducial"]
+      #truth_selections[f"matched_fid_probeMediumMuonID_{trigger}"] = truth_selections[f"matched_probeMediumMuonID_{trigger}"] & truth_selections["fiducial"]
 
 
     truth_bskkmumu.recomatch_pt[truth_selections["matched"]] = reco_bskkmumu.fit_pt[truth_bskkmumu.reco_idx[truth_selections["matched"]]]
@@ -907,11 +989,11 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       truth_selection_names.extend([f"matched_fid_tag_{trigger}", f"matched_fid_probe_{trigger}", f"matched_fid_tagx_{trigger}"])
       #truth_selection_names.extend([f"matched_tagHiTrkPt_{trigger}", f"matched_probeHiTrkPt_{trigger}"])
       #truth_selection_names.extend([f"matched_fid_tagHiTrkPt_{trigger}", f"matched_fid_probeHiTrkPt_{trigger}"])
-      truth_selection_names.extend([f"matched_fid_tagHiMuonPt_{trigger}", f"matched_fid_probeHiMuonPt_{trigger}"])
-      truth_selection_names.extend([f"matched_fid_tagMediumMuonPt_{trigger}", f"matched_fid_probeMediumMuonPt_{trigger}"])
-      truth_selection_names.extend([f"matched_fid_tagHugeMuonPt_{trigger}", f"matched_fid_probeHugeMuonPt_{trigger}"])
-      truth_selection_names.extend([f"matched_fid_tagVarMuonPt_{trigger}", f"matched_fid_probeVarMuonPt_{trigger}"])
-      truth_selection_names.extend([f"matched_fid_tagMediumMuon_{trigger}", f"matched_fid_tagxMediumMuon_{trigger}", f"matched_fid_probeMediumMuon_{trigger}"])
+      truth_selection_names.extend([f"matched_fid_tagHiMuonPt_{trigger}", f"matched_fid_tagxHiMuonPt_{trigger}"])
+      truth_selection_names.extend([f"matched_fid_tagMediumMuonPt_{trigger}", f"matched_fid_tagxMediumMuonPt_{trigger}"])
+      #truth_selection_names.extend([f"matched_fid_tagHugeMuonPt_{trigger}", f"matched_fid_probeHugeMuonPt_{trigger}"])
+      truth_selection_names.extend([f"matched_fid_tagVarMuonPt_{trigger}", f"matched_fid_tagxVarMuonPt_{trigger}", f"matched_fid_probeVarMuonPt_{trigger}"])
+      truth_selection_names.extend([f"matched_fid_tagMediumMuonID_{trigger}", f"matched_fid_tagxMediumMuonID_{trigger}"]) # f"matched_fid_probeMediumMuonID_{trigger}"
 
     for selection_name in truth_selection_names:
       output["truth_cutflow"][dataset_name][selection_name] = truth_selections[selection_name].sum().sum()
@@ -1101,41 +1183,58 @@ class MCEfficencyProcessor(processor.ProcessorABC):
       })
 
     optz_selection = (reco_bskkmumu.fit_pt > 5.0) & (reco_bskkmumu.fit_pt < 25.0) \
-                                & (reco_bskkmumu.sv_prob > 0.01) \
-                                & (reco_bskkmumu.l_xy_sig > 1.5) \
-                                & (reco_bskkmumu.cos2D > 0.95) \
-                                & (np.abs(reco_bskkmumu.phi_m - PHI_1020_MASS) < 0.05) \
-                                & (np.abs(reco_bskkmumu.mll_fullfit - JPSI_1S_MASS) < 0.5) \
-                                & (reco_bskkmumu.l1_pt > 1.0) \
-                                & (reco_bskkmumu.l2_pt > 1.0) \
+                                & (reco_bskkmumu.l_xy_sig > 2.0) \
+                                & (reco_bskkmumu.cos2D > 0.99) \
+                                & (np.abs(reco_bskkmumu.phi_m - PHI_1020_MASS) < 0.03) \
+                                & (reco_bskkmumu.l1_pt > 1.5) \
+                                & (reco_bskkmumu.l2_pt > 1.5) \
                                 & (reco_bskkmumu.trk1_pt > 0.5) \
                                 & (reco_bskkmumu.trk2_pt > 0.5) \
                                 & selections["truthmatched"]
-    #output[f"Bcands_Bs_opt"][dataset_name].extend({
-    #  "pt": reco_bskkmumu.fit_pt[optz_selection].flatten(),
-    #  "eta": reco_bskkmumu.fit_eta[optz_selection].flatten(),
-    #  "y": reco_bskkmumu.fit_y[optz_selection].flatten(),
-    #  "phi": reco_bskkmumu.fit_phi[optz_selection].flatten(),
-    #  "mass": reco_bskkmumu.fit_mass[optz_selection].flatten(),
-    #  "l_xy": reco_bskkmumu.l_xy[optz_selection].flatten(),
-    #  "l_xy_sig": reco_bskkmumu.l_xy_sig[optz_selection].flatten(),
-    #  "sv_prob": reco_bskkmumu.sv_prob[optz_selection].flatten(),
-    #  "cos2D": reco_bskkmumu.fit_cos2D[optz_selection].flatten(),
-    #  "dm_phi": np.abs(reco_bskkmumu.phi_m[optz_selection].flatten() - PHI_1020_MASS),
-    #  "dm_jpsi": np.abs(reco_bskkmumu.mll_fullfit[optz_selection].flatten() - JPSI_1S_MASS),
-    #  "l1_pt": reco_bskkmumu.l1_pt[optz_selection].flatten(),
-    #  "l2_pt": reco_bskkmumu.l2_pt[optz_selection].flatten(),
-    #  "k1_pt": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
-    #  "k2_pt": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
-    #  "l1_eta": reco_bskkmumu.l1_pt[optz_selection].flatten(),
-    #  "l2_eta": reco_bskkmumu.l2_pt[optz_selection].flatten(),
-    #  "k1_eta": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
-    #  "k2_eta": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
-    #  "HLT_Mu7_IP4":  ((df["HLT_Mu7_IP4"]  == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-    #  "HLT_Mu9_IP5":  ((df["HLT_Mu9_IP5"]  == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-    #  "HLT_Mu9_IP6":  ((df["HLT_Mu9_IP6"]  == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-    #  "HLT_Mu12_IP6": ((df["HLT_Mu12_IP6"] == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
-    #})
+                                #& (reco_bskkmumu.sv_prob > 0.01) \
+                                #& (reco_bskkmumu.sv_prob > 0.01) \
+                                #& (np.abs(reco_bskkmumu.mll_fullfit - JPSI_1S_MASS) < 0.5) \
+    
+    '''
+    self._accumulator["Bcands_Bs_opt"] = processor.defaultdict_accumulator(
+          partial(Bcand_accumulator, cols=[ "pt", "eta", "y", "phi", "mass", 
+            "sv_prob", "l_xy_sig", "l_xy", "cos2D", 
+            "dm_phi", "dm_jpsi", 
+            "l1_pt", "l2_pt", "k1_pt", "k2_pt", 
+            "l1_eta", "l2_eta", "k1_eta", "k2_eta", 
+            "HLT_Mu7_IP4", "HLT_Mu9_IP5", "HLT_Mu9_IP6", "HLT_Mu12_IP6", 
+    ])) 
+    '''
+
+    output[f"Bcands_Bs_opt"][dataset_name].extend({
+      "pt": reco_bskkmumu.fit_pt[optz_selection].flatten(),
+      "eta": reco_bskkmumu.fit_eta[optz_selection].flatten(),
+      "y": reco_bskkmumu.fit_y[optz_selection].flatten(),
+      "phi": reco_bskkmumu.fit_phi[optz_selection].flatten(),
+      "mass": reco_bskkmumu.fit_mass[optz_selection].flatten(),
+      "l_xy": reco_bskkmumu.l_xy[optz_selection].flatten(),
+      "l_xy_sig": reco_bskkmumu.l_xy_sig[optz_selection].flatten(),
+      "sv_prob": reco_bskkmumu.sv_prob[optz_selection].flatten(),
+      "cos2D": reco_bskkmumu.fit_cos2D[optz_selection].flatten(),
+      "dm_phi": np.abs(reco_bskkmumu.phi_m[optz_selection].flatten() - PHI_1020_MASS),
+      "dm_jpsi": np.abs(reco_bskkmumu.mll_fullfit[optz_selection].flatten() - JPSI_1S_MASS),
+      "l1_pt": reco_bskkmumu.l1_pt[optz_selection].flatten(),
+      "l2_pt": reco_bskkmumu.l2_pt[optz_selection].flatten(),
+      "k1_pt": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
+      "k2_pt": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
+      "l1_eta": reco_bskkmumu.l1_pt[optz_selection].flatten(),
+      "l2_eta": reco_bskkmumu.l2_pt[optz_selection].flatten(),
+      "k1_eta": reco_bskkmumu.trk1_pt[optz_selection].flatten(),
+      "k2_eta": reco_bskkmumu.trk2_pt[optz_selection].flatten(),
+      "HLT_Mu7_IP4":  ((df["HLT_Mu7_IP4"]  == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+      "HLT_Mu9_IP5":  ((df["HLT_Mu9_IP5"]  == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+      "HLT_Mu9_IP6":  ((df["HLT_Mu9_IP6"]  == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+      "HLT_Mu12_IP6": ((df["HLT_Mu12_IP6"] == 1) * reco_bskkmumu_mask_template[optz_selection]).flatten().astype(int),
+      "isTag_HLT_Mu7_IP4": selections["tag_HLT_Mu7_IP4"][optz_selection].flatten(),
+      "isTag_HLT_Mu9_IP5": selections["tag_HLT_Mu9_IP5"][optz_selection].flatten(),
+      "isTag_HLT_Mu9_IP6": selections["tag_HLT_Mu9_IP6"][optz_selection].flatten(),
+      "isTag_HLT_Mu12_IP6": selections["tag_HLT_Mu12_IP6"][optz_selection].flatten(),
+    })
 
     return output
 
@@ -1213,7 +1312,7 @@ if __name__ == "__main__":
                                 executor=processor.futures_executor,
                                 executor_args={'workers': args.workers, 'flatten': False, 'status':not args.condor},
                                 chunksize=50000,
-                                # maxchunks=1,
+                                #maxchunks=8,
                             )
   ts_end = time.time()
   total_events = 0

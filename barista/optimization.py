@@ -17,7 +17,11 @@ chain_mc.Add("/home/dryu/BFrag/boffea/barista/fitting/optimization_Bs_mc.root")
 #chain_mc.Add("")
 #chain_mc.Print()
 
-preselection_cuts = "(l1_pt > 1.5) && (l2_pt > 1.5) && (pt < 12.0) && (dm_phi < 0.01) && (k1_pt > 0.5) && (k2_pt > 0.5) && (l_xy_sig > 2.0) && (cos2D > 0.99) && (sv_prob > 0.07)"
+preselection_cuts = {
+    "probe": "(l1_pt > 1.5) && (l2_pt > 1.5) && (pt < 12.0) && (dm_phi < 0.01) && (k1_pt > 0.5) && (k2_pt > 0.5) && (l_xy_sig > 2.0) && (cos2D > 0.99) && (sv_prob > 0.07)", 
+    "tag": "(l1_pt > 1.5) && (l2_pt > 1.5) && (((l1_pt > 7*1.05) && (TMath::Abs(l1_eta)<1.5)) || ((l2_pt > 7*1.05) && (TMath::Abs(l2_eta)<1.5))) (pt < 15.0) && (dm_phi < 0.01) && (k1_pt > 0.5) && (k2_pt > 0.5) && (l_xy_sig > 2.0) && (cos2D > 0.99) && (sv_prob > 0.07)", 
+
+}
 training_vars = ["cos2D", "l_xy_sig", "k1_pt", "k2_pt"] # , "l1_pt", "l2_pt" # , "dm_phi", "sv_prob"
 
 varprops = {
@@ -78,15 +82,17 @@ xlabels = {
     "mass": "M [GeV]",
 }
 
-def GetSBFractions(chain_data):
-    # Determine s and b by fitting data TChain
-    f_sb = ROOT.TFile("opt_sbfit.root", "RECREATE")
+def GetSBFractions(chain_data, side):
+    # Determine initial s and b by fitting data TChain
+    f_sb = ROOT.TFile(f"opt_sbfit_{side}.root", "RECREATE")
     ws = ROOT.RooWorkspace('ws')
     ws.Clear()
     mass = ws.factory(f"mass[5.35, 5.2, 5.52]")
     pt = ws.factory(f"pt[10., 0., 100.]")
     l1_pt = ws.factory(f"l1_pt[10., 0., 100.]")
     l2_pt = ws.factory(f"l2_pt[10., 0., 100.]")
+    l1_eta = ws.factory(f"l1_eta[0., -3.0, 3.0]")
+    l2_eta = ws.factory(f"l2_eta[0., -3.0, 3.0]")
     k1_pt = ws.factory(f"k1_pt[10., 0., 100.]")
     k2_pt = ws.factory(f"k2_pt[10., 0., 100.]")
     dm_phi = ws.factory(f"dm_phi[0.01., 0., 0.5]")
@@ -99,6 +105,8 @@ def GetSBFractions(chain_data):
     rdatavars.add(pt)
     rdatavars.add(l1_pt)
     rdatavars.add(l2_pt)
+    rdatavars.add(l1_eta)
+    rdatavars.add(l2_eta)
     rdatavars.add(dm_phi)
     rdatavars.add(k1_pt)
     rdatavars.add(k2_pt)
@@ -107,7 +115,7 @@ def GetSBFractions(chain_data):
     rdatavars.add(sv_prob)
     rdataset =  ROOT.RooDataSet("fitData", "fitData", rdatavars, 
                                 ROOT.RooFit.Import(chain_data), 
-                                ROOT.RooFit.Cut(preselection_cuts)) # 
+                                ROOT.RooFit.Cut(preselection_cuts[side])) # 
     rdatahist = ROOT.RooDataHist("fitDataBinned", "fitDataBinned", ROOT.RooArgSet(mass), rdataset)
     ndata = rdataset.sumEntries()
 
@@ -189,12 +197,12 @@ def GetSBFractions(chain_data):
     tline4.SetLineStyle(3)
     tline4.SetLineColor(ROOT.kGray+1)
     tline4.Draw()
-    c_fit.SaveAs("/home/dryu/BFrag/data/optimization/figures/{}.pdf".format(c_fit.GetName()))
+    c_fit.SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{c_fit.GetName()}_{side}.pdf")
 
     return s, b
 
 def RunMethodCuts(chain_data, chain_mc):
-    tmva_file = ROOT.TFile("tmva_cuts.root", "RECREATE")
+    tmva_file = ROOT.TFile(f"tmva_cuts_{side}.root", "RECREATE")
     factory = ROOT.TMVA.Factory("cuts", tmva_file, "V:!Silent")
     dataloader = ROOT.TMVA.DataLoader("dataset")
 
@@ -205,7 +213,7 @@ def RunMethodCuts(chain_data, chain_mc):
         dataloader.AddSpectator(var, xlabels[var], "", bins[var][1], bins[var][2])
     dataloader.AddSignalTree(chain_mc)
     dataloader.AddBackgroundTree(chain_data)
-    base_cuts = preselection_cuts
+    base_cuts = preselection_cuts[side]
     #for var in training_vars:
     #    if varprops[var] == "FMax":
     #        base_cuts += f" && ({var} > {var_cutranges[var][0]})"
@@ -241,9 +249,9 @@ def KinematicPlots(chain_data, chain_mc):
         hist_bkgd[var] = ROOT.TH1D(f"h_bkgd_{var}", f"h_bkgd_{var}", bins[var][0], bins[var][1], bins[var][2])
 
         print("Preselection cuts:")
-        print(preselection_cuts)
-        chain_mc.Draw(f"{var} >> h_signal_{var}", preselection_cuts)
-        chain_data.Draw(f"{var} >> h_bkgd_{var}", f"{preselection_cuts} && (TMath::Abs(mass - {BS_MASS}) > 0.05)")
+        print(preselection_cuts[side])
+        chain_mc.Draw(f"{var} >> h_signal_{var}", preselection_cuts[side])
+        chain_data.Draw(f"{var} >> h_bkgd_{var}", f"{preselection_cuts[side]} && (TMath::Abs(mass - {BS_MASS}) > 0.05)")
 
         if hist_signal[var].Integral() > 0:
             hist_signal[var].Scale(1. / hist_signal[var].Integral())
@@ -273,14 +281,14 @@ def KinematicPlots(chain_data, chain_mc):
         legend.AddEntry(hist_bkgd[var], "Background", "l")
         legend.Draw()
 
-        canvases[var].SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{canvases[var].GetName()}.pdf")
-        canvases[var].SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{canvases[var].GetName()}.png")
+        canvases[var].SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{canvases[var].GetName()}_{side}.pdf")
+        canvases[var].SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{canvases[var].GetName()}_{side}.png")
 
 
 def ComputeSignificance():
     print("ComputeSignificance")
     # Load s and b from GetSBFractions()
-    f_sb = ROOT.TFile("opt_sbfit.root", "READ")
+    f_sb = ROOT.TFile(f"opt_sbfit_{side}.root", "READ")
     ws = f_sb.Get("ws")
     #ws = ROOT.RooWorkspace('ws')
     ws.Print()
@@ -291,7 +299,7 @@ def ComputeSignificance():
     print(f"Using N_s={s}, N_b={b}")
 
     # Load ROC curve from RunMethodCuts()
-    tmva_file = ROOT.TFile("tmva_cuts.root", "READ")
+    tmva_file = ROOT.TFile(f"tmva_cuts_{side}.root", "READ")
     hist_roc = tmva_file.Get("dataset/Method_cuts/cuts/MVA_cuts_effBvsS")
 
     # Make significance graph
@@ -319,8 +327,8 @@ def ComputeSignificance():
     fit_signif.SetLineColor(2)
     fit_signif.SetLineWidth(1)
     fit_signif.Draw("same")
-    c_signif.SaveAs("/home/dryu/BFrag/data/optimization/figures/{}.pdf".format(c_signif.GetName()))
-    c_signif.SaveAs("/home/dryu/BFrag/data/optimization/figures/{}.png".format(c_signif.GetName()))
+    c_signif.SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{c_signif.GetName()}_{side}.pdf")
+    c_signif.SaveAs(f"/home/dryu/BFrag/data/optimization/figures/{c_signif.GetName()}_{side}.png")
 
     # Print cuts
     reader = ROOT.TMVA.Reader("!Color:!Silent")
@@ -380,6 +388,7 @@ if __name__ == "__main__":
     parser.add_argument("--step3", action="store_true", help="Step 3: make significant plot")
     parser.add_argument("--kinplots", action="store_true", help="Run KinematicPlots")
     parser.add_argument("--all", action="store_true", help="Run the whole thing")
+    parser.add_argument("--side", type=str, choices=["tag", "probe"], help="tag or probe")
     args = parser.parse_args()
 
     # Load events
@@ -393,10 +402,10 @@ if __name__ == "__main__":
     print("Data nentries = {}".format(chain_data.GetEntries()))
 
     if args.step1 or args.all:
-        GetSBFractions(chain_data)
+        GetSBFractions(chain_data, side=args.side)
     if args.step2 or args.all:
-        RunMethodCuts(chain_data, chain_mc)
+        RunMethodCuts(chain_data, chain_mc, side=args.side)
     if args.step3 or args.all:
         ComputeSignificance()
     if args.kinplots or args.all:
-        KinematicPlots(chain_data, chain_mc)
+        KinematicPlots(chain_data, chain_mc, side=args.side)

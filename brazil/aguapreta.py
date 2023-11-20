@@ -30,6 +30,14 @@ KSTAR_WINDOW = 0.050
 B0_PHI_VETO_WINDOW = 0.01
 BS_KSTAR_VETO_WINDOW = 0.05
 
+# Branching ratios
+BR_phiKK = 0.492
+BR_KstarKpi = 0.665
+BR_BuKJpsi = 1.020e-3
+BR_BdKstarJpsi = 1.27e-3
+BR_BsPhiJpsi = 1.08e-3
+
+
 # Optimized cuts
 final_cuts = {
 	"Bs": {
@@ -122,7 +130,7 @@ def delta_r(eta1, eta2, phi1, phi2):
 
 def varmuonpt(pt, abseta):
 	return (
-		((abseta < 1.0) & (pt > 3.25)) \
-		| ((1.0 < abseta) & (abseta < 1.5) & (pt > 3.25 + (1.5 - 3.25) / (1.5 - 1.0) * (abseta - 1.0))) \
+		((abseta < 1.1) & (pt > 3.5)) \
+		| ((1.1 < abseta) & (abseta < 1.5) & (pt > 3.5 + (1.5 - 3.5) / (1.5 - 1.1) * (abseta - 1.1))) \
 		| ((1.5 < abseta) & (pt > 1.5))
 		)

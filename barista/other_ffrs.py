@@ -11,15 +11,55 @@ import numpy as np
 import math
 import pickle
 
-BR_phiKK       = 0.492
-BR_KstarKpi    = 0.665
-BR_BuKJpsi     = 1.006e-3
-BR_BdKstarJpsi = 1.27e-3
-BR_BsPhiJpsi   = 1.08e-3
+from brazil.aguapreta import BR_phiKK, BR_KstarKpi, BR_BuKJpsi, BR_BdKstarJpsi, BR_BsPhiJpsi
+#BR_phiKK = 0.492
+#BR_KstarKpi = 0.665
+#BR_BuKJpsi = 1.020e-3
+#BR_BdKstarJpsi = 1.27e-3
+#BR_BsPhiJpsi = 1.08e-3
 
 def main():
 	ffrs = {}
 
+	### BPH-21-001, pt
+	xbins = [12, 13, 14, 15, 16, 18, 20, 23, 26, 29, 34, 45, 70]
+	yields_dict = {}
+	yields_dict["Bd"] = [(13261, 520), (25320, 857), (32496, 923), (41243, 695), (95348, 1038), (101216, 1321), (141747, 2040), (115830, 1565), (91951, 1028), (104570, 1130), (109976, 896), (61313, 1153)]
+	yields_dict["Bu"] = [(208436, 529), (238697, 554), (251434, 574), (252905, 570), (472530, 769), (407594, 706), (482561, 768), (349881, 661), (250986, 554), (268446, 581), (267778, 609), (138089, 433)]
+	yields_dict["Bs"] = [(4395, 75), (6997, 100), (8901, 108), (10273, 118), (22164, 171), (21567, 170), (28385, 191), (22152, 167), (16304, 145), (18314, 154), (19048, 156), (9869, 116)]
+	eff_dict = {}
+	eff_dict["Bu"] = [(0.01586, 0.00012), (0.02360, 0.00016), (0.03203, 0.00022), (0.04095, 0.00028), (0.05377, 0.00027), (0.07143, 0.00039), (0.09110, 0.00045), (0.11465, 0.00065), (0.13306, 0.00089), (0.15502, 0.00097), (0.18159, 0.00111), (0.21194, 0.00169)]
+	eff_dict["Bd"] = [(0.00121, 0.00002), (0.00276, 0.00003), (0.00495, 0.00005), (0.00788, 0.00007), (0.01279, 0.00008), (0.02043, 0.00013), (0.03075, 0.00017), (0.04369, 0.00026), (0.05597, 0.00038), (0.06934, 0.00044), (0.08990, 0.00053), (0.11420, 0.00085)]
+	eff_dict["Bs"] = [(0.00263, 0.00003), (0.00562, 0.00006), (0.00974, 0.00009), (0.01450, 0.00013), (0.02240, 0.00014), (0.03425, 0.00022), (0.04824, 0.00027), (0.06513, 0.00041), (0.08085, 0.00058), (0.09673, 0.00065), (0.11781, 0.00077), (0.13636, 0.00119)]
+	ffrs[("BPH21001", "pt")] = FFRDataFromYields(
+					yields_dict=yields_dict, 
+					eff_dict=eff_dict,
+					axis="pt", 
+					name="BPH21001", 
+					xbins=xbins)
+	ffrs[("BPH21001", "pt")].save()
+
+	### BPH-21-001, rapidity
+	xbins = [0.00, 0.25, 0.50, 0.75, 1.00, 1.30, 1.60, 2.40]
+	yields_dict = {}
+	yields_dict["Bs"] = [(29578, 186), (30854, 192), (32434, 198), (29034, 196), (26040, 192), (17953, 167), (22590, 222)]
+	yields_dict["Bu"] = [(541692, 764 ), (559411, 784), (593143, 821), (535407, 810), (520667, 919), (393101, 910), (479677, 1168)]
+	yields_dict["Bd"] = [(148284, 1261), (155504, 1450), (163290, 1322), (142595, 1246), (125410, 1068), (86048, 823), (107838, 584)]
+
+	eff_dict = {}
+	eff_dict["Bu"] = [(0.06114, 0.00032), (0.06319, 0.00033), (0.06875, 0.00035), (0.06720, 0.00035), (0.06240, 0.00031), (0.05470, 0.00029), (0.03063, 0.00013)]
+	eff_dict["Bs"] = [(0.03007, 0.00018), (0.03157, 0.00019), (0.03418, 0.00020), (0.03237, 0.00020), (0.02793, 0.00016), (0.02336, 0.00015), (0.01312, 0.00007)]
+	eff_dict["Bd"] = [(0.01982, 0.00012), (0.02051, 0.00012), (0.02224, 0.00013), (0.02083, 0.00012), (0.01773, 0.00010), (0.01444, 0.00009), (0.00838, 0.00004)]
+	ffrs[("BPH21001", "y")] = FFRDataFromYields(
+					yields_dict=yields_dict, 
+					eff_dict=eff_dict, 
+					axis="y", 
+					name="BPH21001", 
+					xbins=xbins)
+	ffrs[("BPH21001", "y")].save()
+
+
+	''' OLD: Sometime before approval
 	### BPH-21-001, pt
 	xbins = [12, 13, 14, 15, 16, 18, 20, 23, 26, 29, 34, 45, 70]
 	yields_Bs = [(7206, 95), (9668, 114), (11480, 124), (12482, 129), (25734, 186), (24024, 178), (30795, 200), (23563, 175), (17140, 151), (18951, 160), (19480, 166), (9878, 117)]
@@ -29,7 +69,7 @@ def main():
 	eff_Bs = [(0.00441, 0.00005), (0.00803, 0.00007), (0.01273, 0.00011), (0.01800, 0.00015), (0.02616, 0.00015), (0.03834, 0.00023), (0.05229, 0.00029), (0.06911, 0.00043), (0.08452, 0.00060), (0.10027, 0.00067), (0.12046, 0.00078), (0.13689, 0.00120)]
 	eff_Bd = [(0.00306, 0.00003),(0.00563, 0.00005),(0.00891, 0.00007),(0.01285, 0.00010),(0.01917, 0.00011),(0.02839, 0.00017),(0.04030, 0.00021),(0.05475, 0.00031),(0.06756, 0.00044),(0.08171, 0.00050),(0.10209, 0.00058),(0.12372, 0.00090),]
 
-	ffrs[("BPH21001", "pt")] = FFRDataSimple(
+	ffrs[("BPH21001", "pt")] = FFRDataFromYields(
 					yields_dict={"Bu": yields_Bu, "Bd": yields_Bd, "Bs": yields_Bs}, 
 					eff_dict={"Bu": eff_Bu, "Bd": eff_Bd, "Bs": eff_Bs}, 
 					axis="pt", 
@@ -47,13 +87,14 @@ def main():
 	eff_Bs = [(0.03375, 0.00020), (0.03546, 0.00021), (0.03838, 0.00022), (0.03622, 0.00021), (0.03138, 0.00018), (0.02628, 0.00016), (0.01462, 0.00007), ]
 	eff_Bd = [(0.02638, 0.00015), (0.02743, 0.00015), (0.02974, 0.00016), (0.02788, 0.00016), (0.02383, 0.00013), (0.01953, 0.00011), (0.01105, 0.00005), ]
 
-	ffrs[("BPH21001", "y")] = FFRDataSimple(
+	ffrs[("BPH21001", "y")] = FFRDataFromYields(
 					yields_dict={"Bu": yields_Bu, "Bd": yields_Bd, "Bs": yields_Bs}, 
 					eff_dict={"Bu": eff_Bu, "Bd": eff_Bd, "Bs": eff_Bs}, 
 					axis="y", 
 					name="BPH21001", 
 					xbins=xbins)
 	ffrs[("BPH21001", "y")].save()
+	'''
 
 	ffrs[("LHCb_13TeV", "pt")] = FFRDataLHCb(
 		name="LHCb_13TeV", 
@@ -147,7 +188,7 @@ class FFRDataLHCb:
 		self._avg_dfdfu = None
 
 	def save(self):
-		output_path = f"/home/dryu/BFrag/data/ffrs/external/ffrs_lhcb_{self._axis}_{self._name}.pkl"
+		output_path = f"/home/dyu7/BFrag/data/ffrs/external/ffrs_lhcb_{self._axis}_{self._name}.pkl"
 		with open(output_path, "wb") as f:
 			pickle.dump(self, f)
 
@@ -283,7 +324,7 @@ class FFRDataLHCb:
 		return "noselection"
 
 
-class FFRDataSimple:
+class FFRDataFromYields:
 	def __init__(self, yields_dict, eff_dict, xbins, axis="pt", name="default"):
 		self._axis  = copy.deepcopy(axis)
 		self._xbins = copy.deepcopy(xbins)
@@ -311,13 +352,13 @@ class FFRDataSimple:
 		self._dtotal_n = self._dn
 
 		# Divisions
-		self._Rsu = self._total_n["Bs"] / self._total_n["Bu"] / BR_phiKK / 2.0
+		self._Rsu = self._total_n["Bs"] / self._total_n["Bu"] #/ BR_phiKK / 2.0
 		self._dRsu = self._Rsu * np.sqrt((self._dtotal_n["Bs"] / self._total_n["Bs"])**2 + (self._dtotal_n["Bu"] / self._total_n["Bu"])**2) / 2.0
 
-		self._Rsd = self._total_n["Bs"] / self._total_n["Bd"] / BR_phiKK * BR_KstarKpi / 2.0
+		self._Rsd = self._total_n["Bs"] / self._total_n["Bd"] #/ BR_phiKK * BR_KstarKpi / 2.0
 		self._dRsd = self._Rsd * np.sqrt((self._dtotal_n["Bs"] / self._total_n["Bs"])**2 + (self._dtotal_n["Bd"] / self._total_n["Bd"])**2) / 2.0
 
-		self._Rdu = self._total_n["Bd"] / self._total_n["Bu"] / BR_KstarKpi / 2.0
+		self._Rdu = self._total_n["Bd"] / self._total_n["Bu"] #/ BR_KstarKpi / 2.0
 		self._dRdu = self._Rdu * np.sqrt((self._dtotal_n["Bd"] / self._total_n["Bd"])**2 + (self._dtotal_n["Bu"] / self._total_n["Bu"])**2) / 2.0
 
 		self._fsfu = self._total_n["Bs"] / self._total_n["Bu"] / (BR_BsPhiJpsi * BR_phiKK) * BR_BuKJpsi
@@ -336,13 +377,13 @@ class FFRDataSimple:
 			self._sum_n[btype] = self._total_n[btype].sum()
 			self._dsum_n[btype] = math.sqrt((self._dn[btype] * self._dn[btype]).sum())
 
-		self._avg_Rsu = self._sum_n["Bs"] / self._sum_n["Bu"] / BR_phiKK / 2.0
+		self._avg_Rsu = self._sum_n["Bs"] / self._sum_n["Bu"] #/ BR_phiKK / 2.0
 		self._avg_dRsu = self._avg_Rsu * np.sqrt((self._dsum_n["Bs"] / self._sum_n["Bs"])**2 + (self._dsum_n["Bu"] / self._sum_n["Bu"])**2) / 2.0
 
-		self._avg_Rsd = self._sum_n["Bs"] / self._sum_n["Bd"] / BR_phiKK * BR_KstarKpi / 2.0
+		self._avg_Rsd = self._sum_n["Bs"] / self._sum_n["Bd"] #/ BR_phiKK * BR_KstarKpi / 2.0
 		self._avg_dRsd = self._avg_Rsd * np.sqrt((self._dsum_n["Bs"] / self._sum_n["Bs"])**2 + (self._dsum_n["Bd"] / self._sum_n["Bd"])**2) / 2.0
 
-		self._avg_Rdu = self._sum_n["Bd"] / self._sum_n["Bu"] / BR_KstarKpi / 2.0
+		self._avg_Rdu = self._sum_n["Bd"] / self._sum_n["Bu"] #/ BR_KstarKpi / 2.0
 		self._avg_dRdu = self._avg_Rdu * np.sqrt((self._dsum_n["Bd"] / self._sum_n["Bd"])**2 + (self._dsum_n["Bu"] / self._sum_n["Bu"])**2) / 2.0
 
 		self._avg_fsfu = self._sum_n["Bs"] / self._sum_n["Bu"] / (BR_BsPhiJpsi * BR_phiKK) * BR_BuKJpsi
@@ -355,7 +396,7 @@ class FFRDataSimple:
 		self._avg_dfdfu = self._avg_fdfu * np.sqrt((self._dsum_n["Bd"] / self._sum_n["Bd"])**2 + (self._dsum_n["Bu"] / self._sum_n["Bu"])**2)
 
 	def save(self):
-		output_path = f"/home/dryu/BFrag/data/ffrs/external/ffrs_{self._axis}_{self._name}.pkl"
+		output_path = f"/home/dyu7/BFrag/data/ffrs/external/ffrs_{self._axis}_{self._name}.pkl"
 		with open(output_path, "wb") as f:
 			pickle.dump(self, f)
 

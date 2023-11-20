@@ -4,4 +4,5 @@ if [ -z "$1" ]; then
 else
 	PORT="$1";
 fi
-ssh -N -L localhost:${PORT}:localhost:${PORT} dyu7@brux20.hep.brown.edu
+ssh -L localhost:${PORT}:localhost:${PORT} dyu7@brux20campus.hep.brown.edu -p 2222 "cd BFrag/boffea; echo 'Setting up env...'; source env.sh; echo 'Launching notebook...'; source notebookserver.sh ${PORT};"
+

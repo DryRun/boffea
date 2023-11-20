@@ -8,7 +8,7 @@ ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptTitle(0)
 from brazil.seaborn_colors import SeabornColors
 seaborn_colors = SeabornColors()
-palette_dir = os.path.expandvars("/home/dryu/BFrag/boffea/brazil/seaborn_palettes")
+palette_dir = os.path.expandvars("/home/dyu7/BFrag/boffea/brazil/seaborn_palettes")
 seaborn_colors.load_palette("Blues_d", palette_dir=palette_dir)
 seaborn_colors.load_palette("Reds_d", palette_dir=palette_dir)
 seaborn_colors.load_palette("Oranges_d", palette_dir=palette_dir)
@@ -60,7 +60,7 @@ def style_graph(graph, btype):
 
 # Load yields from RooFit result
 def load_yields(btype, binned=False, correct_eff=False):
-	yields_file = f"/home/dryu/BFrag/boffitting/barista/fitting/{btype}/yields_{args.fitfunc}_{args.selection}"
+	yields_file = f"/home/dyu7/BFrag/boffitting/barista/fitting/{btype}/yields_{args.fitfunc}_{args.selection}"
 	if binned:
 		yields_file += "_binned"
 	if correct_eff:
@@ -124,8 +124,8 @@ def yield_pt_plot(yields, save_tag, normalize_bin_width=False, correct_eff=False
 		legend.AddEntry(graphs[btype], legend_entries[btype], "pl")
 	legend.Draw()
 
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}.png")
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}.pdf")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}.png")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}.pdf")
 
 	# Log y
 	canvas.SetLogy()
@@ -135,8 +135,8 @@ def yield_pt_plot(yields, save_tag, normalize_bin_width=False, correct_eff=False
 	for btype in ["Bu", "Bd", "Bs"]:
 		graphs[btype].Draw("p")
 	legend.Draw()
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}_logy.png")
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}_logy.pdf")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}_logy.png")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}_logy.pdf")
 
 def yield_y_graph(yields):
 	cut_names = [x for x in yields.keys() if "ybin" in x]
@@ -179,8 +179,8 @@ def yield_y_plot(yields, save_tag, correct_eff=False):
 		legend.AddEntry(graphs[btype], legend_entries[btype], "pl")
 	legend.Draw()
 
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}.png")
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}.pdf")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}.png")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}.pdf")
 
 	# Log y
 	canvas.SetLogy()
@@ -190,8 +190,8 @@ def yield_y_plot(yields, save_tag, correct_eff=False):
 	for btype in ["Bu", "Bd", "Bs"]:
 		graphs[btype].Draw("p")
 	legend.Draw()
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}_logy.png")
-	canvas.SaveAs(f"/home/dryu/BFrag/data/yields/{canvas.GetName()}_logy.pdf")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}_logy.png")
+	canvas.SaveAs(f"/home/dyu7/BFrag/data/yields/{canvas.GetName()}_logy.pdf")
 
 
 
@@ -199,7 +199,7 @@ if __name__ == "__main__":
 	for binned in [True]:#, False]:
 		for correct_eff in [False]: # False
 			for side in ["tag", "probe"]: # , "tagMaxPt", "probeMaxPt"
-				for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7", "HLT_Mu9_IP5", "HLT_Mu9_IP6"]:
+				for trigger_strategy in ["HLT_all", "HLT_Mu9", "HLT_Mu7", "HLT_Mu9_IP5"]: # HLT_Mu9_IP6
 					yields = {}
 					for btype in ["Bu", "Bd", "Bs"]:
 						print(btype)
