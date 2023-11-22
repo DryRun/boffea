@@ -169,7 +169,7 @@ def fit_data(tree, mass_range=BU_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 		mcside = f"{side}HiTrkPtmatch"
 	elif "MuonPt" in selection:
 		mcside = f"{side}{selection}match"
-	elif selection == "MediumMuon":
+	elif selection == "MediumMuonID":
 		mcside = f"{side}{selection}match"
 	else:
 		raise ValueError("asdfg Don't know what to do with selection {}".format(selection))
@@ -1094,10 +1094,16 @@ if __name__ == "__main__":
 					if args.binned:
 						save_tag += "_binned"
 					if args.correct_eff:
-						save_tag += "_correcteff"				
+						save_tag += "_correcteff"			
+					if not os.path.isfile(f"Bu/fitws_data_Bu_{save_tag}.root"):
+						print(f"WARNING : Couldn't find file Bu/fitws_data_Bu_{save_tag}.root, skipping in tables")
+						continue
 					ws_file = ROOT.TFile("Bu/fitws_data_Bu_{}.root".format(save_tag), "READ")
 					#ws_file.ls()
 					ws = ws_file.Get("ws")
+					print("CRASH")
+					print(f"{side} {trigger_strategy} {cut_name}")
+					print(ws_file)
 					yields[side][trigger_strategy][cut_name] = extract_yields(ws)
 		pprint(yields)
 		yields_file = f"Bu/yields_{args.fitfunc}_{args.selection}"

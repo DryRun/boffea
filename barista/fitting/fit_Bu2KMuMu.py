@@ -9,7 +9,7 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gROOT.ProcessLine(open('models.cc').read())
 from ROOT import MyErfc
 
-figure_dir = "/home/dryu/BFrag/data/fits/data"
+figure_dir = "/home/dyu7/BFrag/data/fits/data"
 
 # Fit bins
 ptbins = [5.0, 10.0, 15.0, 20.0, 25.0, 30.0]
@@ -54,7 +54,7 @@ def plot_data(tree, mass_range=[5.05, 5.5], cut="", tag=""):
 	h_data.SetMarkerStyle(20)
 	h_data.GetXaxis().SetTitle("Fitted M_{J/#Psi K^{#pm}} [GeV]")
 	h_data.Draw()
-	c.SaveAs("/home/dryu/BFrag/data/fits/data/{}.pdf".format(c.GetName()))
+	c.SaveAs("/home/dyu7/BFrag/data/fits/data/{}.pdf".format(c.GetName()))
 
 
 def fit_data(tree, mass_range=[5.05, 5.5], cut="1"):

@@ -48,7 +48,7 @@ def fit_dg(tree, mass_range=[4.8, 5.85], cut=""):
 
 
 if __name__ == "__main__":
-	figure_dir = "/home/dryu/BFrag/data/fits/mc"
+	figure_dir = "/home/dyu7/BFrag/data/fits/mc"
 	long_names = {
 		"Bs": "Bs2PhiJpsi2KKMuMu",
 		"Bu": "Bu2KJpsi2KMuMu",

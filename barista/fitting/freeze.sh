@@ -1,8 +1,147 @@
-cp Bu/fitparams_MC_Bu.pkl Bu/fitparams_MC_Bu_frozen.pkl
-cp Bu/fiterrs_MC_Bu.pkl Bu/fiterrs_MC_Bu_frozen.pkl
-cp Bd/prefitparams_MC_Bd.pkl Bd/prefitparams_MC_Bd_frozen.pkl
-cp Bd/prefiterrs_MC_Bd.pkl Bd/prefiterrs_MC_Bd_frozen.pkl
-cp Bd/fitparams_MC_Bd.pkl Bd/fitparams_MC_Bd_frozen.pkl
-cp Bd/fiterrs_MC_Bd.pkl Bd/fiterrs_MC_Bd_frozen.pkl
-cp Bs/fitparams_MC_Bs.pkl Bs/fitparams_MC_Bs_frozen.pkl
-cp Bs/fiterrs_MC_Bs.pkl Bs/fiterrs_MC_Bs_frozen.pkl
+#cp Bu/fitparams_MC_Bu_hypatia_nominal.pkl Bu/fitparams_MC_Bu_hypatia_nominal_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_hypatia_nominal.pkl Bu/fiterrs_MC_Bu_hypatia_nominal_frozen.pkl
+#cp Bs/fitparams_MC_Bs_hypatia_nominal.pkl Bs/fitparams_MC_Bs_hypatia_nominal_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_hypatia_nominal.pkl Bs/fiterrs_MC_Bs_hypatia_nominal_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_hypatia_nominal.pkl Bd/prefitparams_MC_Bd_hypatia_nominal_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_hypatia_nominal.pkl Bd/prefiterrs_MC_Bd_hypatia_nominal_frozen.pkl
+#cp Bs/fitparams_MC_Bs_hypatia_nominal_johnson.pkl Bs/fitparams_MC_Bs_hypatia_nominal_johnson_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_hypatia_nominal_johnson.pkl Bs/fiterrs_MC_Bs_hypatia_nominal_johnson_frozen.pkl
+
+cp Bu/fitparams_MC_Bu_nominal_johnson.pkl Bu/fitparams_MC_Bu_nominal_johnson_frozen.pkl
+cp Bu/fiterrs_MC_Bu_nominal_johnson.pkl Bu/fiterrs_MC_Bu_nominal_johnson_frozen.pkl
+cp Bd/prefitparams_MC_Bd_nominal_johnson.pkl Bd/prefitparams_MC_Bd_nominal_johnson_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_nominal_johnson.pkl Bd/prefiterrs_MC_Bd_nominal_johnson_frozen.pkl
+cp Bs/fitparams_MC_Bs_nominal_johnson.pkl Bs/fitparams_MC_Bs_nominal_johnson_frozen.pkl
+cp Bs/fiterrs_MC_Bs_nominal_johnson.pkl Bs/fiterrs_MC_Bs_nominal_johnson_frozen.pkl
+
+cp Bu/fitparams_MC_Bu_nominal_3gauss.pkl Bu/fitparams_MC_Bu_nominal_3gauss_frozen.pkl
+cp Bu/fiterrs_MC_Bu_nominal_3gauss.pkl Bu/fiterrs_MC_Bu_nominal_3gauss_frozen.pkl
+cp Bd/prefitparams_MC_Bd_nominal_3gauss.pkl Bd/prefitparams_MC_Bd_nominal_3gauss_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_nominal_3gauss.pkl Bd/prefiterrs_MC_Bd_nominal_3gauss_frozen.pkl
+cp Bs/fitparams_MC_Bs_nominal_3gauss.pkl Bs/fitparams_MC_Bs_nominal_3gauss_frozen.pkl
+cp Bs/fiterrs_MC_Bs_nominal_3gauss.pkl Bs/fiterrs_MC_Bs_nominal_3gauss_frozen.pkl
+
+cp Bu/fitparams_MC_Bu_VarMuonPt_johnson.pkl Bu/fitparams_MC_Bu_VarMuonPt_johnson_frozen.pkl
+cp Bu/fiterrs_MC_Bu_VarMuonPt_johnson.pkl Bu/fiterrs_MC_Bu_VarMuonPt_johnson_frozen.pkl
+cp Bd/prefitparams_MC_Bd_VarMuonPt_johnson.pkl Bd/prefitparams_MC_Bd_VarMuonPt_johnson_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_VarMuonPt_johnson.pkl Bd/prefiterrs_MC_Bd_VarMuonPt_johnson_frozen.pkl
+cp Bs/fitparams_MC_Bs_VarMuonPt_johnson.pkl Bs/fitparams_MC_Bs_VarMuonPt_johnson_frozen.pkl
+cp Bs/fiterrs_MC_Bs_VarMuonPt_johnson.pkl Bs/fiterrs_MC_Bs_VarMuonPt_johnson_frozen.pkl
+
+cp Bu/fitparams_MC_Bu_VarMuonPt_3gauss.pkl Bu/fitparams_MC_Bu_VarMuonPt_3gauss_frozen.pkl
+cp Bu/fiterrs_MC_Bu_VarMuonPt_3gauss.pkl Bu/fiterrs_MC_Bu_VarMuonPt_3gauss_frozen.pkl
+cp Bd/prefitparams_MC_Bd_VarMuonPt_3gauss.pkl Bd/prefitparams_MC_Bd_VarMuonPt_3gauss_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_VarMuonPt_3gauss.pkl Bd/prefiterrs_MC_Bd_VarMuonPt_3gauss_frozen.pkl
+cp Bs/fitparams_MC_Bs_VarMuonPt_3gauss.pkl Bs/fitparams_MC_Bs_VarMuonPt_3gauss_frozen.pkl
+cp Bs/fiterrs_MC_Bs_VarMuonPt_3gauss.pkl Bs/fiterrs_MC_Bs_VarMuonPt_3gauss_frozen.pkl
+
+cp Bu/fitparams_MC_Bu_HiMuonPt_johnson.pkl Bu/fitparams_MC_Bu_HiMuonPt_johnson_frozen.pkl
+cp Bu/fiterrs_MC_Bu_HiMuonPt_johnson.pkl Bu/fiterrs_MC_Bu_HiMuonPt_johnson_frozen.pkl
+cp Bd/prefitparams_MC_Bd_HiMuonPt_johnson.pkl Bd/prefitparams_MC_Bd_HiMuonPt_johnson_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_HiMuonPt_johnson.pkl Bd/prefiterrs_MC_Bd_HiMuonPt_johnson_frozen.pkl
+cp Bs/fitparams_MC_Bs_HiMuonPt_johnson.pkl Bs/fitparams_MC_Bs_HiMuonPt_johnson_frozen.pkl
+cp Bs/fiterrs_MC_Bs_HiMuonPt_johnson.pkl Bs/fiterrs_MC_Bs_HiMuonPt_johnson_frozen.pkl
+
+cp Bu/fitparams_MC_Bu_MediumMuonPt_johnson.pkl Bu/fitparams_MC_Bu_MediumMuonPt_johnson_frozen.pkl
+cp Bu/fiterrs_MC_Bu_MediumMuonPt_johnson.pkl Bu/fiterrs_MC_Bu_MediumMuonPt_johnson_frozen.pkl
+cp Bd/prefitparams_MC_Bd_MediumMuonPt_johnson.pkl Bd/prefitparams_MC_Bd_MediumMuonPt_johnson_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_MediumMuonPt_johnson.pkl Bd/prefiterrs_MC_Bd_MediumMuonPt_johnson_frozen.pkl
+cp Bs/fitparams_MC_Bs_MediumMuonPt_johnson.pkl Bs/fitparams_MC_Bs_MediumMuonPt_johnson_frozen.pkl
+cp Bs/fiterrs_MC_Bs_MediumMuonPt_johnson.pkl Bs/fiterrs_MC_Bs_MediumMuonPt_johnson_frozen.pkl
+
+cp Bu/fitparams_MC_Bu_MediumMuonID_johnson.pkl Bu/fitparams_MC_Bu_MediumMuonID_johnson_frozen.pkl
+cp Bu/fiterrs_MC_Bu_MediumMuonID_johnson.pkl Bu/fiterrs_MC_Bu_MediumMuonID_johnson_frozen.pkl
+cp Bd/prefitparams_MC_Bd_MediumMuonID_johnson.pkl Bd/prefitparams_MC_Bd_MediumMuonID_johnson_frozen.pkl
+cp Bd/prefiterrs_MC_Bd_MediumMuonID_johnson.pkl Bd/prefiterrs_MC_Bd_MediumMuonID_johnson_frozen.pkl
+cp Bs/fitparams_MC_Bs_MediumMuonID_johnson.pkl Bs/fitparams_MC_Bs_MediumMuonID_johnson_frozen.pkl
+cp Bs/fiterrs_MC_Bs_MediumMuonID_johnson.pkl Bs/fiterrs_MC_Bs_MediumMuonID_johnson_frozen.pkl
+
+#cp Bu/fitparams_MC_Bu_hypatia.pkl Bu/fitparams_MC_Bu_hypatia_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_hypatia.pkl Bu/fiterrs_MC_Bu_hypatia_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_hypatia.pkl Bd/prefitparams_MC_Bd_hypatia_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_hypatia.pkl Bd/prefiterrs_MC_Bd_hypatia_frozen.pkl
+#cp Bs/fitparams_MC_Bs_hypatia.pkl Bs/fitparams_MC_Bs_hypatia_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_hypatia.pkl Bs/fiterrs_MC_Bs_hypatia_frozen.pkl
+#cp Bd/fitparams_MC_Bd_hypatia.pkl Bd/fitparams_MC_Bd_hypatia_frozen.pkl
+#cp Bd/fiterrs_MC_Bd_hypatia.pkl Bd/fiterrs_MC_Bd_hypatia_frozen.pkl
+
+#cp Bu/fitparams_MC_Bu_nominal_2gauss.pkl Bu/fitparams_MC_Bu_nominal_2gauss_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_nominal_2gauss.pkl Bu/fiterrs_MC_Bu_nominal_2gauss_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_nominal_2gauss.pkl Bd/prefitparams_MC_Bd_nominal_2gauss_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_nominal_2gauss.pkl Bd/prefiterrs_MC_Bd_nominal_2gauss_frozen.pkl
+#cp Bs/fitparams_MC_Bs_nominal_2gauss.pkl Bs/fitparams_MC_Bs_nominal_2gauss_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_nominal_2gauss.pkl Bs/fiterrs_MC_Bs_nominal_2gauss_frozen.pkl
+
+
+
+
+#cp Bu/fitparams_MC_Bu_nominal_johnson.pkl Bu/fitparams_MC_Bu_nominal_johnson_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_nominal_johnson.pkl Bu/fiterrs_MC_Bu_nominal_johnson_frozen.pkl
+#cp Bd/fitparams_hyp_MC_Bd.pkl Bd/fitparams_hyp_MC_Bd_frozen.pkl
+#cp Bd/fiterrs_hyp_MC_Bd.pkl Bd/fiterrs_hyp_MC_Bd_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_nominal_johnson.pkl Bd/prefitparams_MC_Bd_nominal_johnson_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_nominal_johnson.pkl Bd/prefiterrs_MC_Bd_nominal_johnson_frozen.pkl
+#cp Bs/fitparams_MC_Bs_nominal_johnson.pkl Bs/fitparams_MC_Bs_nominal_johnson_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_nominal_johnson.pkl Bs/fiterrs_MC_Bs_nominal_johnson_frozen.pkl
+#
+#cp Bu/fitparams_MC_Bu_nominal_2gauss.pkl Bu/fitparams_MC_Bu_nominal_2gauss_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_nominal_2gauss.pkl Bu/fiterrs_MC_Bu_nominal_2gauss_frozen.pkl
+#cp Bd/fitparams_hyp_MC_Bd.pkl Bd/fitparams_hyp_MC_Bd_frozen.pkl
+#cp Bd/fiterrs_hyp_MC_Bd.pkl Bd/fiterrs_hyp_MC_Bd_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_nominal_2gauss.pkl Bd/prefitparams_MC_Bd_nominal_2gauss_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_nominal_2gauss.pkl Bd/prefiterrs_MC_Bd_nominal_2gauss_frozen.pkl
+#cp Bs/fitparams_MC_Bs_nominal_2gauss.pkl Bs/fitparams_MC_Bs_nominal_2gauss_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_nominal_2gauss.pkl Bs/fiterrs_MC_Bs_nominal_2gauss_frozen.pkl
+#
+#cp Bu/fitparams_MC_Bu_nominal_3gauss.pkl Bu/fitparams_MC_Bu_nominal_3gauss_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_nominal_3gauss.pkl Bu/fiterrs_MC_Bu_nominal_3gauss_frozen.pkl
+#cp Bd/fitparams_hyp_MC_Bd.pkl Bd/fitparams_hyp_MC_Bd_frozen.pkl
+#cp Bd/fiterrs_hyp_MC_Bd.pkl Bd/fiterrs_hyp_MC_Bd_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_nominal_3gauss.pkl Bd/prefitparams_MC_Bd_nominal_3gauss_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_nominal_3gauss.pkl Bd/prefiterrs_MC_Bd_nominal_3gauss_frozen.pkl
+#cp Bs/fitparams_MC_Bs_nominal_3gauss.pkl Bs/fitparams_MC_Bs_nominal_3gauss_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_nominal_3gauss.pkl Bs/fiterrs_MC_Bs_nominal_3gauss_frozen.pkl
+
+#cp Bu/fitparams_MC_Bu_HiTrkPt_johnson.pkl Bu/fitparams_MC_Bu_HiTrkPt_johnson_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_HiTrkPt_johnson.pkl Bu/fiterrs_MC_Bu_HiTrkPt_johnson_frozen.pkl
+#cp Bs/fitparams_MC_Bs_HiTrkPt_johnson.pkl Bs/fitparams_MC_Bs_HiTrkPt_johnson_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_HiTrkPt_johnson.pkl Bs/fiterrs_MC_Bs_HiTrkPt_johnson_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_HiTrkPt_johnson.pkl Bd/prefitparams_MC_Bd_HiTrkPt_johnson_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_HiTrkPt_johnson.pkl Bd/prefiterrs_MC_Bd_HiTrkPt_johnson_frozen.pkl
+
+#cp Bs/fitparams_MC_Bs_hypatia_HiTrkPt.pkl Bs/fitparams_MC_Bs_hypatia_HiTrkPt_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_hypatia_HiTrkPt.pkl Bs/fiterrs_MC_Bs_hypatia_HiTrkPt_frozen.pkl
+#cp Bu/fitparams_MC_Bu_hypatia_HiTrkPt.pkl Bu/fitparams_MC_Bu_hypatia_HiTrkPt_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_hypatia_HiTrkPt.pkl Bu/fiterrs_MC_Bu_hypatia_HiTrkPt_frozen.pkl
+
+#cp Bs/fitparams_MC_Bs_hypatia_HiMuonPt.pkl Bs/fitparams_MC_Bs_hypatia_HiMuonPt_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_hypatia_HiMuonPt.pkl Bs/fiterrs_MC_Bs_hypatia_HiMuonPt_frozen.pkl
+#cp Bu/fitparams_MC_Bu_hypatia_HiMuonPt.pkl Bu/fitparams_MC_Bu_hypatia_HiMuonPt_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_hypatia_HiMuonPt.pkl Bu/fiterrs_MC_Bu_hypatia_HiMuonPt_frozen.pkl
+#cp Bu/fitparams_MC_Bu_HiMuonPt_johnson.pkl Bu/fitparams_MC_Bu_HiMuonPt_johnson_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_HiMuonPt_johnson.pkl Bu/fiterrs_MC_Bu_HiMuonPt_johnson_frozen.pkl
+#cp Bs/fitparams_MC_Bs_HiMuonPt_johnson.pkl Bs/fitparams_MC_Bs_HiMuonPt_johnson_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_HiMuonPt_johnson.pkl Bs/fiterrs_MC_Bs_HiMuonPt_johnson_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_HiMuonPt_johnson.pkl Bd/prefitparams_MC_Bd_HiMuonPt_johnson_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_HiMuonPt_johnson.pkl Bd/prefiterrs_MC_Bd_HiMuonPt_johnson_frozen.pkl
+#
+#cp Bu/fitparams_MC_Bu_MediumMuonPt_johnson.pkl Bu/fitparams_MC_Bu_MediumMuonPt_johnson_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_MediumMuonPt_johnson.pkl Bu/fiterrs_MC_Bu_MediumMuonPt_johnson_frozen.pkl
+#cp Bs/fitparams_MC_Bs_MediumMuonPt_johnson.pkl Bs/fitparams_MC_Bs_MediumMuonPt_johnson_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_MediumMuonPt_johnson.pkl Bs/fiterrs_MC_Bs_MediumMuonPt_johnson_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_MediumMuonPt_johnson.pkl Bd/prefitparams_MC_Bd_MediumMuonPt_johnson_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_MediumMuonPt_johnson.pkl Bd/prefiterrs_MC_Bd_MediumMuonPt_johnson_frozen.pkl
+#
+#cp Bu/fitparams_MC_Bu_HugeMuonPt_johnson.pkl Bu/fitparams_MC_Bu_HugeMuonPt_johnson_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_HugeMuonPt_johnson.pkl Bu/fiterrs_MC_Bu_HugeMuonPt_johnson_frozen.pkl
+#cp Bs/fitparams_MC_Bs_HugeMuonPt_johnson.pkl Bs/fitparams_MC_Bs_HugeMuonPt_johnson_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_HugeMuonPt_johnson.pkl Bs/fiterrs_MC_Bs_HugeMuonPt_johnson_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_HugeMuonPt_johnson.pkl Bd/prefitparams_MC_Bd_HugeMuonPt_johnson_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_HugeMuonPt_johnson.pkl Bd/prefiterrs_MC_Bd_HugeMuonPt_johnson_frozen.pkl
+#
+#cp Bu/fitparams_MC_Bu_VarMuonPt_johnson.pkl Bu/fitparams_MC_Bu_VarMuonPt_johnson_frozen.pkl
+#cp Bu/fiterrs_MC_Bu_VarMuonPt_johnson.pkl Bu/fiterrs_MC_Bu_VarMuonPt_johnson_frozen.pkl
+#cp Bs/fitparams_MC_Bs_VarMuonPt_johnson.pkl Bs/fitparams_MC_Bs_VarMuonPt_johnson_frozen.pkl
+#cp Bs/fiterrs_MC_Bs_VarMuonPt_johnson.pkl Bs/fiterrs_MC_Bs_VarMuonPt_johnson_frozen.pkl
+#cp Bd/prefitparams_MC_Bd_VarMuonPt_johnson.pkl Bd/prefitparams_MC_Bd_VarMuonPt_johnson_frozen.pkl
+#cp Bd/prefiterrs_MC_Bd_VarMuonPt_johnson.pkl Bd/prefiterrs_MC_Bd_VarMuonPt_johnson_frozen.pkl

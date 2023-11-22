@@ -41,7 +41,7 @@ def plot_data(tree, mass_range=[5.05, 5.5], cut="", tag=""):
 	h_data.SetMarkerStyle(20)
 	h_data.GetXaxis().SetTitle("Fitted M_{J/\\Psi K^{\\pm}} [GeV]")
 	h_data.Draw()
-	c.SaveAs("/home/dryu/BFrag/data/fits/data/{}.pdf".format(c.GetName()))
+	c.SaveAs("/home/dyu7/BFrag/data/fits/data/{}.pdf".format(c.GetName()))
 
 
 def fit_data(tree, mass_range=[5.05, 5.5], cut=""):

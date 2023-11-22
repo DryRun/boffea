@@ -86,6 +86,7 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 		w_eff = ws.factory("w_eff[0.0, 1.e5]")
 		rdataset = ROOT.RooDataSet("fitData", "fitData", ROOT.RooArgSet(mass, pt, y, w_eff), ROOT.RooFit.Import(tree), ROOT.RooFit.Cut(cut), ROOT.RooFit.WeightVar("w_eff"))
 	else:
+		print(f"DEBUG : {incut} {cut_name} {binned} {correct_eff} {side} {selection} {fitfunc}")
 		rdataset = ROOT.RooDataSet("fitData", "fitData", ROOT.RooArgSet(mass, pt, y), ROOT.RooFit.Import(tree), ROOT.RooFit.Cut(cut))
 
 	ndata = rdataset.sumEntries()
@@ -132,7 +133,7 @@ def fit_data(tree, mass_range=BS_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 			mcside = f"{side}HiTrkPtmatch"
 		elif "MuonPt" in selection:
 			mcside = f"{side}{selection}match"
-		elif selection == "MediumMuon":
+		elif selection == "MediumMuonID":
 			mcside = f"{side}{selection}match"
 		else:
 			raise ValueError("asdfg Don't know what to do with selection {}".format(selection))
@@ -544,8 +545,8 @@ if __name__ == "__main__":
 			raise ValueError("Unrecognized cuts: {}".format(args.some))
 	cuts["tagx"] = cuts["tag"]
 
-	print("jkl; Printing fit_cuts")
-	pprint(fit_cuts)
+	#print("jkl; Printing fit_cuts")
+	#pprint(fit_cuts)
 
 	trigger_strategies_to_run = args.trigger_strategies.split(",") #["HLT_all", "HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_Mu9_IP6"] # "HLT_all", "HLT_Mu7", "HLT_Mu9", "HLT_Mu9_IP5", "HLT_Mu9_IP6"
 	sides_to_run = args.sides.split(",")
@@ -567,6 +568,7 @@ if __name__ == "__main__":
 				for trigger in trigger_strategies[trigger_strategy]:
 					tree_name = get_Bcands_name_data(btype="Bs", trigger=trigger, side=side, selection=args.selection)
 					for data_file in data_files:
+						print(f"{data_file}/{tree_name}")
 						chain.Add(f"{data_file}/{tree_name}")
 
 				print("Total entries = {}".format(chain.GetEntries()))

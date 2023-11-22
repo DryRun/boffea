@@ -161,7 +161,7 @@ def fit_data(tree, mass_range=BD_FIT_WINDOW, incut="1", cut_name="inclusive", bi
 		elif "MuonPt" in selection:
 			mcside_main = f"{side}{selection}match"
 			mcside_swap = f"{side}{selection}matchswap"
-		elif selection == "MediumMuon":
+		elif selection == "MediumMuonID":
 			mcside_main = f"{side}{selection}match"
 			mcside_swap = f"{side}{selection}matchswap"
 		else:

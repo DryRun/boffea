@@ -7,7 +7,7 @@ from brazil.aguapreta import *
 import pickle
 ROOT.gROOT.SetBatch(True)
 
-figure_dir = "/home/dryu/BFrag/data/fits/mc"
+figure_dir = "/home/dyu7/BFrag/data/fits/mc"
 
 import sys
 sys.path.append(".")

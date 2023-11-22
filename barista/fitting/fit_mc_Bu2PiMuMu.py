@@ -8,7 +8,7 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gROOT.ProcessLine(open('models.cc').read())
 from ROOT import MyErfc
 
-figure_dir = "/home/dryu/BFrag/data/fits/mc"
+figure_dir = "/home/dyu7/BFrag/data/fits/mc"
 
 MMIN=5.15
 MMAX=5.7
